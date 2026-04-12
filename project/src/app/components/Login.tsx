@@ -7,13 +7,18 @@ import logoImage from 'figma:asset/e814ddf273032a96d26231b3f2e66cb992b86fda.png'
 export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login(email, password);
-    navigate('/');
+    const success = login(email, password);
+    if (success) {
+      navigate('/');
+    } else {
+      setError('Invalid email or password. Please try again.');
+    }
   };
 
   const quickLogins = [
@@ -89,6 +94,10 @@ export const Login = () => {
             >
               Sign In
             </button>
+
+            {error && (
+              <p className="text-sm text-red-600 text-center">{error}</p>
+            )}
           </form>
 
           {/* Quick Login Demo Buttons */}
@@ -101,6 +110,7 @@ export const Login = () => {
                   onClick={() => {
                     setEmail(account.email);
                     setPassword('demo');
+                    setError('');
                   }}
                   className="text-xs px-3 py-2 bg-blue-50 hover:bg-blue-100 text-[#1E40AF] rounded border border-blue-200 transition-colors"
                 >

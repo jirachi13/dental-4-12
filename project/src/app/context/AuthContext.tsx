@@ -12,7 +12,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => void;
+  login: (email: string, password: string) => boolean;
   logout: () => void;
 }
 
@@ -60,16 +60,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const credentials: Record<string, string> = {
-      'dentist@floral.ph': 'dentist123',
-      'aide@floral.ph': 'aide123',
-      'school@floral.ph': 'school123',
-      'barangay@floral.ph': 'barangay123',
-      'admin@floral.ph': 'admin123',
+      'dentist@floral.ph': 'demo',
+      'aide@floral.ph': 'demo',
+      'school@floral.ph': 'demo',
+      'barangay@floral.ph': 'demo',
+      'admin@floral.ph': 'demo',
     };
 
     if (mockUsers[email] && credentials[email] === password) {
       setUser(mockUsers[email]);
+      return true;
     }
+    return false;
   };
 
   const logout = () => {
