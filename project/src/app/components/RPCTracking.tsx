@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Plus, X, CheckCircle, AlertCircle, Clock, Shield } from 'lucide-react';
+import { Search, Plus, X, CheckCircle, AlertCircle, Clock, Shield, School as SchoolIcon, List, ChevronRight, Users } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getGradeColor } from '../utils/gradeColors';
 
@@ -28,7 +28,23 @@ const rpcRecords = [
   { id:'15', studentName:'Bea Aquino', birthdate:'2018-01-15', gender:'Female', school:'Bagong Tanyag Integrated School', grade:'Grade 2', section:'Dahlia', visit1Date:null, visit1Status:'Pending', visit2Date:null, visit2Status:'Pending', daysUntilDue:0, status:'not-started' },
 ];
 
+
+const ViewToggle = ({ mode, onChange }: { mode: 'school' | 'list'; onChange: (m: 'school' | 'list') => void }) => (
+  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+    <button onClick={() => onChange('school')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'school' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+      <SchoolIcon className="w-4 h-4" /> School View
+    </button>
+    <button onClick={() => onChange('list')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'list' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+      <List className="w-4 h-4" /> List View
+    </button>
+  </div>
+);
+
 export const RPCTracking = () => {
+  const [viewMode, setViewMode] = useState<'school' | 'list'>('school');
+  const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
+  const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [schoolFilter, setSchoolFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState('all');
@@ -93,12 +109,57 @@ export const RPCTracking = () => {
     </select>
   );
 
+  // School view computed data
+  const schoolSummary = SCHOOLS.map(school => {
+    const records = rpcRecords.filter(r => r.school === school);
+    const complete = records.filter(r => r.status === 'complete').length;
+    const overdueCount = records.filter(r => r.status === 'overdue').length;
+    return { name: school, total: records.length, complete, overdue: overdueCount };
+  });
+
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">RPC Records</h1>
-        <p className="text-sm text-gray-500">Routine Preventive Care — Fluoride application tracking (4–6 month interval)</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">RPC Records</h1>
+          <p className="text-sm text-gray-500">Routine Preventive Care — Fluoride application tracking (4–6 month interval)</p>
+        </div>
+        <ViewToggle mode={viewMode} onChange={setViewMode} />
       </div>
+
+      {/* School View */}
+      {viewMode === 'school' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {schoolSummary.map(s => (
+            <div key={s.name} className="bg-white rounded-xl border border-gray-200 p-5 hover:border-[#1E40AF] hover:shadow-md transition-all cursor-pointer"
+              onClick={() => setViewMode('list')}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <SchoolIcon className="w-5 h-5 text-[#1E40AF]" />
+                </div>
+                <div className="font-semibold text-gray-900 text-sm leading-tight">{s.name}</div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <div className="text-lg font-bold text-gray-900">{s.total}</div>
+                  <div className="text-xs text-gray-500">Total</div>
+                </div>
+                <div className="bg-green-50 rounded-lg p-2">
+                  <div className="text-lg font-bold text-green-600">{s.complete}</div>
+                  <div className="text-xs text-gray-500">Complete</div>
+                </div>
+                <div className="bg-red-50 rounded-lg p-2">
+                  <div className="text-lg font-bold text-red-600">{s.overdue}</div>
+                  <div className="text-xs text-gray-500">Overdue</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* List View — existing content wrapped */}
+      {viewMode === 'list' && <div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
@@ -230,6 +291,7 @@ export const RPCTracking = () => {
           </div>
         </div>
       )}
+    </div>}
     </div>
   );
 };

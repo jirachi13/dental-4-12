@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { Search, X, Eye } from 'lucide-react';
+import { Search, X, Eye, School as SchoolIcon, List } from 'lucide-react';
+
 import { getGradeColor } from '../utils/gradeColors';
 
 const SCHOOLS = [
@@ -25,6 +26,7 @@ const mockCharts = [
 
 export const DentalChartNav = () => {
   const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState<'school' | 'list'>('school');
   const [searchTerm, setSearchTerm] = useState('');
   const [schoolFilter, setSchoolFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState('all');

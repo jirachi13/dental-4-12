@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { Search, Plus, Eye, FileText, X } from 'lucide-react';
+import { Search, Plus, Eye, FileText, X, School as SchoolIcon, List, ChevronRight, Users } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 
 const SCHOOLS = [
@@ -8,13 +8,29 @@ const SCHOOLS = [
   'Bagong Tanyag Elementary School Annex A',
   'South Daang Hari Elementary School Main',
 ];
-
 const GRADES = ['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
+
+const ViewToggle = ({ mode, onChange }: { mode: 'school' | 'list'; onChange: (m: 'school' | 'list') => void }) => (
+  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+    <button onClick={() => onChange('school')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'school' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+      <SchoolIcon className="w-4 h-4" /> School View
+    </button>
+    <button onClick={() => onChange('list')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'list' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+      <List className="w-4 h-4" /> List View
+    </button>
+  </div>
+);
 
 export const PatientList = () => {
   const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState<'school' | 'list'>('school');
 
-  // Flat filters — no drill-down
+  // Drill-down state
+  const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
+  const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
+
+  // List view filters
   const [searchTerm, setSearchTerm] = useState('');
   const [schoolFilter, setSchoolFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState('all');
@@ -24,15 +40,10 @@ export const PatientList = () => {
   const [riskFilter, setRiskFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newPatient, setNewPatient] = useState({
-    firstName: '', lastName: '', middleName: '',
-    birthdate: '', gender: '', grade: '', section: '',
-    school: '', guardianName: '', guardianContact: '', address: '',
-  });
+  const [newPatient, setNewPatient] = useState({ firstName:'', lastName:'', middleName:'', birthdate:'', gender:'', grade:'', section:'', school:'', guardianName:'', guardianContact:'', address:'' });
 
   const calculateAge = (birthdate: string) => {
-    const today = new Date();
-    const birth = new Date(birthdate);
+    const today = new Date(); const birth = new Date(birthdate);
     let age = today.getFullYear() - birth.getFullYear();
     const m = today.getMonth() - birth.getMonth();
     if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
@@ -43,10 +54,8 @@ export const PatientList = () => {
     if (age <= 5) return 'Under 5';
     if (age <= 10) return '6-10';
     if (age <= 14) return '10-14';
-    if (age <= 19) return '15-19';
-    return 'Other';
+    return '15-19';
   };
-
 
   const allStudents = [
     { id: '1', name: 'Juan Morales', birthdate: '2020-07-23', gender: 'Male', grade: 'Grade 1', section: 'Sampaguita', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-01-24', oralStatus: 'Needs Treatment', riskLevel: 'Low' },
@@ -231,31 +240,45 @@ export const PatientList = () => {
     { id: '180', name: 'Maria Reyes', birthdate: '2015-11-17', gender: 'Female', grade: 'Grade 6', section: 'Guijo', school: 'South Daang Hari Elementary School Main', lastVisit: '2026-02-06', oralStatus: 'Orally Fit', riskLevel: 'High' },
   ];
 
+  // School view computed data
+  const schoolData = SCHOOLS.map(school => {
+    const students = allStudents.filter(s => s.school === school);
+    const grades = [...new Set(students.map(s => s.grade))].sort();
+    return { name: school, count: students.length, grades };
+  });
+
+  const gradesForSchool = selectedSchool
+    ? [...new Set(allStudents.filter(s => s.school === selectedSchool).map(s => s.grade))].sort()
+    : [];
+
+  const sectionsForGrade = (selectedSchool && selectedGrade)
+    ? [...new Set(allStudents.filter(s => s.school === selectedSchool && s.grade === selectedGrade).map(s => s.section))].sort()
+    : [];
+
+  const studentsForSection = (selectedSchool && selectedGrade && selectedSection)
+    ? allStudents.filter(s => s.school === selectedSchool && s.grade === selectedGrade && s.section === selectedSection)
+    : [];
+
+  // List view filtered
   const allSections = useMemo(() => {
-    const base = schoolFilter !== 'all'
-      ? allStudents.filter(s => s.school === schoolFilter)
-      : allStudents;
-    const filtered = gradeFilter !== 'all'
-      ? base.filter(s => s.grade === gradeFilter)
-      : base;
-    return [...new Set(filtered.map(s => s.section))].sort();
+    let base = schoolFilter !== 'all' ? allStudents.filter(s => s.school === schoolFilter) : allStudents;
+    if (gradeFilter !== 'all') base = base.filter(s => s.grade === gradeFilter);
+    return [...new Set(base.map(s => s.section))].sort();
   }, [schoolFilter, gradeFilter]);
 
-  const filtered = useMemo(() => {
-    return allStudents.filter(s => {
-      const age = calculateAge(s.birthdate);
-      const ageGroup = getAgeGroup(age);
-      if (schoolFilter !== 'all' && s.school !== schoolFilter) return false;
-      if (gradeFilter !== 'all' && s.grade !== gradeFilter) return false;
-      if (sectionFilter !== 'all' && s.section !== sectionFilter) return false;
-      if (genderFilter !== 'all' && s.gender !== genderFilter) return false;
-      if (riskFilter !== 'all' && s.riskLevel !== riskFilter) return false;
-      if (statusFilter !== 'all' && s.oralStatus !== statusFilter) return false;
-      if (ageGroupFilter !== 'all' && ageGroup !== ageGroupFilter) return false;
-      if (searchTerm && !s.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-      return true;
-    });
-  }, [schoolFilter, gradeFilter, sectionFilter, genderFilter, riskFilter, statusFilter, ageGroupFilter, searchTerm]);
+  const filtered = useMemo(() => allStudents.filter(s => {
+    const age = calculateAge(s.birthdate);
+    const ag = getAgeGroup(age);
+    if (schoolFilter !== 'all' && s.school !== schoolFilter) return false;
+    if (gradeFilter !== 'all' && s.grade !== gradeFilter) return false;
+    if (sectionFilter !== 'all' && s.section !== sectionFilter) return false;
+    if (genderFilter !== 'all' && s.gender !== genderFilter) return false;
+    if (riskFilter !== 'all' && s.riskLevel !== riskFilter) return false;
+    if (statusFilter !== 'all' && s.oralStatus !== statusFilter) return false;
+    if (ageGroupFilter !== 'all' && ag !== ageGroupFilter) return false;
+    if (searchTerm && !s.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    return true;
+  }), [schoolFilter, gradeFilter, sectionFilter, genderFilter, riskFilter, statusFilter, ageGroupFilter, searchTerm]);
 
   const hasActiveFilters = schoolFilter !== 'all' || gradeFilter !== 'all' || sectionFilter !== 'all' ||
     genderFilter !== 'all' || ageGroupFilter !== 'all' || riskFilter !== 'all' || statusFilter !== 'all' || searchTerm !== '';
@@ -267,37 +290,50 @@ export const PatientList = () => {
   };
 
   const riskBadge = (level: string) => {
-    const colors: Record<string, string> = {
-      'High': 'bg-red-100 text-red-800',
-      'Medium': 'bg-yellow-100 text-yellow-800',
-      'Low': 'bg-green-100 text-green-800',
-    };
-    return <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${colors[level] || 'bg-gray-100 text-gray-700'}`}>{level}</span>;
+    const c: Record<string,string> = { 'High':'bg-red-100 text-red-800', 'Medium':'bg-yellow-100 text-yellow-800', 'Low':'bg-green-100 text-green-800' };
+    return <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${c[level]||'bg-gray-100 text-gray-700'}`}>{level}</span>;
   };
 
   const statusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      'Orally Fit': 'bg-green-100 text-green-800',
-      'Needs Treatment': 'bg-red-100 text-red-800',
-      'Under Treatment': 'bg-blue-100 text-blue-800',
-      'Needs Follow-up': 'bg-yellow-100 text-yellow-800',
-    };
-    return <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${colors[status] || 'bg-gray-100 text-gray-700'}`}>{status}</span>;
+    const c: Record<string,string> = { 'Orally Fit':'bg-green-100 text-green-800', 'Needs Treatment':'bg-red-100 text-red-800', 'Under Treatment':'bg-blue-100 text-blue-800', 'Needs Follow-up':'bg-yellow-100 text-yellow-800' };
+    return <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${c[status]||'bg-gray-100 text-gray-700'}`}>{status}</span>;
   };
 
-  const FilterSelect = ({ value, onChange, options, label }: {
-    value: string; onChange: (v: string) => void;
-    options: {value: string; label: string}[]; label: string;
-  }) => (
-    <select
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-    >
+  const FilterSelect = ({ value, onChange, options, label }: { value: string; onChange: (v:string) => void; options: {value:string;label:string}[]; label: string }) => (
+    <select value={value} onChange={e => onChange(e.target.value)} className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
       <option value="all">{label}</option>
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
   );
+
+  const SchoolCard = ({ school, count, onClick }: { school: string; count: number; onClick: () => void }) => (
+    <button onClick={onClick} className="w-full text-left bg-white rounded-xl border border-gray-200 p-5 hover:border-[#1E40AF] hover:shadow-md transition-all group">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <SchoolIcon className="w-5 h-5 text-[#1E40AF]" />
+          </div>
+          <div>
+            <div className="font-semibold text-gray-900 text-sm">{school}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{count} students enrolled</div>
+          </div>
+        </div>
+        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#1E40AF] transition-colors" />
+      </div>
+    </button>
+  );
+
+  const Breadcrumb = () => {
+    if (!selectedSchool) return null;
+    return (
+      <div className="flex items-center gap-1 text-sm text-gray-500 mb-4">
+        <button onClick={() => { setSelectedSchool(null); setSelectedGrade(null); setSelectedSection(null); }} className="hover:text-[#1E40AF]">All Schools</button>
+        {selectedSchool && <><ChevronRight className="w-4 h-4" /><button onClick={() => { setSelectedGrade(null); setSelectedSection(null); }} className="hover:text-[#1E40AF] truncate max-w-[160px]">{selectedSchool.split(' ').slice(0,2).join(' ')}</button></>}
+        {selectedGrade && <><ChevronRight className="w-4 h-4" /><button onClick={() => setSelectedSection(null)} className="hover:text-[#1E40AF]">{selectedGrade}</button></>}
+        {selectedSection && <><ChevronRight className="w-4 h-4" /><span className="text-gray-900 font-medium">{selectedSection}</span></>}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -305,179 +341,222 @@ export const PatientList = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Student Records</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{filtered.length} student{filtered.length !== 1 ? 's' : ''} found</p>
+          <p className="text-sm text-gray-500 mt-0.5">{allStudents.length} students across 3 schools</p>
         </div>
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
-        >
-          <Plus className="w-4 h-4" /> Add Student
-        </button>
+        <div className="flex items-center gap-3">
+          <ViewToggle mode={viewMode} onChange={setViewMode} />
+          <button onClick={() => setShowAddForm(true)} className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+            <Plus className="w-4 h-4" /> Add Student
+          </button>
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by student name..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+      {/* SCHOOL VIEW */}
+      {viewMode === 'school' && (
+        <div className="space-y-4">
+          <Breadcrumb />
 
-        {/* Filter row */}
-        <div className="flex flex-wrap gap-2">
-          <FilterSelect
-            value={schoolFilter}
-            onChange={v => { setSchoolFilter(v); setSectionFilter('all'); }}
-            label="All Schools"
-            options={SCHOOLS.map(s => ({ value: s, label: s.replace(' Elementary School', '').replace(' Integrated School', ' Integrated').replace(' Main', '') }))}
-          />
-          <FilterSelect
-            value={gradeFilter}
-            onChange={v => { setGradeFilter(v); setSectionFilter('all'); }}
-            label="All Grades"
-            options={GRADES.map(g => ({ value: g, label: g }))}
-          />
-          <FilterSelect
-            value={sectionFilter}
-            onChange={v => setSectionFilter(v)}
-            label="All Sections"
-            options={allSections.map(s => ({ value: s, label: s }))}
-          />
-          <FilterSelect
-            value={genderFilter}
-            onChange={setGenderFilter}
-            label="All Genders"
-            options={[{ value: 'Male', label: 'Male' }, { value: 'Female', label: 'Female' }]}
-          />
-          <FilterSelect
-            value={ageGroupFilter}
-            onChange={setAgeGroupFilter}
-            label="All Age Groups"
-            options={[
-              { value: 'Under 5', label: 'Under 5' },
-              { value: '6-10', label: '6–10' },
-              { value: '10-14', label: '10–14' },
-              { value: '15-19', label: '15–19' },
-            ]}
-          />
-          <FilterSelect
-            value={riskFilter}
-            onChange={setRiskFilter}
-            label="All Risk Levels"
-            options={[
-              { value: 'High', label: 'High Risk' },
-              { value: 'Medium', label: 'Medium Risk' },
-              { value: 'Low', label: 'Low Risk' },
-            ]}
-          />
-          <FilterSelect
-            value={statusFilter}
-            onChange={setStatusFilter}
-            label="All Statuses"
-            options={[
-              { value: 'Orally Fit', label: 'Orally Fit' },
-              { value: 'Needs Treatment', label: 'Needs Treatment' },
-              { value: 'Under Treatment', label: 'Under Treatment' },
-              { value: 'Needs Follow-up', label: 'Needs Follow-up' },
-            ]}
-          />
-          {hasActiveFilters && (
-            <button
-              onClick={clearFilters}
-              className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
-            >
-              <X className="w-3 h-3" /> Clear All
-            </button>
+          {/* Level 1 — Schools */}
+          {!selectedSchool && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {schoolData.map(s => (
+                <SchoolCard key={s.name} school={s.name} count={s.count} onClick={() => setSelectedSchool(s.name)} />
+              ))}
+            </div>
+          )}
+
+          {/* Level 2 — Grades */}
+          {selectedSchool && !selectedGrade && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-gray-700">Select Grade — {selectedSchool}</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {gradesForSchool.map(grade => {
+                  const gc = getGradeColor(grade);
+                  const count = allStudents.filter(s => s.school === selectedSchool && s.grade === grade).length;
+                  return (
+                    <button key={grade} onClick={() => setSelectedGrade(grade)}
+                      style={{ backgroundColor: gc.light, borderColor: gc.solid }}
+                      className="flex items-center justify-between p-4 rounded-xl border-2 hover:shadow-md transition-all group">
+                      <div>
+                        <div style={{ color: gc.solid }} className="font-bold text-sm">{grade}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{count} students</div>
+                      </div>
+                      <ChevronRight style={{ color: gc.solid }} className="w-4 h-4" />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Level 3 — Sections */}
+          {selectedSchool && selectedGrade && !selectedSection && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-gray-700">{selectedGrade} — Select Section</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {sectionsForGrade.map(section => {
+                  const gc = getGradeColor(selectedGrade);
+                  const count = allStudents.filter(s => s.school === selectedSchool && s.grade === selectedGrade && s.section === section).length;
+                  return (
+                    <button key={section} onClick={() => setSelectedSection(section)}
+                      className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200 hover:border-[#1E40AF] hover:shadow-md transition-all group">
+                      <div>
+                        <div className="font-semibold text-gray-900 text-sm">{section}</div>
+                        <div style={{ color: gc.solid }} className="text-xs font-medium mt-0.5">{count} students</div>
+                      </div>
+                      <Users className="w-4 h-4 text-gray-400 group-hover:text-[#1E40AF]" />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Level 4 — Students in section */}
+          {selectedSchool && selectedGrade && selectedSection && (
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-700">{selectedSection} — {studentsForSection.length} students</span>
+              </div>
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Student</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Gender</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Age</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Risk</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Last Visit</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {studentsForSection.map(student => (
+                    <tr key={student.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-xs flex-shrink-0">
+                            {student.name.split(' ').map((n: string) => n[0]).join('').slice(0,2)}
+                          </div>
+                          <span className="font-medium text-gray-900">{student.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{student.gender}</td>
+                      <td className="px-4 py-3 text-gray-600">{calculateAge(student.birthdate)}</td>
+                      <td className="px-4 py-3">{riskBadge(student.riskLevel)}</td>
+                      <td className="px-4 py-3">{statusBadge(student.oralStatus)}</td>
+                      <td className="px-4 py-3 text-gray-500">{student.lastVisit}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => navigate(`/patients/${student.id}`)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" title="View Profile"><Eye className="w-4 h-4" /></button>
+                          <button onClick={() => navigate(`/dental-chart/${student.id}`)} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg" title="View Dental Chart"><FileText className="w-4 h-4" /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
-      </div>
+      )}
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Student</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">School</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Grade / Section</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Gender</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Age</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Risk</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Last Visit</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="text-center py-12 text-gray-400">
-                    No students match the selected filters.
-                  </td>
-                </tr>
-              ) : filtered.map(student => {
-                const age = calculateAge(student.birthdate);
-                const gc = getGradeColor(student.grade);
-                const gcStyle = { backgroundColor: gc.light, color: gc.solid };
-                return (
-                  <tr key={student.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-xs flex-shrink-0">
-                          {student.name.split(' ').map((n: string) => n[0]).join('').slice(0,2)}
-                        </div>
-                        <span className="font-medium text-gray-900">{student.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 text-xs max-w-[160px] truncate">{student.school}</td>
-                    <td className="px-4 py-3">
-                      <span style={gcStyle} className="inline-block px-2 py-0.5 rounded text-xs font-semibold">
-                        {student.grade}
-                      </span>
-                      <span className="text-gray-500 text-xs ml-1">{student.section}</span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{student.gender}</td>
-                    <td className="px-4 py-3 text-gray-600">{age}</td>
-                    <td className="px-4 py-3">{riskBadge(student.riskLevel)}</td>
-                    <td className="px-4 py-3">{statusBadge(student.oralStatus)}</td>
-                    <td className="px-4 py-3 text-gray-500">{student.lastVisit}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => navigate(`/patients/${student.id}`)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"
-                          title="View Profile"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => navigate(`/dental-chart/${student.id}`)}
-                          className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg"
-                          title="View Dental Chart"
-                        >
-                          <FileText className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        {filtered.length > 0 && (
-          <div className="px-4 py-3 border-t border-gray-100 text-sm text-gray-500">
-            Showing {filtered.length} of {allStudents.length} students
+      {/* LIST VIEW */}
+      {viewMode === 'list' && (
+        <div className="space-y-4">
+          {/* Filters */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input type="text" placeholder="Search by student name..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <FilterSelect value={schoolFilter} onChange={v => { setSchoolFilter(v); setSectionFilter('all'); }} label="All Schools"
+                options={SCHOOLS.map(s => ({ value: s, label: s.replace(' Elementary School','').replace(' Integrated School',' Integrated').replace(' Main','') }))} />
+              <FilterSelect value={gradeFilter} onChange={v => { setGradeFilter(v); setSectionFilter('all'); }} label="All Grades"
+                options={GRADES.map(g => ({ value: g, label: g }))} />
+              <FilterSelect value={sectionFilter} onChange={setSectionFilter} label="All Sections"
+                options={allSections.map(s => ({ value: s, label: s }))} />
+              <FilterSelect value={genderFilter} onChange={setGenderFilter} label="All Genders"
+                options={[{ value:'Male', label:'Male' }, { value:'Female', label:'Female' }]} />
+              <FilterSelect value={ageGroupFilter} onChange={setAgeGroupFilter} label="All Age Groups"
+                options={[{ value:'Under 5', label:'Under 5' }, { value:'6-10', label:'6–10' }, { value:'10-14', label:'10–14' }, { value:'15-19', label:'15–19' }]} />
+              <FilterSelect value={riskFilter} onChange={setRiskFilter} label="All Risk Levels"
+                options={[{ value:'High', label:'High Risk' }, { value:'Medium', label:'Medium Risk' }, { value:'Low', label:'Low Risk' }]} />
+              <FilterSelect value={statusFilter} onChange={setStatusFilter} label="All Statuses"
+                options={[{ value:'Orally Fit', label:'Orally Fit' }, { value:'Needs Treatment', label:'Needs Treatment' }, { value:'Under Treatment', label:'Under Treatment' }, { value:'Needs Follow-up', label:'Needs Follow-up' }]} />
+              {hasActiveFilters && (
+                <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
+                  <X className="w-3 h-3" /> Clear All
+                </button>
+              )}
+            </div>
           </div>
-        )}
-      </div>
+
+          {/* Table */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Student</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">School</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Grade / Section</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Gender</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Age</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Risk</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Last Visit</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filtered.length === 0 ? (
+                    <tr><td colSpan={9} className="text-center py-12 text-gray-400">No students match the selected filters.</td></tr>
+                  ) : filtered.map(student => {
+                    const age = calculateAge(student.birthdate);
+                    const gc = getGradeColor(student.grade);
+                    return (
+                      <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-xs flex-shrink-0">
+                              {student.name.split(' ').map((n: string) => n[0]).join('').slice(0,2)}
+                            </div>
+                            <span className="font-medium text-gray-900">{student.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 text-xs max-w-[140px] truncate">{student.school.replace(' Elementary School','').replace(' Integrated School',' Integrated').replace(' Main','')}</td>
+                        <td className="px-4 py-3">
+                          <span style={{ backgroundColor: gc.light, color: gc.solid }} className="inline-block px-2 py-0.5 rounded text-xs font-semibold">{student.grade}</span>
+                          <span className="text-gray-500 text-xs ml-1">{student.section}</span>
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">{student.gender}</td>
+                        <td className="px-4 py-3 text-gray-600">{age}</td>
+                        <td className="px-4 py-3">{riskBadge(student.riskLevel)}</td>
+                        <td className="px-4 py-3">{statusBadge(student.oralStatus)}</td>
+                        <td className="px-4 py-3 text-gray-500">{student.lastVisit}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => navigate(`/patients/${student.id}`)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" title="View Profile"><Eye className="w-4 h-4" /></button>
+                            <button onClick={() => navigate(`/dental-chart/${student.id}`)} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg" title="Dental Chart"><FileText className="w-4 h-4" /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {filtered.length > 0 && (
+              <div className="px-4 py-3 border-t border-gray-100 text-sm text-gray-500">
+                Showing {filtered.length} of {allStudents.length} students
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Add Student Modal */}
       {showAddForm && (
@@ -485,102 +564,35 @@ export const PatientList = () => {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b">
               <h2 className="text-lg font-bold text-gray-900">Add New Student</h2>
-              <button onClick={() => setShowAddForm(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-5 h-5" />
-              </button>
+              <button onClick={() => setShowAddForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
-                  <input type="text" value={newPatient.lastName} onChange={e => setNewPatient({...newPatient, lastName: e.target.value})}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
-                  <input type="text" value={newPatient.firstName} onChange={e => setNewPatient({...newPatient, firstName: e.target.value})}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label><input type="text" value={newPatient.lastName} onChange={e => setNewPatient({...newPatient, lastName: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label><input type="text" value={newPatient.firstName} onChange={e => setNewPatient({...newPatient, firstName: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Middle Name</label>
-                <input type="text" value={newPatient.middleName} onChange={e => setNewPatient({...newPatient, middleName: e.target.value})}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Middle Name</label><input type="text" value={newPatient.middleName} onChange={e => setNewPatient({...newPatient, middleName: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Birthdate *</label>
-                  <input type="date" value={newPatient.birthdate} onChange={e => setNewPatient({...newPatient, birthdate: e.target.value})}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Gender *</label>
-                  <select value={newPatient.gender} onChange={e => setNewPatient({...newPatient, gender: e.target.value})}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">Select</option>
-                    <option>Male</option>
-                    <option>Female</option>
-                  </select>
-                </div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Birthdate *</label><input type="date" value={newPatient.birthdate} onChange={e => setNewPatient({...newPatient, birthdate: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Gender *</label><select value={newPatient.gender} onChange={e => setNewPatient({...newPatient, gender: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="">Select</option><option>Male</option><option>Female</option></select></div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">School *</label>
-                <select value={newPatient.school} onChange={e => setNewPatient({...newPatient, school: e.target.value})}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="">Select School</option>
-                  {SCHOOLS.map(s => <option key={s}>{s}</option>)}
-                </select>
-              </div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">School *</label><select value={newPatient.school} onChange={e => setNewPatient({...newPatient, school: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="">Select School</option>{SCHOOLS.map(s => <option key={s}>{s}</option>)}</select></div>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Grade *</label>
-                  <select value={newPatient.grade} onChange={e => setNewPatient({...newPatient, grade: e.target.value})}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">Select Grade</option>
-                    {GRADES.map(g => <option key={g}>{g}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Section *</label>
-                  <input type="text" value={newPatient.section} onChange={e => setNewPatient({...newPatient, section: e.target.value})}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. Sampaguita" />
-                </div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Grade *</label><select value={newPatient.grade} onChange={e => setNewPatient({...newPatient, grade: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="">Select Grade</option>{GRADES.map(g => <option key={g}>{g}</option>)}</select></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Section *</label><input type="text" value={newPatient.section} onChange={e => setNewPatient({...newPatient, section: e.target.value})} placeholder="e.g. Sampaguita" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Guardian Name *</label>
-                <input type="text" value={newPatient.guardianName} onChange={e => setNewPatient({...newPatient, guardianName: e.target.value})}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Guardian Contact</label>
-                <input type="text" value={newPatient.guardianContact} onChange={e => setNewPatient({...newPatient, guardianContact: e.target.value})}
-                  placeholder="09XX-XXX-XXXX"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                <input type="text" value={newPatient.address} onChange={e => setNewPatient({...newPatient, address: e.target.value})}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Guardian Name *</label><input type="text" value={newPatient.guardianName} onChange={e => setNewPatient({...newPatient, guardianName: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Guardian Contact</label><input type="text" value={newPatient.guardianContact} onChange={e => setNewPatient({...newPatient, guardianContact: e.target.value})} placeholder="09XX-XXX-XXXX" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Address</label><input type="text" value={newPatient.address} onChange={e => setNewPatient({...newPatient, address: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             </div>
             <div className="flex gap-3 p-6 border-t">
-              <button onClick={() => setShowAddForm(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  if (!newPatient.firstName || !newPatient.lastName || !newPatient.school || !newPatient.grade) {
-                    alert('Please fill in all required fields.');
-                    return;
-                  }
-                  alert(`Student ${newPatient.firstName} ${newPatient.lastName} added successfully!`);
-                  setShowAddForm(false);
-                  setNewPatient({ firstName:'',lastName:'',middleName:'',birthdate:'',gender:'',grade:'',section:'',school:'',guardianName:'',guardianContact:'',address:'' });
-                }}
-                className="flex-1 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
-                Add Student
-              </button>
+              <button onClick={() => setShowAddForm(false)} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">Cancel</button>
+              <button onClick={() => {
+                if (!newPatient.firstName || !newPatient.lastName || !newPatient.school || !newPatient.grade) { alert('Please fill in all required fields.'); return; }
+                alert(`Student ${newPatient.firstName} ${newPatient.lastName} added successfully!`);
+                setShowAddForm(false);
+                setNewPatient({ firstName:'',lastName:'',middleName:'',birthdate:'',gender:'',grade:'',section:'',school:'',guardianName:'',guardianContact:'',address:'' });
+              }} className="flex-1 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">Add Student</button>
             </div>
           </div>
         </div>

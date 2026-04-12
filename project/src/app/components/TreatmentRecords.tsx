@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { Search, X, FileText, Eye } from 'lucide-react';
+import { Search, X, FileText, Eye, School as SchoolIcon, List } from 'lucide-react';
+
 import { getGradeColor } from '../utils/gradeColors';
 
 const SCHOOLS = [
@@ -28,6 +29,7 @@ const mockTreatments = [
 
 export const TreatmentRecords = () => {
   const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState<'school' | 'list'>('school');
   const [searchTerm, setSearchTerm] = useState('');
   const [schoolFilter, setSchoolFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState('all');

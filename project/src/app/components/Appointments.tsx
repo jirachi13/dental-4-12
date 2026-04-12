@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Check, Users, School as SchoolIcon, Home, ChevronRight as ChevronRightIcon, GraduationCap } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Check } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 
-type NavigationLevel = 'schools' | 'calendar' | 'grades' | 'sections';
+const SCHOOLS = [
+  'Bagong Tanyag Integrated School',
+  'Bagong Tanyag Elementary School Annex A',
+  'South Daang Hari Elementary School Main',
+];
 
 export const Appointments = () => {
-  // Navigation state
-  const [currentLevel, setCurrentLevel] = useState<NavigationLevel>('schools');
-  const [activeSchool, setActiveSchool] = useState<string | null>(null);
-
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 3, 1)); // April 2026
-  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [schoolFilter, setSchoolFilter] = useState('all');
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 3, 1));
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
@@ -18,8 +18,6 @@ export const Appointments = () => {
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-
-  // Create appointment form state
   const [formSchool, setFormSchool] = useState('');
   const [selectedGrade, setSelectedGrade] = useState('');
   const [selectedSection, setSelectedSection] = useState('');
@@ -28,92 +26,39 @@ export const Appointments = () => {
   const [appointmentTime, setAppointmentTime] = useState('');
   const [appointmentType, setAppointmentType] = useState('');
 
-  const schools = [
-    'Bagong Tanyag Integrated School',
-    'Bagong Tanyag Elementary School Annex A',
-    'South Daang Hari Elementary School Main',
-  ];
+  const grades = ['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
+  const sectionsByGrade: Record<string, string[]> = {
+    'Grade 1':['Sampaguita','Rosal'],'Grade 2':['Rose','Dahlia'],
+    'Grade 3':['Jasmine','Orchid'],'Grade 4':['Tulip','Lily'],
+    'Grade 5':['Sunflower','Daisy'],'Grade 6':['Carnation','Ilang-Ilang'],
+  };
 
-  const grades = ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6'];
-
-  const sections = ['Sampaguita', 'Rosal', 'Gumamela', 'Santan'];
-
-  // Mock students for selected section
   const studentsInSection = selectedSection ? [
     { id: '1', name: 'Juan Dela Cruz', gender: 'Male', age: 10 },
     { id: '2', name: 'Maria Santos', gender: 'Female', age: 9 },
     { id: '3', name: 'Pedro Reyes', gender: 'Male', age: 10 },
     { id: '4', name: 'Ana Garcia', gender: 'Female', age: 9 },
     { id: '5', name: 'Jose Martinez', gender: 'Male', age: 10 },
+    { id: '6', name: 'Sofia Cruz', gender: 'Female', age: 10 },
+    { id: '7', name: 'Miguel Torres', gender: 'Male', age: 9 },
   ] : [];
 
-  // Mock appointments - School/Grade/Section based
   const appointments = [
-    {
-      id: '1',
-      date: '2026-04-15',
-      time: '09:00',
-      school: 'Bagong Tanyag Integrated School',
-      grade: 'Grade 4',
-      section: 'Sampaguita',
-      studentCount: 32,
-      type: 'Regular Checkup',
-      status: 'Scheduled',
-      dentist: 'Dr. Maria Santos',
-      students: [
-        { id: 's1', name: 'Juan Dela Cruz', gender: 'Male', age: 10, riskLevel: 'High' },
-        { id: 's2', name: 'Maria Garcia', gender: 'Female', age: 9, riskLevel: 'Low' },
-        { id: 's3', name: 'Pedro Reyes', gender: 'Male', age: 10, riskLevel: 'Medium' },
-        { id: 's4', name: 'Ana Santos', gender: 'Female', age: 9, riskLevel: 'Low' },
-        { id: 's5', name: 'Jose Martinez', gender: 'Male', age: 10, riskLevel: 'High' },
-      ],
-    },
-    {
-      id: '2',
-      date: '2026-04-15',
-      time: '13:00',
-      school: 'Bagong Tanyag Elementary School Annex A',
-      grade: 'Grade 3',
-      section: 'Rosal',
-      studentCount: 28,
-      type: 'Fluoride Application',
-      status: 'In Progress',
-      dentist: 'Dr. Carlos Mendoza',
-      students: [
-        { id: 's6', name: 'Sofia Cruz', gender: 'Female', age: 8, riskLevel: 'Low' },
-        { id: 's7', name: 'Miguel Torres', gender: 'Male', age: 9, riskLevel: 'Medium' },
-        { id: 's8', name: 'Isabella Lopez', gender: 'Female', age: 8, riskLevel: 'Low' },
-      ],
-    },
-    {
-      id: '3',
-      date: '2026-04-20',
-      time: '08:00',
-      school: 'South Daang Hari Elementary School Main',
-      grade: 'Grade 5',
-      section: 'Gumamela',
-      studentCount: 35,
-      type: 'Bayanihan Mission',
-      status: 'Scheduled',
-      dentist: 'Dr. Maria Santos',
-      students: [
-        { id: 's9', name: 'Rafael Gomez', gender: 'Male', age: 11, riskLevel: 'Medium' },
-        { id: 's10', name: 'Lucia Diaz', gender: 'Female', age: 10, riskLevel: 'Low' },
-      ],
-    },
-    {
-      id: '4',
-      date: '2026-04-15',
-      time: '15:00',
-      school: 'Bagong Tanyag Integrated School',
-      grade: 'Grade 2',
-      section: 'Jasmine',
-      studentCount: 26,
-      type: 'Screening',
-      status: 'Scheduled',
-      dentist: 'Dr. Maria Santos',
-      students: [],
-    },
+    { id:'1', date:'2026-04-15', time:'09:00', school:'Bagong Tanyag Integrated School', grade:'Grade 4', section:'Sampaguita', studentCount:32, type:'Regular Checkup', status:'Scheduled', dentist:'Dr. Maria Santos', students:[
+      { id:'s1', name:'Juan Dela Cruz', gender:'Male', age:10, riskLevel:'High' },
+      { id:'s2', name:'Maria Garcia', gender:'Female', age:9, riskLevel:'Low' },
+      { id:'s3', name:'Pedro Reyes', gender:'Male', age:10, riskLevel:'Medium' },
+    ]},
+    { id:'2', date:'2026-04-15', time:'13:00', school:'Bagong Tanyag Elementary School Annex A', grade:'Grade 3', section:'Topaz', studentCount:28, type:'Fluoride Application', status:'In Progress', dentist:'Dr. Maria Santos', students:[
+      { id:'s6', name:'Sofia Cruz', gender:'Female', age:8, riskLevel:'Low' },
+      { id:'s7', name:'Miguel Torres', gender:'Male', age:9, riskLevel:'Medium' },
+    ]},
+    { id:'3', date:'2026-04-20', time:'08:00', school:'South Daang Hari Elementary School Main', grade:'Grade 5', section:'Yakal', studentCount:35, type:'Bayanihan Mission', status:'Scheduled', dentist:'Dr. Maria Santos', students:[
+      { id:'s9', name:'Rafael Gomez', gender:'Male', age:11, riskLevel:'Medium' },
+    ]},
+    { id:'4', date:'2026-04-15', time:'15:00', school:'Bagong Tanyag Integrated School', grade:'Grade 2', section:'Rose', studentCount:26, type:'Screening', status:'Scheduled', dentist:'Dr. Maria Santos', students:[] },
+    { id:'5', date:'2026-04-22', time:'09:00', school:'Bagong Tanyag Elementary School Annex A', grade:'Grade 4', section:'Opal', studentCount:30, type:'Fluoride Application', status:'Scheduled', dentist:'Dr. Maria Santos', students:[] },
+    { id:'6', date:'2026-04-28', time:'08:00', school:'South Daang Hari Elementary School Main', grade:'Grade 6', section:'Guijo', studentCount:40, type:'Bayanihan Mission', status:'Scheduled', dentist:'Dr. Maria Santos', students:[] },
   ];
 
   const getDaysInMonth = (date: Date) => {
@@ -121,288 +66,116 @@ export const Appointments = () => {
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-
     const days = [];
-    // Add empty cells for days before month starts
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(null);
-    }
-    // Add all days in month
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(new Date(year, month, i));
-    }
+    for (let i = 0; i < firstDay.getDay(); i++) days.push(null);
+    for (let i = 1; i <= lastDay.getDate(); i++) days.push(new Date(year, month, i));
     return days;
   };
 
   const getAppointmentsForDay = (date: Date | null) => {
     if (!date) return [];
     const dateStr = date.toISOString().split('T')[0];
-    const schoolFiltered = activeSchool
-      ? appointments.filter(apt => apt.school === activeSchool)
-      : appointments;
-    return schoolFiltered.filter(apt => apt.date === dateStr);
+    const filtered = schoolFilter !== 'all' ? appointments.filter(a => a.school === schoolFilter) : appointments;
+    return filtered.filter(a => a.date === dateStr);
   };
 
-  const prevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-  };
-
-  const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-  };
-
+  const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth()-1, 1));
+  const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 1));
   const monthName = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
   const days = getDaysInMonth(currentDate);
 
+  const filteredAppointments = schoolFilter !== 'all' ? appointments.filter(a => a.school === schoolFilter) : appointments;
+
   const handleCreateAppointment = () => {
-    alert(`Appointment created for ${formSchool} - ${selectedGrade} ${selectedSection} with ${selectedStudents.length} students on ${appointmentDate} at ${appointmentTime}`);
+    alert(`Appointment created for ${formSchool} — ${selectedGrade} ${selectedSection} with ${selectedStudents.length} students on ${appointmentDate} at ${appointmentTime}`);
     setShowCreateModal(false);
-    // Reset form
-    setFormSchool('');
-    setSelectedGrade('');
-    setSelectedSection('');
-    setSelectedStudents([]);
-    setAppointmentDate('');
-    setAppointmentTime('');
-    setAppointmentType('');
+    setFormSchool(''); setSelectedGrade(''); setSelectedSection('');
+    setSelectedStudents([]); setAppointmentDate(''); setAppointmentTime(''); setAppointmentType('');
   };
 
-  const toggleStudentSelection = (studentId: string) => {
-    setSelectedStudents(prev =>
-      prev.includes(studentId)
-        ? prev.filter(id => id !== studentId)
-        : [...prev, studentId]
-    );
+  const toggleStudentSelection = (id: string) => {
+    setSelectedStudents(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]);
   };
-
-  const selectAllStudents = () => {
-    setSelectedStudents(studentsInSection.map(s => s.id));
-  };
-
-  const deselectAllStudents = () => {
-    setSelectedStudents([]);
-  };
-
-  // Navigation functions
-  const navigateToSchool = (schoolName: string) => {
-    setActiveSchool(schoolName);
-    setCurrentLevel('calendar');
-  };
-
-  const navigateToSchools = () => {
-    setActiveSchool(null);
-    setCurrentLevel('schools');
-  };
-
-  // Calculate appointment counts per school
-  const getSchoolAppointmentCounts = () => {
-    const schoolData = [
-      { name: 'Bagong Tanyag Integrated School', shortName: 'Bagong Tanyag Integrated' },
-      { name: 'Bagong Tanyag Elementary School Annex A', shortName: 'Bagong Tanyag Annex A' },
-      { name: 'South Daang Hari Elementary School Main', shortName: 'South Daang Hari Main' },
-    ];
-
-    return schoolData.map(school => {
-      const schoolAppointments = appointments.filter(apt => apt.school === school.name);
-      const upcomingCount = schoolAppointments.filter(apt => new Date(apt.date) >= new Date()).length;
-      const totalStudents = schoolAppointments.reduce((sum, apt) => sum + apt.studentCount, 0);
-
-      return {
-        ...school,
-        appointmentCount: schoolAppointments.length,
-        upcomingCount,
-        totalStudents,
-      };
-    });
-  };
-
-  // Filter appointments by active school
-  const filteredAppointments = activeSchool
-    ? appointments.filter(apt => apt.school === activeSchool)
-    : appointments;
-
-  const schoolStats = getSchoolAppointmentCounts();
 
   return (
-    <div className="space-y-6">
-      {/* Breadcrumb */}
-      {currentLevel === 'calendar' && activeSchool && (
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Home className="w-4 h-4" />
-          <button
-            onClick={navigateToSchools}
-            className="hover:text-[#1E40AF] hover:underline"
-          >
-            Schools
-          </button>
-          <ChevronRightIcon className="w-4 h-4 text-gray-400" />
-          <span className="font-medium text-gray-900">
-            {schoolStats.find(s => s.name === activeSchool)?.shortName || activeSchool}
-          </span>
-        </div>
-      )}
-
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Appointments</h1>
-          {currentLevel === 'schools' && (
-            <p className="text-gray-600 mt-1">
-              {schoolStats.reduce((sum, s) => sum + s.appointmentCount, 0)} total appointments across 3 schools
-            </p>
-          )}
-          {currentLevel === 'calendar' && activeSchool && (
-            <p className="text-gray-600 mt-1">
-              {filteredAppointments.length} appointments for this school
-            </p>
-          )}
+          <h1 className="text-2xl font-bold text-gray-900">Appointments</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{filteredAppointments.length} appointment{filteredAppointments.length !== 1 ? 's' : ''}</p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-[#1E3A8A] transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          New Appointment
+        <button onClick={() => setShowCreateModal(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-[#1E3A8A] text-sm font-medium">
+          <Plus className="w-4 h-4" /> New Appointment
         </button>
       </div>
 
-      {/* LEVEL 1: SCHOOL CARDS */}
-      {currentLevel === 'schools' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {schoolStats.map((school) => (
-            <button
-              key={school.name}
-              onClick={() => navigateToSchool(school.name)}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-[#1E40AF] transition-all text-left group"
-            >
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-[#1E40AF] bg-opacity-10 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-opacity-20 transition-colors">
-                  <SchoolIcon className="w-6 h-6 text-[#1E40AF]" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 text-lg mb-3">{school.shortName}</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Total Appointments</span>
-                      <span className="text-2xl font-bold text-[#1E40AF]">{school.appointmentCount}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Upcoming</span>
-                      <span className="text-lg font-semibold text-green-600">{school.upcomingCount}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Total Students</span>
-                      <span className="text-lg font-semibold text-gray-700">{school.totalStudents}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+      {/* Filters + Calendar Nav */}
+      <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-2">
+          <select value={schoolFilter} onChange={e => setSchoolFilter(e.target.value)}
+            className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="all">All Schools</option>
+            {SCHOOLS.map(s => <option key={s} value={s}>{s.replace(' Elementary School','').replace(' Integrated School',' Integrated').replace(' Main','')}</option>)}
+          </select>
+          {schoolFilter !== 'all' && (
+            <button onClick={() => setSchoolFilter('all')} className="text-xs text-red-600 border border-red-200 rounded px-2 py-1.5 hover:bg-red-50">
+              <X className="w-3 h-3" />
             </button>
-          ))}
+          )}
         </div>
-      )}
-
-      {/* LEVEL 2: CALENDAR VIEW FOR SELECTED SCHOOL */}
-      {currentLevel === 'calendar' && activeSchool && (
-        <div className="h-screen flex flex-col bg-gray-50">
-          {/* Calendar Navigation */}
-          <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-            <button
-              onClick={prevMonth}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-2">
-              <CalendarIcon className="w-5 h-5 text-gray-600" />
-              <h2 className="text-lg font-semibold text-gray-900">{monthName}</h2>
-            </div>
-            <button
-              onClick={nextMonth}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+        <div className="flex items-center gap-2">
+          <button onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-lg"><ChevronLeft className="w-4 h-4"/></button>
+          <div className="flex items-center gap-1.5">
+            <CalendarIcon className="w-4 h-4 text-gray-500"/>
+            <span className="text-sm font-semibold text-gray-900 min-w-[140px] text-center">{monthName}</span>
           </div>
-
-      {/* Calendar Grid - Fits on screen without scrolling */}
-      <div className="flex-1 overflow-hidden p-6">
-        <div className="h-full flex flex-col">
-          {/* Day headers */}
-          <div className="grid grid-cols-7 gap-1 mb-1">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-              <div key={day} className="text-center text-xs font-semibold text-gray-600 py-2">
-                {day}
-              </div>
-            ))}
-          </div>
-
-          {/* Calendar cells */}
-          <div className="grid grid-cols-7 gap-1 flex-1">
-            {days.map((day, index) => {
-              const dayAppointments = day ? getAppointmentsForDay(day) : [];
-              const isToday = day && day.toDateString() === new Date().toDateString();
-
-              return (
-                <div
-                  key={index}
-                  className={`border border-gray-200 rounded-lg p-2 transition-all overflow-hidden min-h-[100px] ${
-                    !day ? 'bg-gray-50' : 'bg-white hover:bg-blue-50'
-                  } ${isToday ? 'ring-2 ring-[#1E40AF]' : ''}`}
-                >
-                  {day && (
-                    <>
-                      <div className={`text-sm font-semibold mb-2 ${isToday ? 'text-[#1E40AF]' : 'text-gray-700'}`}>
-                        {day.getDate()}
-                      </div>
-                      {/* Appointment pills */}
-                      <div className="space-y-1">
-                        {dayAppointments.slice(0, 2).map((apt) => {
-                          const gradeColor = getGradeColor(apt.grade);
-                          return (
-                            <button
-                              key={apt.id}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedAppointment(apt);
-                                setShowAppointmentModal(true);
-                                setAttendanceMap({});
-                                setStudentSearchTerm('');
-                              }}
-                              className="w-full px-2 py-1 rounded text-left truncate transition-all hover:shadow-md"
-                              style={{
-                                backgroundColor: gradeColor.light,
-                                color: gradeColor.solid,
-                                minHeight: '22px'
-                              }}
-                              title={`${apt.section} · ${apt.studentCount} students`}
-                            >
-                              <span className="text-xs font-bold flex items-center gap-1">
-                                <span className="text-base leading-none">●</span>
-                                <span>{apt.section} · {apt.studentCount}</span>
-                              </span>
-                            </button>
-                          );
-                        })}
-                        {dayAppointments.length > 2 && (
-                          <div className="px-2 py-1 text-xs text-gray-500 bg-gray-100 rounded" style={{ minHeight: '22px' }}>
-                            +{dayAppointments.length - 2} more
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-lg"><ChevronRight className="w-4 h-4"/></button>
         </div>
       </div>
 
+      {/* Calendar */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="grid grid-cols-7 border-b border-gray-200">
+          {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
+            <div key={d} className="text-center text-xs font-semibold text-gray-600 py-2 bg-gray-50">{d}</div>
+          ))}
         </div>
-      )}
+        <div className="grid grid-cols-7" style={{ gridAutoRows: '100px' }}>
+          {days.map((day, i) => {
+            const dayApts = day ? getAppointmentsForDay(day) : [];
+            const isToday = day && day.toDateString() === new Date().toDateString();
+            return (
+              <div key={i} className={`border-b border-r border-gray-100 p-1.5 overflow-hidden ${!day ? 'bg-gray-50' : 'bg-white hover:bg-blue-50'} ${isToday ? 'ring-2 ring-inset ring-[#1E40AF]' : ''}`}>
+                {day && (
+                  <>
+                    <div className={`text-xs font-semibold mb-1 ${isToday ? 'text-[#1E40AF]' : 'text-gray-700'}`}>{day.getDate()}</div>
+                    <div className="space-y-0.5">
+                      {dayApts.slice(0,2).map(apt => {
+                        const gc = getGradeColor(apt.grade);
+                        return (
+                          <button key={apt.id}
+                            onClick={e => { e.stopPropagation(); setSelectedAppointment(apt); setShowAppointmentModal(true); setAttendanceMap({}); setStudentSearchTerm(''); }}
+                            className="w-full px-1.5 py-0.5 rounded text-left truncate hover:opacity-80"
+                            style={{ backgroundColor: gc.light, color: gc.solid, minHeight: '22px' }}>
+                            <span className="text-xs font-bold flex items-center gap-0.5">
+                              <span>●</span><span className="truncate">{apt.section} · {apt.studentCount}</span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                      {dayApts.length > 2 && (
+                        <div className="px-1.5 py-0.5 text-xs text-gray-500 bg-gray-100 rounded" style={{ minHeight: '22px' }}>+{dayApts.length-2} more</div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Appointment Detail Modal */}
       {showAppointmentModal && selectedAppointment && (
