@@ -58,8 +58,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role: 'system_admin',
       },
     };
-    
-    setUser(mockUsers[email] || mockUsers['dentist@floral.ph']);
+
+    const credentials: Record<string, string> = {
+      'dentist@floral.ph': 'dentist123',
+      'aide@floral.ph': 'aide123',
+      'school@floral.ph': 'school123',
+      'barangay@floral.ph': 'barangay123',
+      'admin@floral.ph': 'admin123',
+    };
+
+    if (mockUsers[email] && credentials[email] === password) {
+      setUser(mockUsers[email]);
+    }
   };
 
   const logout = () => {
