@@ -15,6 +15,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
+import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 import { 
   BarChart, 
   Bar, 

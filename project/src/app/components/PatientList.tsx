@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { Search, Plus, Eye, FileText, X, School as SchoolIcon, List, ChevronRight, Users } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
+import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
+import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 
 const SCHOOLS = [
   'Bagong Tanyag Integrated School',
@@ -306,29 +308,35 @@ export const PatientList = () => {
     </select>
   );
 
-  const SchoolCard = ({ school, count, onClick }: { school: string; count: number; onClick: () => void }) => (
-    <button onClick={onClick} className="w-full text-left bg-white rounded-xl border border-gray-200 p-5 hover:border-[#1E40AF] hover:shadow-md transition-all group">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-            <SchoolIcon className="w-5 h-5 text-[#1E40AF]" />
+  const SchoolCard = ({ school, count, onClick }: { school: string; count: number; onClick: () => void }) => {
+    const sc = getSchoolColor(school);
+    return (
+      <button onClick={onClick} style={{ borderColor: sc.border }} className="w-full text-left bg-white rounded-xl border-2 p-5 hover:shadow-md transition-all group">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div style={{ backgroundColor: sc.light }} className="w-10 h-10 rounded-lg flex items-center justify-center">
+              <SchoolIcon style={{ color: sc.solid }} className="w-5 h-5" />
+            </div>
+            <div>
+              <div style={{ color: sc.text }} className="font-bold text-sm">{school}</div>
+              <div className="text-xs text-gray-500 mt-0.5">{count} students enrolled</div>
+            </div>
           </div>
-          <div>
-            <div className="font-semibold text-gray-900 text-sm">{school}</div>
-            <div className="text-xs text-gray-500 mt-0.5">{count} students enrolled</div>
-          </div>
+          <ChevronRight style={{ color: sc.solid }} className="w-5 h-5 transition-colors" />
         </div>
-        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#1E40AF] transition-colors" />
-      </div>
-    </button>
-  );
+        <div style={{ backgroundColor: sc.light }} className="mt-3 rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ color: sc.text, backgroundColor: sc.light }}>
+          {getSchoolShortName(school)}
+        </div>
+      </button>
+    );
+  };
 
   const Breadcrumb = () => {
     if (!selectedSchool) return null;
     return (
       <div className="flex items-center gap-1 text-sm text-gray-500 mb-4">
         <button onClick={() => { setSelectedSchool(null); setSelectedGrade(null); setSelectedSection(null); }} className="hover:text-[#1E40AF]">All Schools</button>
-        {selectedSchool && <><ChevronRight className="w-4 h-4" /><button onClick={() => { setSelectedGrade(null); setSelectedSection(null); }} className="hover:text-[#1E40AF] truncate max-w-[160px]">{selectedSchool.split(' ').slice(0,2).join(' ')}</button></>}
+        {selectedSchool && <><ChevronRight className="w-4 h-4" /><button onClick={() => { setSelectedGrade(null); setSelectedSection(null); }} style={{ color: selectedSchool ? getSchoolColor(selectedSchool).solid : undefined }} className="truncate max-w-[160px] font-medium">{selectedSchool ? getSchoolShortName(selectedSchool) : ''}</button></>}
         {selectedGrade && <><ChevronRight className="w-4 h-4" /><button onClick={() => setSelectedSection(null)} className="hover:text-[#1E40AF]">{selectedGrade}</button></>}
         {selectedSection && <><ChevronRight className="w-4 h-4" /><span className="text-gray-900 font-medium">{selectedSection}</span></>}
       </div>
@@ -527,7 +535,12 @@ export const PatientList = () => {
                             <span className="font-medium text-gray-900">{student.name}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-gray-600 text-xs max-w-[140px] truncate">{student.school.replace(' Elementary School','').replace(' Integrated School',' Integrated').replace(' Main','')}</td>
+                        <td className="px-4 py-3 max-w-[140px]">
+                          <div className="flex items-center gap-1.5">
+                            <div style={{ backgroundColor: getSchoolColor(student.school).solid }} className="w-2 h-2 rounded-full flex-shrink-0" />
+                            <span className="text-gray-600 text-xs truncate">{getSchoolShortName(student.school)}</span>
+                          </div>
+                        </td>
                         <td className="px-4 py-3">
                           <span style={{ backgroundColor: gc.light, color: gc.solid }} className="inline-block px-2 py-0.5 rounded text-xs font-semibold">{student.grade}</span>
                           <span className="text-gray-500 text-xs ml-1">{student.section}</span>

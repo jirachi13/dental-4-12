@@ -11,7 +11,6 @@ import { TreatmentRecords } from "./components/TreatmentRecords";
 import { Appointments } from "./components/Appointments";
 import { RPCTracking } from "./components/RPCTracking";
 import { AIAnalytics } from "./components/AIAnalytics";
-import { FollowUpAlerts } from "./components/FollowUpAlerts";
 import { Reports } from "./components/Reports";
 import { AccountManagement } from "./components/AccountManagement";
 import { AuditTrail } from "./components/AuditTrail";
@@ -35,7 +34,6 @@ export const router = createBrowserRouter([
       { path: "appointments", Component: Appointments },
       { path: "rpc", Component: RPCTracking },
       { path: "ai-analytics", Component: AIAnalytics },
-      { path: "follow-up", Component: FollowUpAlerts },
       { path: "reports", Component: Reports },
       { path: "accounts", Component: AccountManagement },
       { path: "audit", Component: AuditTrail },

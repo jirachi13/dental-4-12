@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Search, Plus, X, CheckCircle, AlertCircle, Clock, Shield, School as SchoolIcon, List, ChevronRight, Users } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getGradeColor } from '../utils/gradeColors';
+import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 
 const SCHOOLS = [
   'Bagong Tanyag Integrated School',
@@ -130,14 +131,16 @@ export const RPCTracking = () => {
       {/* School View */}
       {viewMode === 'school' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {schoolSummary.map(s => (
-            <div key={s.name} className="bg-white rounded-xl border border-gray-200 p-5 hover:border-[#1E40AF] hover:shadow-md transition-all cursor-pointer"
+          {schoolSummary.map(s => {
+            const sc = getSchoolColor(s.name);
+            return (
+            <div key={s.name} style={{ borderColor: sc.border }} className="bg-white rounded-xl border-2 p-5 hover:shadow-md transition-all cursor-pointer"
               onClick={() => setViewMode('list')}>
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <SchoolIcon className="w-5 h-5 text-[#1E40AF]" />
+                <div style={{ backgroundColor: sc.light }} className="w-10 h-10 rounded-lg flex items-center justify-center">
+                  <SchoolIcon style={{ color: sc.solid }} className="w-5 h-5" />
                 </div>
-                <div className="font-semibold text-gray-900 text-sm leading-tight">{s.name}</div>
+                <div style={{ color: sc.text }} className="font-bold text-sm leading-tight">{getSchoolShortName(s.name)}</div>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="bg-gray-50 rounded-lg p-2">
@@ -154,7 +157,7 @@ export const RPCTracking = () => {
                 </div>
               </div>
             </div>
-          ))}
+          );})}
         </div>
       )}
 

@@ -1,21 +1,13 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import {
-  LayoutDashboard,
-  Users,
-  Calendar,
-  Brain,
-  ClipboardList,
-  LogOut,
-  Stethoscope,
-  Shield,
-  Clipboard,
-  FileBarChart,
-  UserCog,
-  Bell
+  LayoutDashboard, Users, Calendar, Brain,
+  ClipboardList, LogOut, Stethoscope, Shield,
+  Clipboard, FileBarChart, UserCog, Tooth
 } from 'lucide-react';
 import { useEffect } from 'react';
-// Logo placeholder — replace with actual Barangay Tanyag logo file
+
+// Fallback logo — replace with actual Barangay Tanyag logo file
 const logoImage = null;
 
 export const Root = () => {
@@ -24,115 +16,67 @@ export const Root = () => {
   const location = useLocation();
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-    }
+    if (!user) navigate('/login');
   }, [user, navigate]);
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
-  // Define all 8 tabs
   const allTabs = [
     {
-      id: 1,
-      path: '/',
-      label: 'Dashboard',
-      icon: LayoutDashboard,
-      roles: ['dentist', 'dental_aide', 'school_admin', 'barangay_health', 'system_admin']
+      id: 1, path: '/', label: 'Dashboard', icon: LayoutDashboard,
+      roles: ['dentist','dental_aide','school_admin','barangay_health','system_admin']
     },
     {
-      id: 2,
-      path: '/appointments',
-      label: 'Appointments',
-      icon: Calendar,
-      roles: ['dentist', 'dental_aide', 'school_admin']
+      id: 2, path: '/appointments', label: 'Appointments', icon: Calendar,
+      roles: ['dentist','dental_aide','school_admin']
     },
     {
-      id: 3,
-      path: '/patients',
-      label: 'Student Records',
-      icon: Users,
-      roles: ['dentist', 'dental_aide', 'school_admin', 'barangay_health']
+      id: 3, path: '/patients', label: 'Student Records', icon: Users,
+      roles: ['dentist','dental_aide','school_admin','barangay_health']
     },
     {
-      id: 4,
-      path: '/dental-charts',
-      label: 'Dental Chart / Health Records',
-      icon: Stethoscope,
-      roles: ['dentist', 'dental_aide']
+      id: 4, path: '/dental-charts', label: 'Dental Chart / Health Records', icon: Stethoscope,
+      roles: ['dentist','dental_aide']
     },
     {
-      id: 5,
-      path: '/treatment-records',
-      label: 'Treatment Records',
-      icon: Clipboard,
-      roles: ['dentist', 'dental_aide']
+      id: 5, path: '/treatment-records', label: 'Treatment Records', icon: Clipboard,
+      roles: ['dentist','dental_aide']
     },
     {
-      id: 6,
-      path: '/ai-analytics',
-      label: 'Predictive Module',
-      icon: Brain,
+      id: 6, path: '/ai-analytics', label: 'Predictive Module', icon: Brain,
       roles: ['dentist']
     },
     {
-      id: 7,
-      path: '/rpc',
-      label: 'RPC Records',
-      icon: Shield,
-      roles: ['dentist', 'dental_aide']
+      id: 7, path: '/rpc', label: 'RPC Records', icon: Shield,
+      roles: ['dentist','dental_aide']
     },
     {
-      id: 8,
-      path: '/reports',
-      label: 'Consolidated Reports',
-      icon: FileBarChart,
-      roles: ['dentist', 'school_admin', 'barangay_health']
+      id: 8, path: '/reports', label: 'Consolidated Reports', icon: FileBarChart,
+      roles: ['dentist','school_admin','barangay_health']
     },
     {
-      id: 9,
-      path: '/accounts',
-      label: 'User Management',
-      icon: UserCog,
+      id: 9, path: '/accounts', label: 'User Management', icon: UserCog,
       roles: ['system_admin']
     },
     {
-      id: 10,
-      path: '/audit',
-      label: 'Audit Trail',
-      icon: ClipboardList,
+      id: 10, path: '/audit', label: 'Audit Trail', icon: ClipboardList,
       roles: ['system_admin']
     },
-    {
-      id: 11,
-      path: '/follow-up',
-      label: 'Follow-up Alerts',
-      icon: Bell,
-      roles: ['dentist', 'dental_aide']
-    },
+    // Follow Up Alerts REMOVED
   ];
 
-  // Filter tabs by current user role
   const visibleTabs = allTabs.filter(tab => tab.roles.includes(user.role));
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const handleLogout = () => { logout(); navigate('/login'); };
 
   const isTabActive = (path: string) => {
-    if (path === '/') {
-      return location.pathname === '/';
-    }
+    if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
   };
 
   const TabLink = ({ tab }: { tab: typeof allTabs[0] }) => {
     const isActive = isTabActive(tab.path);
     const Icon = tab.icon;
-
     return (
       <Link
         to={tab.path}
@@ -151,8 +95,8 @@ export const Root = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* LEFT TAB BAR */}
-      <aside className="w-[60px] md:w-[200px] bg-white border-r border-gray-200 flex flex-col fixed left-0 top-0 h-screen">
-        {/* Logo Section */}
+      <aside className="w-[60px] md:w-[220px] bg-white border-r border-gray-200 flex flex-col fixed left-0 top-0 h-screen z-40">
+        {/* Logo */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             {logoImage ? (
@@ -162,18 +106,21 @@ export const Root = () => {
                 <span className="text-white font-bold text-xs">BT</span>
               </div>
             )}
-            <span className="hidden md:block text-xl font-bold text-[#1E40AF]">FLORAL</span>
+            <div className="hidden md:block">
+              <div className="text-lg font-bold text-[#1E40AF]">FLORAL</div>
+              <div className="text-xs text-gray-500 leading-tight">Dental Health System</div>
+            </div>
           </div>
         </div>
 
-        {/* Vertical Tabs */}
+        {/* Tabs */}
         <nav className="flex-1 overflow-y-auto py-2">
           {visibleTabs.map((tab) => (
             <TabLink key={tab.id} tab={tab} />
           ))}
         </nav>
 
-        {/* User Info & Logout */}
+        {/* User info + logout */}
         <div className="border-t border-gray-200 p-4">
           <div className="hidden md:block mb-3">
             <div className="text-sm font-medium text-gray-900 truncate">{user.name}</div>
@@ -193,8 +140,8 @@ export const Root = () => {
         </div>
       </aside>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 ml-[60px] md:ml-[200px]">
+      {/* MAIN CONTENT */}
+      <main className="flex-1 ml-[60px] md:ml-[220px]">
         <div className="p-4 md:p-8">
           <Outlet />
         </div>
