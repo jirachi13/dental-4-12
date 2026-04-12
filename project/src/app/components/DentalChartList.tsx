@@ -9,17 +9,17 @@ export const DentalChartList = () => {
 
   // Mock data
   const patients = [
-    { id: '1', name: 'Juan Dela Cruz', age: 9, grade: 'Grade 4', school: 'Tanyag Elementary', lastUpdated: '2026-03-13', status: 'complete' },
-    { id: '2', name: 'Maria Santos', age: 8, grade: 'Grade 3', school: 'Tanyag Elementary', lastUpdated: '2026-03-12', status: 'incomplete' },
-    { id: '3', name: 'Pedro Reyes', age: 10, grade: 'Grade 5', school: 'Western Bicutan Elementary', lastUpdated: '2026-03-11', status: 'complete' },
-    { id: '4', name: 'Ana Garcia', age: 7, grade: 'Grade 2', school: 'Tanyag Elementary', lastUpdated: '2026-03-10', status: 'complete' },
-    { id: '5', name: 'Jose Martinez', age: 11, grade: 'Grade 6', school: 'Upper Bicutan Elementary', lastUpdated: '2026-03-09', status: 'incomplete' },
-    { id: '6', name: 'Sofia Lopez', age: 8, grade: 'Grade 3', school: 'Tanyag Elementary', lastUpdated: '2026-03-08', status: 'complete' },
-    { id: '7', name: 'Miguel Torres', age: 9, grade: 'Grade 4', school: 'Western Bicutan Elementary', lastUpdated: '2026-03-07', status: 'complete' },
-    { id: '8', name: 'Carmen Flores', age: 10, grade: 'Grade 5', school: 'Tanyag Elementary', lastUpdated: '2026-03-06', status: 'incomplete' },
+    { id: '1', name: 'Juan Dela Cruz', age: 9, grade: 'Grade 4', school: 'Bagong Tanyag Integrated School', lastUpdated: '2026-03-13', status: 'complete' },
+    { id: '2', name: 'Maria Santos', age: 8, grade: 'Grade 3', school: 'Bagong Tanyag Integrated School', lastUpdated: '2026-03-12', status: 'incomplete' },
+    { id: '3', name: 'Pedro Reyes', age: 10, grade: 'Grade 5', school: 'South Daang Hari Elementary School Main', lastUpdated: '2026-03-11', status: 'complete' },
+    { id: '4', name: 'Ana Garcia', age: 7, grade: 'Grade 2', school: 'Bagong Tanyag Integrated School', lastUpdated: '2026-03-10', status: 'complete' },
+    { id: '5', name: 'Jose Martinez', age: 11, grade: 'Grade 6', school: 'Bagong Bagong Tanyag Integrated School School Annex A', lastUpdated: '2026-03-09', status: 'incomplete' },
+    { id: '6', name: 'Sofia Lopez', age: 8, grade: 'Grade 3', school: 'Bagong Tanyag Integrated School', lastUpdated: '2026-03-08', status: 'complete' },
+    { id: '7', name: 'Miguel Torres', age: 9, grade: 'Grade 4', school: 'South Daang Hari Elementary School Main', lastUpdated: '2026-03-07', status: 'complete' },
+    { id: '8', name: 'Carmen Flores', age: 10, grade: 'Grade 5', school: 'Bagong Tanyag Integrated School', lastUpdated: '2026-03-06', status: 'incomplete' },
   ];
 
-  const schools = ['Tanyag Elementary', 'Western Bicutan Elementary', 'Upper Bicutan Elementary'];
+  const schools = ['Bagong Tanyag Integrated School', 'South Daang Hari Elementary School Main', 'Bagong Bagong Tanyag Integrated School School Annex A'];
   const grades = ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6'];
 
   const filteredPatients = patients.filter(patient => {

@@ -9,7 +9,10 @@ import {
   LogOut,
   Stethoscope,
   Shield,
-  Clipboard
+  Clipboard,
+  FileBarChart,
+  UserCog,
+  Bell
 } from 'lucide-react';
 import { useEffect } from 'react';
 // Logo placeholder — replace with actual Barangay Tanyag logo file
@@ -83,10 +86,31 @@ export const Root = () => {
     },
     {
       id: 8,
+      path: '/reports',
+      label: 'Consolidated Reports',
+      icon: FileBarChart,
+      roles: ['dentist', 'school_admin', 'barangay_health']
+    },
+    {
+      id: 9,
+      path: '/accounts',
+      label: 'User Management',
+      icon: UserCog,
+      roles: ['system_admin']
+    },
+    {
+      id: 10,
       path: '/audit',
       label: 'Audit Trail',
       icon: ClipboardList,
       roles: ['system_admin']
+    },
+    {
+      id: 11,
+      path: '/follow-up',
+      label: 'Follow-up Alerts',
+      icon: Bell,
+      roles: ['dentist', 'dental_aide']
     },
   ];
 

@@ -1,332 +1,164 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { School as SchoolIcon, Home, ChevronRight, GraduationCap, Users as UsersIcon, Eye, FileText } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router';
+import { Search, X, FileText, Eye } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 
-type NavigationLevel = 'schools' | 'grades' | 'sections' | 'students';
+const SCHOOLS = [
+  'Bagong Tanyag Integrated School',
+  'Bagong Tanyag Elementary School Annex A',
+  'South Daang Hari Elementary School Main',
+];
+const GRADES = ['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
+const TREATMENT_TYPES = ['Oral Prophylaxis','Fluoride Varnish','Tooth Extraction','Permanent Filling','Temporary Filling','Pit & Fissure Sealant','Silver Diamine Fluoride','Oral Health Instruction','Screening'];
 
-interface BreadcrumbItem {
-  label: string;
-  onClick: () => void;
-}
-
-// Mock student data
-const mockStudents = [
-  { id: '1', name: 'Juan Dela Cruz', gender: 'Male', age: 10, grade: 'Grade 4', section: 'Sampaguita', school: 'Bagong Tanyag Integrated School', treatmentCount: 5, lastTreatment: '2026-03-10' },
-  { id: '2', name: 'Maria Santos', gender: 'Female', age: 9, grade: 'Grade 3', section: 'Rose', school: 'Bagong Tanyag Integrated School', treatmentCount: 3, lastTreatment: '2026-02-15' },
-  { id: '3', name: 'Pedro Reyes', gender: 'Male', age: 11, grade: 'Grade 5', section: 'Narra', school: 'South Daang Hari Elementary School Main', treatmentCount: 7, lastTreatment: '2026-01-20' },
+const mockTreatments = [
+  { id:'1',  studentId:'1',  studentName:'Juan Morales',       gender:'Male',   age:10, grade:'Grade 4', section:'Sampaguita', school:'Bagong Tanyag Integrated School',               visitDate:'2026-03-10', treatmentType:'Tooth Extraction',         diagnosis:'Dental Caries',                 treatmentDone:'Extraction tooth 16' },
+  { id:'2',  studentId:'2',  studentName:'Isabella Villanueva',gender:'Female', age:9,  grade:'Grade 3', section:'Jasmine',    school:'Bagong Tanyag Integrated School',               visitDate:'2026-03-08', treatmentType:'Fluoride Varnish',          diagnosis:'Caries risk — high',            treatmentDone:'Fluoride varnish application' },
+  { id:'3',  studentId:'3',  studentName:'Aldrin Villanueva',  gender:'Male',   age:8,  grade:'Grade 2', section:'Rose',       school:'Bagong Tanyag Integrated School',               visitDate:'2026-03-05', treatmentType:'Oral Prophylaxis',          diagnosis:'Gingivitis',                    treatmentDone:'Oral prophylaxis' },
+  { id:'4',  studentId:'7',  studentName:'Jose Martinez',      gender:'Male',   age:11, grade:'Grade 6', section:'Coral',      school:'Bagong Tanyag Elementary School Annex A',       visitDate:'2026-03-12', treatmentType:'Permanent Filling',        diagnosis:'Caries tooth 36',               treatmentDone:'Composite filling' },
+  { id:'5',  studentId:'9',  studentName:'Miguel Torres',      gender:'Male',   age:9,  grade:'Grade 4', section:'Opal',       school:'Bagong Tanyag Elementary School Annex A',       visitDate:'2026-03-09', treatmentType:'Tooth Extraction',         diagnosis:'Non-restorable caries',         treatmentDone:'Extraction tooth 74' },
+  { id:'6',  studentId:'11', studentName:'Pedro Reyes',        gender:'Male',   age:11, grade:'Grade 5', section:'Yakal',      school:'South Daang Hari Elementary School Main',       visitDate:'2026-03-01', treatmentType:'Fluoride Varnish',          diagnosis:'Preventive care visit 1',       treatmentDone:'Fluoride varnish + OHI' },
+  { id:'7',  studentId:'13', studentName:'Lucia Diaz',         gender:'Female', age:10, grade:'Grade 5', section:'Lauan',      school:'South Daang Hari Elementary School Main',       visitDate:'2026-02-28', treatmentType:'Oral Prophylaxis',          diagnosis:'Plaque accumulation',           treatmentDone:'Scaling and polishing' },
+  { id:'8',  studentId:'15', studentName:'Valentina Cruz',     gender:'Female', age:9,  grade:'Grade 3', section:'Bamboo',     school:'South Daang Hari Elementary School Main',       visitDate:'2026-02-25', treatmentType:'Pit & Fissure Sealant',    diagnosis:'Deep fissures',                 treatmentDone:'PFS teeth 16,26,36,46' },
+  { id:'9',  studentId:'4',  studentName:'Elena Morales',      gender:'Female', age:8,  grade:'Grade 2', section:'Dahlia',     school:'Bagong Tanyag Integrated School',               visitDate:'2026-02-20', treatmentType:'Screening',                diagnosis:'Annual oral health screening',  treatmentDone:'Oral examination — orally fit' },
+  { id:'10', studentId:'8',  studentName:'Carmen Flores',      gender:'Female', age:8,  grade:'Grade 2', section:'Diamond',    school:'Bagong Tanyag Elementary School Annex A',       visitDate:'2026-02-18', treatmentType:'Silver Diamine Fluoride',  diagnosis:'Early childhood caries',        treatmentDone:'SDF application' },
+  { id:'11', studentId:'14', studentName:'Rafael Santos',      gender:'Male',   age:9,  grade:'Grade 4', section:'Kamagong',   school:'South Daang Hari Elementary School Main',       visitDate:'2026-02-15', treatmentType:'Temporary Filling',        diagnosis:'Caries tooth 85',               treatmentDone:'IRM temporary filling' },
+  { id:'12', studentId:'5',  studentName:'Sofia Reyes',        gender:'Female', age:10, grade:'Grade 5', section:'Sunflower',  school:'Bagong Tanyag Integrated School',               visitDate:'2026-02-10', treatmentType:'Oral Health Instruction',  diagnosis:'Poor oral hygiene',             treatmentDone:'Brushing and flossing demo' },
 ];
 
 export const TreatmentRecords = () => {
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [schoolFilter, setSchoolFilter] = useState('all');
+  const [gradeFilter, setGradeFilter] = useState('all');
+  const [genderFilter, setGenderFilter] = useState('all');
+  const [ageGroupFilter, setAgeGroupFilter] = useState('all');
+  const [treatmentFilter, setTreatmentFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
-  const [currentLevel, setCurrentLevel] = useState<NavigationLevel>('schools');
-  const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
-  const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
-  const [selectedSection, setSelectedSection] = useState<string | null>(null);
-
-  const navigateToSchool = (schoolName: string) => {
-    setSelectedSchool(schoolName);
-    setSelectedGrade(null);
-    setSelectedSection(null);
-    setCurrentLevel('grades');
+  const getAgeGroup = (age: number) => {
+    if (age <= 5) return 'Under 5';
+    if (age <= 10) return '6-10';
+    if (age <= 14) return '10-14';
+    return '15-19';
   };
 
-  const navigateToGrade = (grade: string) => {
-    setSelectedGrade(grade);
-    setSelectedSection(null);
-    setCurrentLevel('sections');
-  };
+  const filtered = useMemo(() => mockTreatments.filter(t => {
+    if (schoolFilter !== 'all' && t.school !== schoolFilter) return false;
+    if (gradeFilter !== 'all' && t.grade !== gradeFilter) return false;
+    if (genderFilter !== 'all' && t.gender !== genderFilter) return false;
+    if (ageGroupFilter !== 'all' && getAgeGroup(t.age) !== ageGroupFilter) return false;
+    if (treatmentFilter !== 'all' && t.treatmentType !== treatmentFilter) return false;
+    if (dateFrom && t.visitDate < dateFrom) return false;
+    if (dateTo && t.visitDate > dateTo) return false;
+    if (searchTerm && !t.studentName.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    return true;
+  }), [schoolFilter, gradeFilter, genderFilter, ageGroupFilter, treatmentFilter, dateFrom, dateTo, searchTerm]);
 
-  const navigateToSection = (section: string) => {
-    setSelectedSection(section);
-    setCurrentLevel('students');
-  };
+  const hasActiveFilters = [schoolFilter, gradeFilter, genderFilter, ageGroupFilter, treatmentFilter].some(f => f !== 'all') || searchTerm !== '' || dateFrom !== '' || dateTo !== '';
+  const clearFilters = () => { setSchoolFilter('all'); setGradeFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); setTreatmentFilter('all'); setDateFrom(''); setDateTo(''); setSearchTerm(''); };
 
-  const navigateToSchools = () => {
-    setSelectedSchool(null);
-    setSelectedGrade(null);
-    setSelectedSection(null);
-    setCurrentLevel('schools');
-  };
-
-  const openTreatmentLog = (studentId: string) => {
-    navigate(`/treatment-log/${studentId}`);
-  };
-
-  const getBreadcrumbs = (): BreadcrumbItem[] => {
-    const breadcrumbs: BreadcrumbItem[] = [
-      { label: 'Schools', onClick: navigateToSchools }
-    ];
-
-    if (selectedSchool) {
-      breadcrumbs.push({
-        label: selectedSchool.replace('Bagong Tanyag Elementary School ', 'Bagong Tanyag ').replace(' School', ''),
-        onClick: () => {
-          setSelectedSchool(selectedSchool);
-          setSelectedGrade(null);
-          setSelectedSection(null);
-          setCurrentLevel('grades');
-        }
-      });
-    }
-
-    if (selectedGrade) {
-      breadcrumbs.push({
-        label: selectedGrade,
-        onClick: () => {
-          setSelectedGrade(selectedGrade);
-          setSelectedSection(null);
-          setCurrentLevel('sections');
-        }
-      });
-    }
-
-    if (selectedSection) {
-      breadcrumbs.push({
-        label: `Section ${selectedSection}`,
-        onClick: () => {}
-      });
-    }
-
-    return breadcrumbs;
-  };
-
-  const schoolStats = [
-    { name: 'Bagong Tanyag Integrated School', shortName: 'Bagong Tanyag Integrated', totalTreatments: 1245, thisMonth: 87 },
-    { name: 'Bagong Tanyag Elementary School Annex A', shortName: 'Bagong Tanyag Annex A', totalTreatments: 980, thisMonth: 65 },
-    { name: 'South Daang Hari Elementary School Main', shortName: 'South Daang Hari Main', totalTreatments: 1105, thisMonth: 72 },
-  ];
-
-  const getGradesForSchool = (schoolName: string) => {
-    const grades = ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6'];
-    return grades.map(grade => ({
-      grade,
-      studentCount: Math.floor(Math.random() * 30) + 20
-    }));
-  };
-
-  const getSectionsForGrade = (schoolName: string, grade: string) => {
-    const sections = ['Sampaguita', 'Rose', 'Jasmine', 'Narra'];
-    return sections.map(section => ({
-      section,
-      studentCount: Math.floor(Math.random() * 20) + 15
-    }));
-  };
-
-  const getStudentsForSection = () => {
-    if (!selectedSchool || !selectedGrade || !selectedSection) return [];
-    return mockStudents.filter(s =>
-      s.school === selectedSchool &&
-      s.grade === selectedGrade &&
-      s.section === selectedSection
-    );
-  };
-
-  const breadcrumbs = getBreadcrumbs();
+  const FS = ({ value, onChange, opts, label }: { value: string; onChange: (v: string) => void; opts: {v:string;l:string}[]; label: string }) => (
+    <select value={value} onChange={e => onChange(e.target.value)} className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <option value="all">{label}</option>
+      {opts.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+    </select>
+  );
 
   return (
-    <div className="space-y-6">
-      {breadcrumbs.length > 1 && (
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Home className="w-4 h-4" />
-          {breadcrumbs.map((crumb, index) => {
-            const isGrade = crumb.label.startsWith('Grade') || crumb.label === 'Kinder';
-            const gradeColor = isGrade ? getGradeColor(crumb.label) : null;
-            return (
-              <div key={index} className="flex items-center gap-2">
-                {index > 0 && <ChevronRight className="w-4 h-4 text-gray-400" />}
-                {index === breadcrumbs.length - 1 ? (
-                  <span className="font-medium" style={gradeColor ? { color: gradeColor.solid } : { color: '#111827' }}>{crumb.label}</span>
-                ) : (
-                  <button
-                    onClick={crumb.onClick}
-                    className="hover:text-[#1E40AF] hover:underline"
-                    style={gradeColor ? { color: gradeColor.solid } : {}}
-                  >
-                    {crumb.label}
-                  </button>
-                )}
-              </div>
-            );
-          })}
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Treatment Records</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{filtered.length} record{filtered.length !== 1 ? 's' : ''} found</p>
         </div>
-      )}
-
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Treatment Records</h1>
-        <p className="text-gray-600 mt-1">Comprehensive treatment history and logs</p>
       </div>
-
-      {/* LEVEL 1: SCHOOL CARDS */}
-      {currentLevel === 'schools' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {schoolStats.map((school) => (
-            <button
-              key={school.name}
-              onClick={() => navigateToSchool(school.name)}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-[#1E40AF] transition-all text-left group"
-            >
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-[#FBBF24] bg-opacity-10 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-opacity-20 transition-colors">
-                  <SchoolIcon className="w-6 h-6 text-[#FBBF24]" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 text-lg mb-3">{school.shortName}</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Total Treatments</span>
-                      <span className="text-2xl font-bold text-[#FBBF24]">{school.totalTreatments}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">This Month</span>
-                      <span className="text-lg font-semibold text-green-600">{school.thisMonth}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+      <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input type="text" placeholder="Search by student name..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <FS value={schoolFilter} onChange={setSchoolFilter} label="All Schools"
+            opts={SCHOOLS.map(s => ({ v: s, l: s.replace(' Elementary School', '').replace(' Integrated School', ' Integrated').replace(' Main', '') }))} />
+          <FS value={gradeFilter} onChange={setGradeFilter} label="All Grades" opts={GRADES.map(g => ({ v: g, l: g }))} />
+          <FS value={genderFilter} onChange={setGenderFilter} label="All Genders" opts={[{ v:'Male', l:'Male' }, { v:'Female', l:'Female' }]} />
+          <FS value={ageGroupFilter} onChange={setAgeGroupFilter} label="All Age Groups"
+            opts={[{ v:'Under 5', l:'Under 5' }, { v:'6-10', l:'6–10' }, { v:'10-14', l:'10–14' }, { v:'15-19', l:'15–19' }]} />
+          <FS value={treatmentFilter} onChange={setTreatmentFilter} label="All Treatment Types" opts={TREATMENT_TYPES.map(t => ({ v: t, l: t }))} />
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">From</span>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+              className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <span className="text-sm text-gray-500">To</span>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+              className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          {hasActiveFilters && (
+            <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
+              <X className="w-3 h-3" /> Clear All
             </button>
-          ))}
+          )}
         </div>
-      )}
-
-      {/* LEVEL 2: GRADE LIST */}
-      {currentLevel === 'grades' && selectedSchool && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Select Grade Level</h2>
-          </div>
-          <div className="divide-y divide-gray-200">
-            {getGradesForSchool(selectedSchool).map(({ grade, studentCount }) => {
-              const gradeColor = getGradeColor(grade);
-              return (
-                <button
-                  key={grade}
-                  onClick={() => navigateToGrade(grade)}
-                  className="w-full flex items-center justify-between px-6 py-4 transition-colors group border-l-4"
-                  style={{
-                    borderLeftColor: gradeColor.solid,
-                    backgroundColor: gradeColor.light
-                  }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center group-hover:opacity-80 transition-opacity"
-                      style={{ backgroundColor: gradeColor.solid + '20' }}
-                    >
-                      <GraduationCap className="w-5 h-5" style={{ color: gradeColor.solid }} />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="font-medium" style={{ color: gradeColor.solid }}>{grade}</h3>
-                      <p className="text-sm text-gray-700">{studentCount} students</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5" style={{ color: gradeColor.solid }} />
-                </button>
-              );
-            })}
-          </div>
+      </div>
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Student</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">School</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Grade / Section</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Visit Date</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Treatment Type</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Diagnosis</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Treatment Done</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filtered.length === 0 ? (
+                <tr><td colSpan={8} className="text-center py-12 text-gray-400">No treatment records match the selected filters.</td></tr>
+              ) : filtered.map(t => {
+                const gc = getGradeColor(t.grade);
+                return (
+                  <tr key={t.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-xs flex-shrink-0">
+                          {t.studentName.split(' ').map((n: string) => n[0]).join('').slice(0,2)}
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">{t.studentName}</div>
+                          <div className="text-xs text-gray-500">{t.gender} · Age {t.age}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 text-xs max-w-[140px] truncate">{t.school}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold" style={{ backgroundColor: gc.light, color: gc.solid }}>{t.grade}</span>
+                      <span className="text-gray-500 text-xs ml-1">{t.section}</span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{t.visitDate}</td>
+                    <td className="px-4 py-3"><span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">{t.treatmentType}</span></td>
+                    <td className="px-4 py-3 text-gray-600 text-xs max-w-[160px] truncate">{t.diagnosis}</td>
+                    <td className="px-4 py-3 text-gray-600 text-xs max-w-[160px] truncate">{t.treatmentDone}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => navigate(`/patients/${t.studentId}`)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" title="View Patient"><Eye className="w-4 h-4" /></button>
+                        <button onClick={() => navigate(`/treatment-log/${t.studentId}`)} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg" title="View Treatment Log"><FileText className="w-4 h-4" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      )}
-
-      {/* LEVEL 3: SECTION LIST */}
-      {currentLevel === 'sections' && selectedSchool && selectedGrade && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Select Section</h2>
-          </div>
-          <div className="divide-y divide-gray-200">
-            {getSectionsForGrade(selectedSchool, selectedGrade).map(({ section, studentCount }) => {
-              const gradeColor = getGradeColor(selectedGrade || '');
-              return (
-                <button
-                  key={section}
-                  onClick={() => navigateToSection(section)}
-                  className="w-full flex items-center justify-between px-6 py-4 transition-colors group border-l-4"
-                  style={{
-                    borderLeftColor: gradeColor.solid,
-                    backgroundColor: gradeColor.light + '80'
-                  }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center group-hover:opacity-80 transition-opacity"
-                      style={{ backgroundColor: gradeColor.solid + '20' }}
-                    >
-                      <UsersIcon className="w-5 h-5" style={{ color: gradeColor.solid }} />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="font-medium text-gray-900">Section {section}</h3>
-                      <p className="text-sm text-gray-700">{studentCount} students</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5" style={{ color: gradeColor.solid }} />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* LEVEL 4: STUDENT LIST */}
-      {currentLevel === 'students' && selectedSchool && selectedGrade && selectedSection && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Select Student</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Treatments</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Treatment</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {getStudentsForSection().map((student) => {
-                  const gradeColor = getGradeColor(student.grade);
-                  return (
-                    <tr key={student.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-medium text-gray-900">{student.name}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className="px-2 py-1 rounded-full text-xs font-medium"
-                          style={{
-                            backgroundColor: gradeColor.light,
-                            color: gradeColor.solid
-                          }}
-                        >
-                          {student.grade}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{student.gender}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{student.age} years</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{student.treatmentCount}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{student.lastTreatment}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <button
-                          onClick={() => openTreatmentLog(student.id)}
-                          className="text-[#FBBF24] hover:text-[#D97706] font-medium flex items-center gap-1"
-                        >
-                          <FileText className="w-4 h-4" />
-                          View Log
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+        {filtered.length > 0 && <div className="px-4 py-3 border-t border-gray-100 text-sm text-gray-500">Showing {filtered.length} of {mockTreatments.length} records</div>}
+      </div>
     </div>
   );
 };

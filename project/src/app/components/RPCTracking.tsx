@@ -1,791 +1,231 @@
-import { useState } from 'react';
-import { Search, Filter, Plus, Eye, Calendar, CheckCircle, AlertCircle, X, School as SchoolIcon, Home, ChevronRight, GraduationCap, Users as UsersIcon } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Search, Plus, X, CheckCircle, AlertCircle, Clock, Shield } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Link } from 'react-router';
 import { getGradeColor } from '../utils/gradeColors';
 
-type NavigationLevel = 'schools' | 'grades' | 'sections' | 'students';
+const SCHOOLS = [
+  'Bagong Tanyag Integrated School',
+  'Bagong Tanyag Elementary School Annex A',
+  'South Daang Hari Elementary School Main',
+];
+const GRADES = ['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
 
-interface BreadcrumbItem {
-  label: string;
-  onClick: () => void;
-}
+const rpcRecords = [
+  { id:'1', studentName:'Juan Morales', birthdate:'2016-03-15', gender:'Male', school:'Bagong Tanyag Integrated School', grade:'Grade 4', section:'Sampaguita', visit1Date:'2026-01-15', visit1Status:'Completed', visit2Date:'2026-03-20', visit2Status:'Completed', daysUntilDue:0, status:'complete' },
+  { id:'2', studentName:'Maria Santos', birthdate:'2017-07-22', gender:'Female', school:'Bagong Tanyag Integrated School', grade:'Grade 3', section:'Jasmine', visit1Date:'2026-02-10', visit1Status:'Completed', visit2Date:null, visit2Status:'Pending', daysUntilDue:45, status:'pending' },
+  { id:'3', studentName:'Pedro Reyes', birthdate:'2014-11-08', gender:'Male', school:'South Daang Hari Elementary School Main', grade:'Grade 5', section:'Yakal', visit1Date:'2025-08-15', visit1Status:'Completed', visit2Date:null, visit2Status:'Pending', daysUntilDue:-30, status:'overdue' },
+  { id:'4', studentName:'Ana Garcia', birthdate:'2018-05-12', gender:'Female', school:'Bagong Tanyag Integrated School', grade:'Grade 2', section:'Rose', visit1Date:null, visit1Status:'Pending', visit2Date:null, visit2Status:'Pending', daysUntilDue:0, status:'not-started' },
+  { id:'5', studentName:'Carlos Mendoza', birthdate:'2013-09-30', gender:'Male', school:'Bagong Tanyag Elementary School Annex A', grade:'Grade 6', section:'Coral', visit1Date:'2026-03-01', visit1Status:'Completed', visit2Date:null, visit2Status:'Pending', daysUntilDue:90, status:'pending' },
+  { id:'6', studentName:'Sofia Reyes', birthdate:'2015-11-08', gender:'Female', school:'Bagong Tanyag Integrated School', grade:'Grade 5', section:'Sunflower', visit1Date:'2026-01-20', visit1Status:'Completed', visit2Date:'2026-03-25', visit2Status:'Completed', daysUntilDue:0, status:'complete' },
+  { id:'7', studentName:'Diego Lopez', birthdate:'2019-03-15', gender:'Male', school:'Bagong Tanyag Integrated School', grade:'Grade 1', section:'Sampaguita', visit1Date:null, visit1Status:'Pending', visit2Date:null, visit2Status:'Pending', daysUntilDue:0, status:'not-started' },
+  { id:'8', studentName:'Isabella Gomez', birthdate:'2017-04-18', gender:'Female', school:'Bagong Tanyag Elementary School Annex A', grade:'Grade 3', section:'Topaz', visit1Date:'2025-09-10', visit1Status:'Completed', visit2Date:null, visit2Status:'Pending', daysUntilDue:-15, status:'overdue' },
+  { id:'9', studentName:'Miguel Torres', birthdate:'2016-12-05', gender:'Male', school:'Bagong Tanyag Elementary School Annex A', grade:'Grade 4', section:'Opal', visit1Date:'2026-02-28', visit1Status:'Completed', visit2Date:null, visit2Status:'Pending', daysUntilDue:60, status:'pending' },
+  { id:'10', studentName:'Carmen Flores', birthdate:'2018-08-22', gender:'Female', school:'South Daang Hari Elementary School Main', grade:'Grade 2', section:'Acacia', visit1Date:'2026-01-10', visit1Status:'Completed', visit2Date:'2026-03-15', visit2Status:'Completed', daysUntilDue:0, status:'complete' },
+  { id:'11', studentName:'Lucia Diaz', birthdate:'2015-06-14', gender:'Female', school:'South Daang Hari Elementary School Main', grade:'Grade 5', section:'Lauan', visit1Date:null, visit1Status:'Pending', visit2Date:null, visit2Status:'Pending', daysUntilDue:0, status:'not-started' },
+  { id:'12', studentName:'Rafael Santos', birthdate:'2016-09-03', gender:'Male', school:'South Daang Hari Elementary School Main', grade:'Grade 4', section:'Kamagong', visit1Date:'2025-10-05', visit1Status:'Completed', visit2Date:null, visit2Status:'Pending', daysUntilDue:-45, status:'overdue' },
+  { id:'13', studentName:'Valentina Cruz', birthdate:'2017-02-28', gender:'Female', school:'South Daang Hari Elementary School Main', grade:'Grade 3', section:'Bamboo', visit1Date:'2026-03-05', visit1Status:'Completed', visit2Date:null, visit2Status:'Pending', daysUntilDue:120, status:'pending' },
+  { id:'14', studentName:'Jose Martinez', birthdate:'2013-09-30', gender:'Male', school:'Bagong Tanyag Elementary School Annex A', grade:'Grade 6', section:'Onyx', visit1Date:'2026-02-15', visit1Status:'Completed', visit2Date:'2026-04-10', visit2Status:'Completed', daysUntilDue:0, status:'complete' },
+  { id:'15', studentName:'Bea Aquino', birthdate:'2018-01-15', gender:'Female', school:'Bagong Tanyag Integrated School', grade:'Grade 2', section:'Dahlia', visit1Date:null, visit1Status:'Pending', visit2Date:null, visit2Status:'Pending', daysUntilDue:0, status:'not-started' },
+];
 
 export const RPCTracking = () => {
-  // Navigation state
-  const [currentLevel, setCurrentLevel] = useState<NavigationLevel>('schools');
-  const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
-  const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
-  const [selectedSection, setSelectedSection] = useState<string | null>(null);
-
-  // Filter and search state (only for Level 4: students)
   const [searchTerm, setSearchTerm] = useState('');
-  const [ageGroupFilter, setAgeGroupFilter] = useState('all');
+  const [schoolFilter, setSchoolFilter] = useState('all');
+  const [gradeFilter, setGradeFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
+  const [ageGroupFilter, setAgeGroupFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-
   const [showRecordModal, setShowRecordModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
-  const [visitNumber, setVisitNumber] = useState<1 | 2>(1);
+  const [visitNumber, setVisitNumber] = useState<1|2>(1);
 
-  // Helper functions
   const calculateAge = (birthdate: string) => {
     const today = new Date();
     const birth = new Date(birthdate);
     let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
     return age;
   };
 
   const getAgeGroup = (age: number) => {
-    if (age >= 0 && age <= 5) return '0-5 years';
-    if (age >= 6 && age <= 14) return '6-14 years';
-    if (age >= 15 && age <= 19) return '15-19 years';
-    return 'Other';
+    if (age <= 5) return 'Under 5';
+    if (age <= 10) return '6-10';
+    if (age <= 14) return '10-14';
+    return '15-19';
   };
 
-  // Mock RPC data
-  const rpcRecords = [
-    {
-      id: '1',
-      studentName: 'Juan Dela Cruz',
-      birthdate: '2016-03-15',
-      gender: 'Male',
-      school: 'Bagong Tanyag Integrated School',
-      grade: 'Grade 4',
-      visit1Date: '2026-01-15',
-      visit1Status: 'Completed',
-      visit2Date: '2026-03-20',
-      visit2Status: 'Completed',
-      daysUntilDue: 0,
-      status: 'complete',
-    },
-    {
-      id: '2',
-      studentName: 'Maria Santos',
-      birthdate: '2017-07-22',
-      gender: 'Female',
-      school: 'Bagong Tanyag Elementary School Annex A',
-      grade: 'Grade 3',
-      visit1Date: '2026-02-10',
-      visit1Status: 'Completed',
-      visit2Date: null,
-      visit2Status: 'Pending',
-      daysUntilDue: 45,
-      status: 'pending',
-    },
-    {
-      id: '3',
-      studentName: 'Pedro Reyes',
-      birthdate: '2014-11-08',
-      gender: 'Male',
-      school: 'South Daang Hari Elementary School Main',
-      grade: 'Grade 5',
-      visit1Date: '2025-08-15',
-      visit1Status: 'Completed',
-      visit2Date: null,
-      visit2Status: 'Pending',
-      daysUntilDue: -30,
-      status: 'overdue',
-    },
-    {
-      id: '4',
-      studentName: 'Ana Garcia',
-      birthdate: '2018-05-12',
-      gender: 'Female',
-      school: 'Bagong Tanyag Integrated School',
-      grade: 'Grade 2',
-      visit1Date: null,
-      visit1Status: 'Pending',
-      visit2Date: null,
-      visit2Status: 'Pending',
-      daysUntilDue: 0,
-      status: 'not-started',
-    },
-    {
-      id: '5',
-      studentName: 'Carlos Mendoza',
-      birthdate: '2013-09-30',
-      gender: 'Male',
-      school: 'Bagong Tanyag Elementary School Annex A',
-      grade: 'Grade 6',
-      visit1Date: '2026-03-01',
-      visit1Status: 'Completed',
-      visit2Date: null,
-      visit2Status: 'Pending',
-      daysUntilDue: 90,
-      status: 'pending',
-    },
-  ];
+  const filtered = useMemo(() => rpcRecords.filter(r => {
+    const age = calculateAge(r.birthdate);
+    if (schoolFilter !== 'all' && r.school !== schoolFilter) return false;
+    if (gradeFilter !== 'all' && r.grade !== gradeFilter) return false;
+    if (genderFilter !== 'all' && r.gender !== genderFilter) return false;
+    if (ageGroupFilter !== 'all' && getAgeGroup(age) !== ageGroupFilter) return false;
+    if (statusFilter !== 'all' && r.status !== statusFilter) return false;
+    if (searchTerm && !r.studentName.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    return true;
+  }), [schoolFilter, gradeFilter, genderFilter, ageGroupFilter, statusFilter, searchTerm]);
 
-  // Calculate KPI metrics
-  const totalEnrolled = 120;
+  const hasActiveFilters = [schoolFilter, gradeFilter, genderFilter, ageGroupFilter, statusFilter].some(f => f !== 'all') || searchTerm !== '';
+  const clearFilters = () => { setSchoolFilter('all'); setGradeFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); setStatusFilter('all'); setSearchTerm(''); };
+
   const visit1Completed = rpcRecords.filter(r => r.visit1Status === 'Completed').length;
   const visit2Completed = rpcRecords.filter(r => r.visit2Status === 'Completed').length;
-  const fluorideDueThisMonth = rpcRecords.filter(r => r.daysUntilDue > 0 && r.daysUntilDue <= 30).length;
+  const overdue = rpcRecords.filter(r => r.status === 'overdue').length;
 
-  // Chart data - RPC completion by school
-  const chartData = [
-    {
-      school: 'Bagong Tanyag Integrated',
-      visit1: 35,
-      bothVisits: 28,
-      overdue: 5,
-    },
-    {
-      school: 'Annex A',
-      visit1: 30,
-      bothVisits: 22,
-      overdue: 8,
-    },
-    {
-      school: 'South Daang Hari',
-      visit1: 25,
-      bothVisits: 18,
-      overdue: 3,
-    },
-  ];
+  const chartData = SCHOOLS.map(s => {
+    const recs = rpcRecords.filter(r => r.school === s);
+    const name = s.includes('Integrated') ? 'Integrated' : s.includes('Annex') ? 'Annex A' : 'S. Daang Hari';
+    return { name, complete: recs.filter(r=>r.status==='complete').length, pending: recs.filter(r=>r.status==='pending').length, overdue: recs.filter(r=>r.status==='overdue').length, notStarted: recs.filter(r=>r.status==='not-started').length };
+  });
 
-  const getRowColorClass = (status: string) => {
-    switch (status) {
-      case 'complete':
-        return 'bg-green-50 hover:bg-green-100';
-      case 'pending':
-        return 'bg-yellow-50 hover:bg-yellow-100';
-      case 'overdue':
-        return 'bg-red-50 hover:bg-red-100';
-      default:
-        return 'bg-gray-50 hover:bg-gray-100';
-    }
+  const statusConfig: Record<string,{label:string;color:string;bg:string}> = {
+    complete:     { label:'Complete',     color:'text-green-700', bg:'bg-green-100' },
+    pending:      { label:'Visit 1 Only', color:'text-blue-700',  bg:'bg-blue-100'  },
+    overdue:      { label:'Overdue',      color:'text-red-700',   bg:'bg-red-100'   },
+    'not-started':{ label:'Not Started',  color:'text-gray-600',  bg:'bg-gray-100'  },
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'Completed':
-        return <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">Completed</span>;
-      case 'Pending':
-        return <span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">Pending</span>;
-      case 'Missed':
-        return <span className="px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">Missed</span>;
-      default:
-        return null;
-    }
-  };
-
-  const handleRecordVisit = (student: any, visit: 1 | 2) => {
-    setSelectedStudent(student);
-    setVisitNumber(visit);
-    setShowRecordModal(true);
-  };
-
-  const handleSubmitVisit = () => {
-    alert(`RPC Visit ${visitNumber} for ${selectedStudent?.studentName} has been recorded successfully!`);
-    setShowRecordModal(false);
-    setSelectedStudent(null);
-  };
-
-  // Navigation functions
-  const navigateToSchool = (schoolName: string) => {
-    setSelectedSchool(schoolName);
-    setSelectedGrade(null);
-    setSelectedSection(null);
-    setCurrentLevel('grades');
-    setSearchTerm('');
-    setAgeGroupFilter('all');
-    setGenderFilter('all');
-    setStatusFilter('all');
-  };
-
-  const navigateToGrade = (grade: string) => {
-    setSelectedGrade(grade);
-    setSelectedSection(null);
-    setCurrentLevel('sections');
-  };
-
-  const navigateToSection = (section: string) => {
-    setSelectedSection(section);
-    setCurrentLevel('students');
-  };
-
-  const navigateToSchools = () => {
-    setSelectedSchool(null);
-    setSelectedGrade(null);
-    setSelectedSection(null);
-    setCurrentLevel('schools');
-    setSearchTerm('');
-    setAgeGroupFilter('all');
-    setGenderFilter('all');
-    setStatusFilter('all');
-  };
-
-  // Build breadcrumb trail
-  const getBreadcrumbs = (): BreadcrumbItem[] => {
-    const breadcrumbs: BreadcrumbItem[] = [
-      { label: 'Schools', onClick: navigateToSchools }
-    ];
-
-    if (selectedSchool) {
-      breadcrumbs.push({
-        label: selectedSchool.replace('Bagong Tanyag Elementary School ', 'Bagong Tanyag '),
-        onClick: () => {
-          setSelectedSchool(selectedSchool);
-          setSelectedGrade(null);
-          setSelectedSection(null);
-          setCurrentLevel('grades');
-        }
-      });
-    }
-
-    if (selectedGrade) {
-      breadcrumbs.push({
-        label: selectedGrade,
-        onClick: () => {
-          setSelectedGrade(selectedGrade);
-          setSelectedSection(null);
-          setCurrentLevel('sections');
-        }
-      });
-    }
-
-    if (selectedSection) {
-      breadcrumbs.push({
-        label: `Section ${selectedSection}`,
-        onClick: () => {}
-      });
-    }
-
-    return breadcrumbs;
-  };
-
-  // Get students for current section
-  const getStudentsForSection = () => {
-    if (!selectedSchool || !selectedGrade || !selectedSection) return [];
-
-    return rpcRecords.filter(s =>
-      s.school === selectedSchool &&
-      s.grade === selectedGrade &&
-      s.grade.includes(selectedSection) // Simplified - in real app would have section field
-    );
-  };
-
-  // Filter students at Level 4
-  const filteredRecords = currentLevel === 'students'
-    ? getStudentsForSection().filter(record => {
-        const age = calculateAge(record.birthdate);
-        const ageGroup = getAgeGroup(age);
-
-        const matchesSearch = record.studentName.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesAgeGroup = ageGroupFilter === 'all' || ageGroup === ageGroupFilter;
-        const matchesGender = genderFilter === 'all' || record.gender === genderFilter;
-        const matchesStatus = statusFilter === 'all' || record.status === statusFilter;
-
-        return matchesSearch && matchesAgeGroup && matchesGender && matchesStatus;
-      })
-    : rpcRecords;
-
-  // Calculate school RPC stats
-  const getSchoolRPCStats = () => {
-    const schoolData = [
-      { name: 'Bagong Tanyag Integrated School', shortName: 'Bagong Tanyag Integrated' },
-      { name: 'Bagong Tanyag Elementary School Annex A', shortName: 'Bagong Tanyag Annex A' },
-      { name: 'South Daang Hari Elementary School Main', shortName: 'South Daang Hari Main' },
-    ];
-
-    return schoolData.map(school => {
-      const schoolRecords = rpcRecords.filter(r => r.school === school.name);
-      const visit1Complete = schoolRecords.filter(r => r.visit1Status === 'Completed').length;
-      const visit2Complete = schoolRecords.filter(r => r.visit2Status === 'Completed').length;
-      const overdue = schoolRecords.filter(r => r.status === 'overdue').length;
-      const total = schoolRecords.length;
-
-      return {
-        ...school,
-        visit1Percent: total > 0 ? Math.round((visit1Complete / total) * 100) : 0,
-        visit2Percent: total > 0 ? Math.round((visit2Complete / total) * 100) : 0,
-        overdueCount: overdue,
-        totalStudents: total,
-      };
-    });
-  };
-
-  // Get grades for selected school
-  const getGradesForSchool = (schoolName: string) => {
-    const grades = ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6'];
-    return grades.map(grade => {
-      const studentCount = rpcRecords.filter(s => s.school === schoolName && s.grade === grade).length;
-      return { grade, studentCount };
-    }).filter(g => g.studentCount > 0);
-  };
-
-  // Get sections for selected school and grade (simplified)
-  const getSectionsForGrade = (schoolName: string, grade: string) => {
-    const sections = ['Sampaguita', 'Rose', 'Jasmine'];
-    return sections.map((section, idx) => ({
-      section,
-      studentCount: Math.floor(Math.random() * 20) + 10 // Mock count
-    }));
-  };
-
-  const breadcrumbs = getBreadcrumbs();
-  const schoolStats = getSchoolRPCStats();
+  const FS = ({ value, onChange, opts, label }: any) => (
+    <select value={value} onChange={e=>onChange(e.target.value)} className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <option value="all">{label}</option>
+      {opts.map((o:any) => <option key={o.v} value={o.v}>{o.l}</option>)}
+    </select>
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Breadcrumb */}
-      {breadcrumbs.length > 1 && (
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Home className="w-4 h-4" />
-          {breadcrumbs.map((crumb, index) => {
-            const isGrade = crumb.label.startsWith('Grade') || crumb.label === 'Kinder';
-            const gradeColor = isGrade ? getGradeColor(crumb.label) : null;
-
-            return (
-              <div key={index} className="flex items-center gap-2">
-                {index > 0 && <ChevronRight className="w-4 h-4 text-gray-400" />}
-                {index === breadcrumbs.length - 1 ? (
-                  <span
-                    className="font-medium"
-                    style={gradeColor ? { color: gradeColor.solid } : { color: '#111827' }}
-                  >
-                    {crumb.label}
-                  </span>
-                ) : (
-                  <button
-                    onClick={crumb.onClick}
-                    className="hover:underline"
-                    style={gradeColor ? { color: gradeColor.solid } : {}}
-                  >
-                    {crumb.label}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Header */}
+    <div className="space-y-4">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">RPC Records</h1>
-        <p className="text-gray-600 mt-1">Routine Preventive Care - Fluoride application tracking</p>
+        <h1 className="text-2xl font-bold text-gray-900">RPC Records</h1>
+        <p className="text-sm text-gray-500">Routine Preventive Care — Fluoride application tracking (4–6 month interval)</p>
       </div>
 
-      {/* LEVEL 1: SCHOOL CARDS */}
-      {currentLevel === 'schools' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {schoolStats.map((school) => (
-            <button
-              key={school.name}
-              onClick={() => navigateToSchool(school.name)}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-[#1E40AF] transition-all text-left group"
-            >
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-[#06B6D4] bg-opacity-10 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-opacity-20 transition-colors">
-                  <SchoolIcon className="w-6 h-6 text-[#06B6D4]" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 text-lg mb-3">{school.shortName}</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Visit 1 Complete</span>
-                      <span className="text-lg font-bold text-green-600">{school.visit1Percent}%</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Visit 2 Complete</span>
-                      <span className="text-lg font-bold text-blue-600">{school.visit2Percent}%</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Overdue</span>
-                      <span className="text-lg font-bold text-red-600">{school.overdueCount}</span>
-                    </div>
-                    <div className="pt-2 border-t border-gray-200">
-                      <span className="text-xs text-gray-500">{school.totalStudents} students tracked</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </button>
-          ))}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label:'Total Enrolled',         value: rpcRecords.length,    color:'text-blue-600',  bg:'bg-blue-50',  border:'border-blue-200'  },
+          { label:'Visit 1 Completed',      value: `${visit1Completed} (${Math.round(visit1Completed/rpcRecords.length*100)}%)`, color:'text-cyan-600', bg:'bg-cyan-50', border:'border-cyan-200' },
+          { label:'Both Visits Complete',   value: `${visit2Completed} (${Math.round(visit2Completed/rpcRecords.length*100)}%)`, color:'text-green-600', bg:'bg-green-50', border:'border-green-200' },
+          { label:'Overdue',                value: overdue,               color:'text-red-600',   bg:'bg-red-50',   border:'border-red-200'   },
+        ].map((c,i) => (
+          <div key={i} className={`${c.bg} border ${c.border} rounded-xl p-4`}>
+            <p className="text-sm text-gray-600">{c.label}</p>
+            <p className={`text-2xl font-bold ${c.color} mt-1`}>{c.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <h2 className="text-sm font-semibold text-gray-700 mb-3">RPC Completion by School</h2>
+        <ResponsiveContainer width="100%" height={170}>
+          <BarChart data={chartData} margin={{top:0,right:10,left:-20,bottom:0}}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" tick={{fontSize:11}} />
+            <YAxis tick={{fontSize:11}} />
+            <Tooltip />
+            <Legend wrapperStyle={{fontSize:11}} />
+            <Bar dataKey="complete"   name="Complete"     fill="#16A34A" stackId="a" />
+            <Bar dataKey="pending"    name="Visit 1 Only" fill="#2563EB" stackId="a" />
+            <Bar dataKey="overdue"    name="Overdue"      fill="#E31E24" stackId="a" />
+            <Bar dataKey="notStarted" name="Not Started"  fill="#9CA3AF" stackId="a" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input type="text" placeholder="Search student..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
-      )}
-
-      {/* LEVEL 2: GRADE LIST */}
-      {currentLevel === 'grades' && selectedSchool && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Select Grade Level</h2>
-          </div>
-          <div className="divide-y divide-gray-200">
-            {getGradesForSchool(selectedSchool).map(({ grade, studentCount }) => {
-              const gradeColor = getGradeColor(grade);
-              return (
-                <button
-                  key={grade}
-                  onClick={() => navigateToGrade(grade)}
-                  className="w-full flex items-center justify-between px-6 py-4 transition-colors group border-l-4"
-                  style={{
-                    borderLeftColor: gradeColor.solid,
-                    backgroundColor: gradeColor.light
-                  }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center group-hover:opacity-80 transition-opacity"
-                      style={{ backgroundColor: gradeColor.solid + '20' }}
-                    >
-                      <GraduationCap className="w-5 h-5" style={{ color: gradeColor.solid }} />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="font-medium" style={{ color: gradeColor.solid }}>{grade}</h3>
-                      <p className="text-sm text-gray-700">{studentCount} students</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5" style={{ color: gradeColor.solid }} />
-                </button>
-              );
-            })}
-          </div>
+        <div className="flex flex-wrap gap-2">
+          <FS value={schoolFilter} onChange={setSchoolFilter} label="All Schools" opts={SCHOOLS.map(s=>({v:s,l:s.replace(' Elementary School','').replace(' Integrated School',' Integrated').replace(' Main','')}))} />
+          <FS value={gradeFilter} onChange={setGradeFilter} label="All Grades" opts={GRADES.map(g=>({v:g,l:g}))} />
+          <FS value={genderFilter} onChange={setGenderFilter} label="All Genders" opts={[{v:'Male',l:'Male'},{v:'Female',l:'Female'}]} />
+          <FS value={ageGroupFilter} onChange={setAgeGroupFilter} label="All Age Groups" opts={[{v:'Under 5',l:'Under 5'},{v:'6-10',l:'6–10'},{v:'10-14',l:'10–14'},{v:'15-19',l:'15–19'}]} />
+          <FS value={statusFilter} onChange={setStatusFilter} label="All Statuses" opts={[{v:'complete',l:'Both Complete'},{v:'pending',l:'Visit 1 Only'},{v:'overdue',l:'Overdue'},{v:'not-started',l:'Not Started'}]} />
+          {hasActiveFilters && <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50"><X className="w-3 h-3"/>Clear All</button>}
         </div>
-      )}
+      </div>
 
-      {/* LEVEL 3: SECTION LIST */}
-      {currentLevel === 'sections' && selectedSchool && selectedGrade && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Select Section</h2>
-          </div>
-          <div className="divide-y divide-gray-200">
-            {getSectionsForGrade(selectedSchool, selectedGrade).map(({ section, studentCount }) => {
-              const gradeColor = getGradeColor(selectedGrade || '');
-              return (
-                <button
-                  key={section}
-                  onClick={() => navigateToSection(section)}
-                  className="w-full flex items-center justify-between px-6 py-4 transition-colors group border-l-4"
-                  style={{
-                    borderLeftColor: gradeColor.solid,
-                    backgroundColor: gradeColor.light + '80'
-                  }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center group-hover:opacity-80 transition-opacity"
-                      style={{ backgroundColor: gradeColor.solid + '20' }}
-                    >
-                      <UsersIcon className="w-5 h-5" style={{ color: gradeColor.solid }} />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="font-medium text-gray-900">Section {section}</h3>
-                      <p className="text-sm text-gray-700">{studentCount} students</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5" style={{ color: gradeColor.solid }} />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* LEVEL 4: STUDENT LIST - Keep existing KPI cards and table */}
-      {currentLevel === 'students' && selectedSchool && selectedGrade && selectedSection && (
-        <>
-          {/* KPI Cards - showing only for selected section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Total Students</span>
-                <CheckCircle className="w-5 h-5 text-blue-600" />
-              </div>
-              <p className="text-3xl font-bold text-gray-900">{filteredRecords.length}</p>
-            </div>
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Visit 1 Complete</span>
-                <CheckCircle className="w-5 h-5 text-green-600" />
-              </div>
-              <p className="text-3xl font-bold text-gray-900">
-                {filteredRecords.filter(r => r.visit1Status === 'Completed').length}
-              </p>
-            </div>
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Visit 2 Complete</span>
-                <CheckCircle className="w-5 h-5 text-cyan-600" />
-              </div>
-              <p className="text-3xl font-bold text-gray-900">
-                {filteredRecords.filter(r => r.visit2Status === 'Completed').length}
-              </p>
-            </div>
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Overdue</span>
-                <AlertCircle className="w-5 h-5 text-red-600" />
-              </div>
-              <p className="text-3xl font-bold text-gray-900">
-                {filteredRecords.filter(r => r.status === 'overdue').length}
-              </p>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Filter Students</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Age Group</label>
-                <select
-                  value={ageGroupFilter}
-                  onChange={(e) => setAgeGroupFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF] appearance-none bg-white text-sm"
-                >
-                  <option value="all">All Ages</option>
-                  <option value="0-5 years">0-5 years</option>
-                  <option value="6-14 years">6-14 years</option>
-                  <option value="15-19 years">15-19 years</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Gender</label>
-                <select
-                  value={genderFilter}
-                  onChange={(e) => setGenderFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF] appearance-none bg-white text-sm"
-                >
-                  <option value="all">Both</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">RPC Status</label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF] appearance-none bg-white text-sm"
-                >
-                  <option value="all">All Status</option>
-                  <option value="complete">Complete</option>
-                  <option value="pending">Pending</option>
-                  <option value="overdue">Overdue</option>
-                  <option value="not-started">Not Started</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Search</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Name..."
-                    className="pl-9 pr-3 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF] text-sm"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* RPC Status Table */}
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Visit 1</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Visit 2</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days Until Due</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                {['Student','School','Grade / Section','Visit 1','Visit 2','Status','Days Until Due','Actions'].map(h => (
+                  <th key={h} className="text-left px-4 py-3 font-semibold text-gray-700">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filtered.length === 0 ? (
+                <tr><td colSpan={8} className="text-center py-12 text-gray-400">No records match the selected filters.</td></tr>
+              ) : filtered.map(r => {
+                const sc = statusConfig[r.status] || statusConfig['not-started'];
+                const gc = getGradeColor(r.grade);
+                return (
+                  <tr key={r.id} className={`hover:bg-gray-50 transition-colors ${r.status==='overdue'?'bg-red-50':''}`}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-semibold">{r.studentName.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+                        <span className="font-medium text-gray-900">{r.studentName}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 text-xs max-w-[130px] truncate">{r.school}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold" style={{backgroundColor:gc.light,color:gc.solid}}>{r.grade}</span>
+                      <span className="text-gray-500 text-xs ml-1">{r.section}</span>
+                    </td>
+                    <td className="px-4 py-3">{r.visit1Date ? <span className="text-green-700 text-xs flex items-center gap-1"><CheckCircle className="w-3 h-3"/>{r.visit1Date}</span> : <span className="text-gray-400 text-xs">Not done</span>}</td>
+                    <td className="px-4 py-3">{r.visit2Date ? <span className="text-green-700 text-xs flex items-center gap-1"><CheckCircle className="w-3 h-3"/>{r.visit2Date}</span> : <span className="text-gray-400 text-xs">Not done</span>}</td>
+                    <td className="px-4 py-3"><span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${sc.bg} ${sc.color}`}>{sc.label}</span></td>
+                    <td className="px-4 py-3 text-sm">{r.status==='overdue'?<span className="text-red-600 font-semibold">{Math.abs(r.daysUntilDue)}d overdue</span>:r.daysUntilDue>0?<span className="text-blue-600">{r.daysUntilDue}d</span>:<span className="text-gray-400">—</span>}</td>
+                    <td className="px-4 py-3"><button onClick={()=>{setSelectedStudent(r);setVisitNumber(r.visit1Status==='Completed'?2:1);setShowRecordModal(true);}} className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">Record Visit</button></td>
                   </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredRecords.map((record) => {
-                    const age = calculateAge(record.birthdate);
-                    const ageGroup = getAgeGroup(age);
-                    const gradeColor = getGradeColor(record.grade);
-                    return (
-                      <tr key={record.id} className={getRowColorClass(record.status)}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="font-medium text-gray-900">{record.studentName}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className="px-2 py-1 rounded-full text-xs font-medium"
-                            style={{
-                              backgroundColor: gradeColor.light,
-                              color: gradeColor.solid
-                            }}
-                          >
-                            {record.grade}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                          {age} ({ageGroup})
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                          {record.gender}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm">
-                            {record.visit1Date && <div className="text-gray-900">{record.visit1Date}</div>}
-                            {getStatusBadge(record.visit1Status)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm">
-                            {record.visit2Date && <div className="text-gray-900">{record.visit2Date}</div>}
-                            {getStatusBadge(record.visit2Status)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {record.daysUntilDue > 0 ? (
-                            <span className="text-sm text-yellow-600">{record.daysUntilDue} days</span>
-                          ) : record.daysUntilDue < 0 ? (
-                            <span className="text-sm text-red-600 font-medium">Overdue by {Math.abs(record.daysUntilDue)} days</span>
-                          ) : (
-                            <span className="text-sm text-gray-400">-</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex items-center gap-2">
-                            {record.visit1Status === 'Pending' && (
-                              <button
-                                onClick={() => handleRecordVisit(record, 1)}
-                                className="text-[#06B6D4] hover:text-[#0891B2] font-medium"
-                              >
-                                Record Visit 1
-                              </button>
-                            )}
-                            {record.visit1Status === 'Completed' && record.visit2Status === 'Pending' && (
-                              <button
-                                onClick={() => handleRecordVisit(record, 2)}
-                                className="text-[#06B6D4] hover:text-[#0891B2] font-medium"
-                              >
-                                Record Visit 2
-                              </button>
-                            )}
-                            <Link to={`/patients/${record.id}`} className="text-gray-400 hover:text-gray-600">
-                              <Eye className="w-4 h-4" />
-                            </Link>
-                          </div>
-                        </td>
-                      </tr>
                 );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </>
-        )}
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="px-4 py-3 border-t border-gray-100 text-sm text-gray-500">Showing {filtered.length} of {rpcRecords.length} records</div>
+      </div>
 
-      {/* Record Visit Modal */}
       {showRecordModal && selectedStudent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-lg">
-            <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Record RPC Visit {visitNumber}</h2>
-              <button
-                onClick={() => setShowRecordModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-5 h-5" />
-              </button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-lg font-bold text-gray-900">Record RPC Visit</h2>
+              <button onClick={()=>setShowRecordModal(false)}><X className="w-5 h-5 text-gray-400"/></button>
             </div>
-            
             <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Student</label>
-                <input
-                  type="text"
-                  value={selectedStudent.studentName}
-                  disabled
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                />
+              <div className="bg-blue-50 rounded-lg p-3">
+                <p className="font-semibold text-blue-900">{selectedStudent.studentName}</p>
+                <p className="text-sm text-blue-700">{selectedStudent.grade} — {selectedStudent.section}</p>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Visit Number</label>
-                <input
-                  type="text"
-                  value={`Visit ${visitNumber}`}
-                  disabled
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                />
+                <div className="flex gap-3">
+                  {([1,2] as (1|2)[]).map(n => (
+                    <button key={n} onClick={()=>setVisitNumber(n)}
+                      disabled={n===2 && selectedStudent.visit1Status!=='Completed'}
+                      className={`flex-1 py-2 rounded-lg border text-sm font-medium ${visitNumber===n?'bg-blue-600 text-white border-blue-600':n===2&&selectedStudent.visit1Status!=='Completed'?'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200':'border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                      Visit {n}
+                    </button>
+                  ))}
+                </div>
+                {visitNumber===2 && <p className="text-xs text-gray-500 mt-1">Must be 4–6 months after Visit 1</p>}
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Visit Date *</label>
-                <input
-                  type="date"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Treatment Type *</label>
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF]">
-                  <option value="">Select treatment</option>
-                  <option value="Oral Prophylaxis">Oral Prophylaxis</option>
-                  <option value="Fluoride Varnish">Fluoride Varnish</option>
-                  <option value="OHI">Oral Health Instruction (OHI)</option>
-                  <option value="Screening">Screening</option>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Visit Date *</label><input type="date" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Treatment Type</label>
+                <select className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option>Fluoride Varnish Application</option><option>Oral Prophylaxis</option><option>Oral Health Instructions</option><option>Oral Screening</option>
                 </select>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Completion Status *</label>
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF]">
-                  <option value="Completed">Completed</option>
-                  <option value="Missed">Missed</option>
-                  <option value="Pending">Pending</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Next Schedule Date</label>
-                <input
-                  type="date"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF]"
-                />
-                <p className="text-xs text-gray-500 mt-1">Recommended: 4-6 months after Visit 1</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
-                <textarea
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF]"
-                  placeholder="Add any additional notes..."
-                />
-              </div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Notes</label><textarea rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
             </div>
-
-            <div className="border-t border-gray-200 px-6 py-4 flex gap-3">
-              <button
-                onClick={handleSubmitVisit}
-                className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-[#1E3A8A] transition-colors"
-              >
-                <CheckCircle className="w-4 h-4" />
-                Record Visit
-              </button>
-              <button
-                onClick={() => setShowRecordModal(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
+            <div className="flex gap-3 p-6 border-t">
+              <button onClick={()=>setShowRecordModal(false)} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium">Cancel</button>
+              <button onClick={()=>{alert(`Visit ${visitNumber} recorded for ${selectedStudent.studentName}`);setShowRecordModal(false);}} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Save Visit</button>
             </div>
           </div>
         </div>
