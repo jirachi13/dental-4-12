@@ -2,23 +2,19 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, Stethoscope } from 'lucide-react';
-import logoImage from 'figma:asset/e814ddf273032a96d26231b3f2e66cb992b86fda.png';
+// Logo placeholder — replace with actual Barangay Tanyag logo file
+const logoImage = null;
 
 export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const success = login(email, password);
-    if (success) {
-      navigate('/');
-    } else {
-      setError('Invalid email or password. Please try again.');
-    }
+    login(email, password);
+    navigate('/');
   };
 
   const quickLogins = [
@@ -35,7 +31,13 @@ export const Login = () => {
         {/* Logo and Title */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <img src={logoImage} alt="Barangay Tanyag" className="w-24 h-24 object-contain" />
+            {logoImage ? (
+              <img src={logoImage} alt="Barangay Tanyag" className="w-24 h-24 object-contain" />
+            ) : (
+              <div className="w-24 h-24 bg-[#E31E24] rounded-full flex items-center justify-center mx-auto">
+                <span className="text-white font-bold text-2xl">BT</span>
+              </div>
+            )}
           </div>
           <h1 className="text-4xl font-bold text-[#1E40AF] mb-2">Floral</h1>
           <p className="text-gray-600">School Dental Clinic Management System</p>
@@ -94,10 +96,6 @@ export const Login = () => {
             >
               Sign In
             </button>
-
-            {error && (
-              <p className="text-sm text-red-600 text-center">{error}</p>
-            )}
           </form>
 
           {/* Quick Login Demo Buttons */}
@@ -110,7 +108,6 @@ export const Login = () => {
                   onClick={() => {
                     setEmail(account.email);
                     setPassword('demo');
-                    setError('');
                   }}
                   className="text-xs px-3 py-2 bg-blue-50 hover:bg-blue-100 text-[#1E40AF] rounded border border-blue-200 transition-colors"
                 >

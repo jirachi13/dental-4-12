@@ -9,12 +9,11 @@ import {
   LogOut,
   Stethoscope,
   Shield,
-  Clipboard,
-  FileBarChart,
-  UserCog
+  Clipboard
 } from 'lucide-react';
 import { useEffect } from 'react';
-import logoImage from 'figma:asset/e814ddf273032a96d26231b3f2e66cb992b86fda.png';
+// Logo placeholder — replace with actual Barangay Tanyag logo file
+const logoImage = null;
 
 export const Root = () => {
   const { user, logout } = useAuth();
@@ -84,20 +83,6 @@ export const Root = () => {
     },
     {
       id: 8,
-      path: '/reports',
-      label: 'Consolidated Reports',
-      icon: FileBarChart,
-      roles: ['dentist', 'school_admin', 'barangay_health']
-    },
-    {
-      id: 9,
-      path: '/accounts',
-      label: 'User Management',
-      icon: UserCog,
-      roles: ['system_admin']
-    },
-    {
-      id: 10,
       path: '/audit',
       label: 'Audit Trail',
       icon: ClipboardList,
@@ -146,7 +131,13 @@ export const Root = () => {
         {/* Logo Section */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <img src={logoImage} alt="Barangay Tanyag" className="w-8 h-8 md:w-10 md:h-10 object-contain flex-shrink-0" />
+            {logoImage ? (
+              <img src={logoImage} alt="Barangay Tanyag" className="w-8 h-8 md:w-10 md:h-10 object-contain flex-shrink-0" />
+            ) : (
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-[#E31E24] rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold text-xs">BT</span>
+              </div>
+            )}
             <span className="hidden md:block text-xl font-bold text-[#1E40AF]">FLORAL</span>
           </div>
         </div>
