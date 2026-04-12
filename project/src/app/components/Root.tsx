@@ -9,7 +9,9 @@ import {
   LogOut,
   Stethoscope,
   Shield,
-  Clipboard
+  Clipboard,
+  FileBarChart,
+  UserCog
 } from 'lucide-react';
 import { useEffect } from 'react';
 import logoImage from 'figma:asset/e814ddf273032a96d26231b3f2e66cb992b86fda.png';
@@ -82,6 +84,20 @@ export const Root = () => {
     },
     {
       id: 8,
+      path: '/reports',
+      label: 'Consolidated Reports',
+      icon: FileBarChart,
+      roles: ['dentist', 'school_admin', 'barangay_health']
+    },
+    {
+      id: 9,
+      path: '/accounts',
+      label: 'User Management',
+      icon: UserCog,
+      roles: ['system_admin']
+    },
+    {
+      id: 10,
       path: '/audit',
       label: 'Audit Trail',
       icon: ClipboardList,
