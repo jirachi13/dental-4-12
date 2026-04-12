@@ -325,7 +325,7 @@ export const Dashboard = () => {
             value="15"
             color="text-red-600"
             trend="this week"
-            linkTo="/follow-up"
+            linkTo="/patients"
           />
           <StatCard
             icon={Shield}

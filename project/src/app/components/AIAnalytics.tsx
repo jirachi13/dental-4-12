@@ -1,8 +1,27 @@
-import { useState } from 'react';
-import { AlertCircle, TrendingUp, CheckCircle, Filter, Eye, ThumbsUp, ThumbsDown, Brain, Activity, BarChart3, Info } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { AlertCircle, TrendingUp, CheckCircle, Filter, Eye, ThumbsUp, ThumbsDown, Brain, Activity, BarChart3, Info, School as SchoolIcon, List } from 'lucide-react';
+import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
+const SCHOOLS = [
+  'Bagong Tanyag Integrated School',
+  'Bagong Tanyag Elementary School Annex A',
+  'South Daang Hari Elementary School Main',
+];
+
+const ViewToggle = ({ mode, onChange }: { mode: 'school' | 'list'; onChange: (m: 'school' | 'list') => void }) => (
+  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+    <button onClick={() => onChange('school')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'school' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+      <SchoolIcon className="w-4 h-4" /> School View
+    </button>
+    <button onClick={() => onChange('list')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'list' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+      <List className="w-4 h-4" /> List View
+    </button>
+  </div>
+);
+
 export const AIAnalytics = () => {
+  const [viewMode, setViewMode] = useState<'school' | 'list'>('school');
   const [schoolFilter, setSchoolFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
@@ -224,13 +243,74 @@ export const AIAnalytics = () => {
     { name: 'Pending', value: students.filter(s => !s.validated).length, color: '#E31E24', id: 'pending' },
   ];
 
+  // School view data
+  const schoolRiskSummary = SCHOOLS.map(school => {
+    const schoolStudents = students.filter(s => s.school === school);
+    const high = schoolStudents.filter(s => s.riskLevel === 'High').length;
+    const medium = schoolStudents.filter(s => s.riskLevel === 'Medium').length;
+    const low = schoolStudents.filter(s => s.riskLevel === 'Low').length;
+    const pending = schoolStudents.filter(s => !s.validated).length;
+    return { name: school, total: schoolStudents.length, high, medium, low, pending };
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">AI-Powered Risk Analytics</h1>
-        <p className="text-gray-600 mt-1">Machine learning-based oral health risk assessment with dentist validation workflow</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">AI-Powered Risk Analytics</h1>
+          <p className="text-gray-600 mt-1">Machine learning-based oral health risk assessment with dentist validation workflow</p>
+        </div>
+        <ViewToggle mode={viewMode} onChange={setViewMode} />
       </div>
+
+      {/* School View */}
+      {viewMode === 'school' && (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">Select a school to view detailed risk analytics, or switch to List View to see all students.</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {schoolRiskSummary.map(s => {
+              const sc = getSchoolColor(s.name);
+              return (
+                <div key={s.name} style={{ borderColor: sc.border }} className="bg-white rounded-xl border-2 p-5 hover:shadow-md transition-all cursor-pointer"
+                  onClick={() => { setSchoolFilter(s.name); setViewMode('list'); }}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div style={{ backgroundColor: sc.light }} className="w-10 h-10 rounded-lg flex items-center justify-center">
+                      <Brain style={{ color: sc.solid }} className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div style={{ color: sc.text }} className="font-bold text-sm">{getSchoolShortName(s.name)}</div>
+                      <div className="text-xs text-gray-500">{s.total} students assessed</div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center mb-3">
+                    <div className="bg-red-50 rounded-lg p-2">
+                      <div className="text-lg font-bold text-red-600">{s.high}</div>
+                      <div className="text-xs text-gray-500">High</div>
+                    </div>
+                    <div className="bg-yellow-50 rounded-lg p-2">
+                      <div className="text-lg font-bold text-yellow-600">{s.medium}</div>
+                      <div className="text-xs text-gray-500">Medium</div>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-2">
+                      <div className="text-lg font-bold text-green-600">{s.low}</div>
+                      <div className="text-xs text-gray-500">Low</div>
+                    </div>
+                  </div>
+                  {s.pending > 0 && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-yellow-700">
+                      ⚠ {s.pending} predictions pending validation
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* List View — existing analytics content */}
+      {viewMode === 'list' && <div className="space-y-6">
 
       {/* AI Model Info Banner */}
       <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
@@ -677,6 +757,7 @@ export const AIAnalytics = () => {
           </div>
         </div>
       )}
+    </div>}
     </div>
   );
 };
