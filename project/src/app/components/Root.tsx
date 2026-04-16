@@ -119,6 +119,20 @@ export const Root = () => {
           </div>
         </div>
 
+        {/* School indicator */}
+        {selectedSchool && (
+          <button
+            onClick={handleSwitchSchool}
+            className="mx-3 my-2 hidden md:flex items-start gap-2 px-3 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors text-left w-[calc(100%-24px)]"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-medium text-blue-400 uppercase tracking-wide leading-none mb-0.5">Current School</div>
+              <div className="text-xs font-semibold text-blue-900 leading-snug truncate">{getSchoolShortName(selectedSchool)}</div>
+            </div>
+            <span className="text-[10px] text-blue-500 font-medium mt-0.5 shrink-0">Switch</span>
+          </button>
+        )}
+
         {/* Tabs */}
         <nav className="flex-1 overflow-y-auto py-2">
           {visibleTabs.map((tab) => (
