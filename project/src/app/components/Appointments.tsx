@@ -18,7 +18,7 @@ export const Appointments = () => {
   const navigate = useNavigate();
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'past' | 'calendar' | 'rotation'>('today');
+  const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'past'>('today');
 
   // Filters
   const [gradeFilter, setGradeFilter] = useState('all');
@@ -232,25 +232,69 @@ export const Appointments = () => {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit overflow-x-auto">
+      {/* ── CALENDAR (always visible) ── */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+          <span className="text-sm font-semibold text-gray-700">Dentist Rotation Schedule</span>
+          <div className="flex items-center gap-2">
+            <button onClick={prevMonth} className="p-1.5 hover:bg-gray-100 rounded-lg"><ChevronLeft className="w-4 h-4 text-gray-600"/></button>
+            <span className="text-sm font-semibold text-gray-900 min-w-[110px] text-center">{monthName}</span>
+            <button onClick={nextMonth} className="p-1.5 hover:bg-gray-100 rounded-lg"><ChevronRight className="w-4 h-4 text-gray-600"/></button>
+          </div>
+        </div>
+        <div className="grid grid-cols-7 border-b border-gray-200">
+          {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
+            <div key={d} className="text-center text-xs font-semibold text-gray-600 py-2 bg-gray-50">{d}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7">
+          {days.map((day, idx) => {
+            const dayAppts = getAppointmentsForDay(day);
+            const isToday = day && day.toISOString().split('T')[0] === TODAY;
+            return (
+              <div key={idx} className={`min-h-[80px] p-1.5 border-r border-b border-gray-100 last:border-b-0 ${!day ? 'bg-gray-50/60' : ''} ${isToday ? 'bg-teal-50' : ''}`}>
+                {day && (
+                  <>
+                    <div className={`text-xs font-medium mb-1 w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-teal-600 text-white' : 'text-gray-600'}`}>
+                      {day.getDate()}
+                    </div>
+                    {dayAppts.map(a => {
+                      const gc = getGradeColor(a.grade);
+                      return (
+                        <div key={a.id} style={{ backgroundColor: gc.light, color: gc.solid }}
+                          className="text-[10px] font-medium px-1.5 py-0.5 rounded mb-0.5 truncate">
+                          {a.time} {a.section}
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── TABS: Today / Upcoming / Past ── */}
+      <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
         {[
-          { key: 'today', label: `Today (${todayAppts.length})` },
-          { key: 'upcoming', label: `Upcoming (${upcomingAppts.length})` },
-          { key: 'past', label: `Past (${pastAppts.length})` },
-          { key: 'calendar', label: 'Calendar' },
-          { key: 'rotation', label: 'Rotation' },
+          { key: 'today',    label: `Today (${todayAppts.length})`        },
+          { key: 'upcoming', label: `Upcoming (${upcomingAppts.length})`  },
+          { key: 'past',     label: `Past (${pastAppts.length})`          },
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key as any)}
-            className={`flex-shrink-0 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.key ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.key ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
             {tab.label}
           </button>
         ))}
       </div>
 
-      {/* ── TODAY TAB ── */}
+      {/* ── TAB CONTENT ── */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+
+      {/* TODAY */}
       {activeTab === 'today' && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <>
           <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             <span className="text-sm font-semibold text-gray-900">Today — {new Date(TODAY).toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
@@ -263,12 +307,12 @@ export const Appointments = () => {
           ) : (
             todayAppts.map(a => <AppointmentCard key={a.id} a={a} showActions />)
           )}
-        </div>
+        </>
       )}
 
-      {/* ── UPCOMING TAB ── */}
+      {/* UPCOMING */}
       {activeTab === 'upcoming' && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <>
           <div className="px-4 py-3 border-b border-gray-100">
             <span className="text-sm font-semibold text-gray-900">Upcoming Appointments</span>
           </div>
@@ -290,12 +334,12 @@ export const Appointments = () => {
               </div>
             ))
           )}
-        </div>
+        </>
       )}
 
-      {/* ── PAST TAB ── */}
+      {/* PAST */}
       {activeTab === 'past' && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <>
           <div className="px-4 py-3 border-b border-gray-100">
             <span className="text-sm font-semibold text-gray-900">Past Appointments</span>
           </div>
@@ -306,131 +350,10 @@ export const Appointments = () => {
           ) : (
             pastAppts.map(a => <AppointmentCard key={a.id} a={a} showActions />)
           )}
-        </div>
+        </>
       )}
 
-      {/* ── CALENDAR TAB ── */}
-      {activeTab === 'calendar' && (
-        <div className="space-y-3">
-          {/* Filters */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-            <div className="relative">
-              <input type="text" placeholder="Search by grade, section..." value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-4 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div className="flex items-center gap-2 flex-wrap">
-                <select value={gradeFilter} onChange={e => setGradeFilter(e.target.value)}
-                  className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="all">All Grades</option>
-                  {grades.map(g => <option key={g} value={g}>{g}</option>)}
-                </select>
-                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-                  className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="all">All Statuses</option>
-                  {['Scheduled','In Progress','Completed','Missed','Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-                <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-                  className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="all">All Types</option>
-                  {['Regular Checkup','Screening','Bayanihan Mission','Fluoride Application','Extraction','Follow-up'].map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-                {(gradeFilter !== 'all' || statusFilter !== 'all' || typeFilter !== 'all' || searchTerm) && (
-                  <button onClick={() => { setGradeFilter('all'); setStatusFilter('all'); setTypeFilter('all'); setSearchTerm(''); }}
-                    className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
-                    <X className="w-3 h-3" /> Clear
-                  </button>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-lg"><ChevronLeft className="w-4 h-4"/></button>
-                <div className="flex items-center gap-1.5">
-                  <CalendarIcon className="w-4 h-4 text-gray-500"/>
-                  <span className="text-sm font-semibold text-gray-900 min-w-[140px] text-center">{monthName}</span>
-                </div>
-                <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-lg"><ChevronRight className="w-4 h-4"/></button>
-              </div>
-            </div>
-          </div>
-
-          {/* Calendar grid */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="grid grid-cols-7 border-b border-gray-200">
-              {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
-                <div key={d} className="text-center text-xs font-semibold text-gray-600 py-2 bg-gray-50">{d}</div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7">
-              {days.map((day, idx) => {
-                const dayAppts = getAppointmentsForDay(day);
-                const isToday = day && day.toISOString().split('T')[0] === TODAY;
-                return (
-                  <div key={idx} className={`min-h-[80px] p-1.5 border-r border-b border-gray-100 ${!day ? 'bg-gray-50' : ''} ${isToday ? 'bg-blue-50' : ''}`}>
-                    {day && (
-                      <>
-                        <div className={`text-xs font-medium mb-1 w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-[#1E40AF] text-white' : 'text-gray-600'}`}>
-                          {day.getDate()}
-                        </div>
-                        {dayAppts.map(a => {
-                          const gc = getGradeColor(a.grade);
-                          return (
-                            <div key={a.id} style={{ backgroundColor: gc.light, color: gc.solid }}
-                              className="text-[10px] font-medium px-1.5 py-0.5 rounded mb-0.5 truncate cursor-pointer hover:opacity-80">
-                              {a.time} {a.section}
-                            </div>
-                          );
-                        })}
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── ROTATION TAB ── */}
-      {activeTab === 'rotation' && (
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <p className="text-sm text-gray-500">Dentist rotation schedule by school</p>
-            <button onClick={() => setShowRotationModal(true)}
-              className="flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
-              <Plus className="w-4 h-4" /> Add Rotation
-            </button>
-          </div>
-          {SCHOOLS.filter(s => !selectedSchool || s === selectedSchool).map(school => {
-            const sc = getSchoolColor(school);
-            const schoolRots = rotations.filter(r => r.school === school);
-            return (
-              <div key={school} style={{ borderColor: sc.border }} className="bg-white rounded-xl border-2 overflow-hidden">
-                <div style={{ backgroundColor: sc.light }} className="px-4 py-3 flex items-center gap-2">
-                  <Stethoscope style={{ color: sc.solid }} className="w-4 h-4" />
-                  <span style={{ color: sc.text }} className="font-bold text-sm">{getSchoolShortName(school)}</span>
-                </div>
-                {schoolRots.length === 0 ? (
-                  <div className="px-4 py-4 text-sm text-gray-400">No rotation schedule set</div>
-                ) : (
-                  <div className="divide-y divide-gray-100">
-                    {schoolRots.map(r => (
-                      <div key={r.id} className="px-4 py-3 flex items-center justify-between">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{r.dentist}</div>
-                          <div className="text-xs text-gray-500 mt-0.5">{r.weekStart} → {r.weekEnd}</div>
-                          {r.notes && <div className="text-xs text-gray-400 mt-0.5">{r.notes}</div>}
-                        </div>
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Active</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      </div>{/* end tab content box */}
 
       {/* ── CREATE APPOINTMENT MODAL ── */}
       {showCreateModal && (
@@ -576,7 +499,7 @@ export const Appointments = () => {
                     setRotations(prev => [...prev, { id: `r${Date.now()}`, school: rotSchool, dentist: rotDentist, weekStart: rotWeekStart, weekEnd: rotWeekEnd, notes: rotNotes }]);
                     setRotSchool(''); setRotDentist(''); setRotWeekStart(''); setRotWeekEnd(''); setRotNotes('');
                     setShowRotationModal(false);
-                    setActiveTab('rotation');
+                    setActiveTab('today');
                   }
                 }}
                   className="flex-1 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
