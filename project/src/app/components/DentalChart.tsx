@@ -106,6 +106,18 @@ export const DentalChart = () => {
   const prevPatient = navIndex > 0 ? patientNavList[navIndex - 1] : null;
   const nextPatient = navIndex < patientNavList.length - 1 ? patientNavList[navIndex + 1] : null;
 
+  const navEntry = patientNavList.find(p => p.id === id);
+  const nameParts = navEntry ? navEntry.name.split(' ') : [mockPatient.firstName, mockPatient.lastName];
+  const resolvedPatient = {
+    ...mockPatient,
+    id: id ?? mockPatient.id,
+    firstName: nameParts[0],
+    lastName: nameParts.slice(1).join(' '),
+    name: navEntry?.name ?? mockPatient.name,
+    grade: navEntry?.grade ?? mockPatient.grade,
+    section: navEntry?.section ?? mockPatient.section,
+  };
+
   type TabKey = 'history' | 'chart' | 'appointments' | 'records' | 'treatments' | 'ai';
   const initialTab = (searchParams.get('tab') as TabKey) || 'history';
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
@@ -132,11 +144,11 @@ export const DentalChart = () => {
   const [selectedYear, setSelectedYear] = useState(0); // index into activeYears
   const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
   const [selectedTreatment, setSelectedTreatment] = useState<string | null>(null);
-  const [consentGiven, setConsentGiven] = useState(mockPatient.consentStatus === 'complete');
+  const [consentGiven, setConsentGiven] = useState(resolvedPatient.consentStatus === 'complete');
   const [dataPrivacyAck, setDataPrivacyAck] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [patientInfo, setPatientInfo] = useState({ ...mockPatient });
-  const [draftInfo, setDraftInfo] = useState({ ...mockPatient });
+  const [patientInfo, setPatientInfo] = useState({ ...resolvedPatient });
+  const [draftInfo, setDraftInfo] = useState({ ...resolvedPatient });
   const [editingInfo, setEditingInfo] = useState(false);
 
   // Per-year dental chart data
