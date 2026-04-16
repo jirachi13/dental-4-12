@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
-import { AlertCircle, TrendingUp, CheckCircle, Filter, Eye, ThumbsUp, ThumbsDown, Brain, Activity, BarChart3, Info, School as SchoolIcon, List } from 'lucide-react';
+import { AlertCircle, TrendingUp, CheckCircle, Filter, Eye, Brain, Activity, School as SchoolIcon, List } from 'lucide-react';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
@@ -23,6 +24,7 @@ const ViewToggle = ({ mode, onChange }: { mode: 'school' | 'list'; onChange: (m:
 
 export const AIAnalytics = () => {
   const { selectedSchool } = useAuth();
+  const navigate = useNavigate();
 
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('all');
@@ -30,7 +32,6 @@ export const AIAnalytics = () => {
   const [genderFilter, setGenderFilter] = useState('all');
   const [riskFilter, setRiskFilter] = useState('all');
   const [validationFilter, setValidationFilter] = useState('all');
-  const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
   const [analyticsSubTab, setAnalyticsSubTab] = useState<'risk' | 'pending'>('risk');
 
   // Helper functions
@@ -212,22 +213,6 @@ export const AIAnalytics = () => {
     }
   };
 
-  const handleValidation = (studentId: string, status: 'approved' | 'rejected' | 'modified') => {
-    setStudents(prev => prev.map(student => {
-      if (student.id === studentId) {
-        return {
-          ...student,
-          validated: true,
-          validatedBy: 'Dr. Maria Santos',
-          validationDate: new Date().toISOString().split('T')[0],
-          validationStatus: status,
-        };
-      }
-      return student;
-    }));
-    setSelectedPatient(null);
-    alert(`Validation ${status} for patient successfully!`);
-  };
 
   // Model Performance Data
   const modelPerformanceData = [
@@ -260,13 +245,11 @@ export const AIAnalytics = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">AI-Powered Risk Analytics</h1>
-          <p className="text-gray-600 mt-1">Machine learning-based oral health risk assessment with dentist validation workflow</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">AI Analytics</h1>
+        <p className="text-sm text-gray-500 mt-0.5">ML-based oral health risk assessment</p>
       </div>
 
       {false && (
@@ -313,23 +296,7 @@ export const AIAnalytics = () => {
         </div>
       )}
 
-      {true && <div className="space-y-6">
-
-      {/* Update Risk Scores button */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{studentsWithRisk.filter(s => s.riskLevel === 'High').length} high risk · {studentsWithRisk.filter(s => s.riskLevel === 'Medium').length} medium · {studentsWithRisk.filter(s => s.riskLevel === 'Low').length} low</p>
-        <button
-          onClick={() => {
-            setStudents(prev => prev.map(s => {
-              const { riskLevel, predictedIssue, recommendedAction } = computeRiskScore(s);
-              return { ...s, riskLevel };
-            }));
-            alert('Risk scores updated for all students based on current clinical data.');
-          }}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium">
-          <Brain className="w-4 h-4" /> Update Risk Scores
-        </button>
-      </div>
+      {true && <div className="space-y-4">
 
       {/* AI Model Info Banner */}
       <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
@@ -394,12 +361,24 @@ export const AIAnalytics = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter className="w-5 h-5 text-gray-600" />
-          <h2 className="text-lg font-bold text-gray-900">Filter AI Predictions</h2>
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-gray-500" />
+            <span className="text-sm font-semibold text-gray-700">Filters</span>
+          </div>
+          <button
+            onClick={() => {
+              setStudents(prev => prev.map(s => {
+                const { riskLevel } = computeRiskScore(s);
+                return { ...s, riskLevel };
+              }));
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-xs font-medium">
+            <Brain className="w-3.5 h-3.5" /> Update Risk Scores
+          </button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
           <div>
             <label className="block text-xs text-gray-600 mb-1">Grade Level</label>
             <select
@@ -488,83 +467,55 @@ export const AIAnalytics = () => {
       </div>
 
       {/* Student List with AI Predictions */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900">AI Risk Predictions ({filteredStudents.length} students)</h2>
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-4 py-3 border-b border-gray-200">
+          <h2 className="text-sm font-bold text-gray-900">AI Risk Predictions <span className="font-normal text-gray-400">({filteredStudents.length} students)</span></h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Level</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Confidence</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">AI Conditions</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Student</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Risk Level</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Confidence</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">AI Conditions</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Validation</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-100">
               {filteredStudents.map((student) => (
-                <tr key={student.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
+                <tr key={student.id} onClick={() => navigate(`/dental-chart/${student.id}?tab=records`)}
+                  className="hover:bg-gray-50 cursor-pointer transition-colors">
+                  <td className="px-4 py-3">
                     <div className="font-medium text-gray-900">{student.name}</div>
-                    <div className="text-sm text-gray-600">{student.grade} • {student.school}</div>
+                    <div className="text-xs text-gray-500">{student.grade} · {student.school}</div>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getRiskBadgeColor(student.riskLevel)}`}>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getRiskBadgeColor(student.riskLevel)}`}>
                       {getRiskIcon(student.riskLevel)}
                       {student.riskLevel}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full ${
-                            student.confidenceScore >= 90 ? 'bg-green-600' :
-                            student.confidenceScore >= 75 ? 'bg-blue-600' :
-                            'bg-yellow-600'
-                          }`}
-                          style={{ width: `${student.confidenceScore}%` }}
-                        />
+                      <div className="w-20 bg-gray-200 rounded-full h-1.5">
+                        <div className={`h-1.5 rounded-full ${student.confidenceScore >= 90 ? 'bg-green-600' : student.confidenceScore >= 75 ? 'bg-blue-600' : 'bg-yellow-600'}`}
+                          style={{ width: `${student.confidenceScore}%` }} />
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{student.confidenceScore}%</span>
+                      <span className="text-xs font-medium text-gray-700">{student.confidenceScore}%</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">
-                      {student.aiDetectedConditions.length > 0 ? student.aiDetectedConditions.join(', ') : 'No conditions'}
-                    </div>
+                  <td className="px-4 py-3 text-xs text-gray-700">
+                    {student.aiDetectedConditions.length > 0 ? student.aiDetectedConditions.join(', ') : <span className="text-gray-400">None</span>}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3">
                     {student.validated ? (
-                      <div className="flex items-center gap-2">
-                        {student.validationStatus === 'approved' && (
-                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                            ✓ Approved
-                          </span>
-                        )}
-                        {student.validationStatus === 'modified' && (
-                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                            ✎ Modified
-                          </span>
-                        )}
-                      </div>
+                      student.validationStatus === 'approved'
+                        ? <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">✓ Approved</span>
+                        : <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">✎ Modified</span>
                     ) : (
-                      <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
-                        ⏳ Pending
-                      </span>
+                      <span className="px-2 py-0.5 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">⏳ Pending</span>
                     )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => setSelectedPatient(student)}
-                      className="text-[#1E40AF] hover:text-[#1E3A8A] font-medium text-sm flex items-center gap-1"
-                    >
-                      <Eye className="w-4 h-4" />
-                      {student.validated ? 'View' : 'Review'}
-                    </button>
                   </td>
                 </tr>
               ))}
@@ -610,160 +561,6 @@ export const AIAnalytics = () => {
         </div>
       </div>
 
-      {/* Validation Modal */}
-      {selectedPatient && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">AI Prediction Review</h2>
-                <button
-                  onClick={() => setSelectedPatient(null)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6 space-y-6">
-              {/* Patient Info */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">Patient Information</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Name:</span>
-                    <span className="ml-2 font-medium text-gray-900">{selectedPatient.name}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Grade:</span>
-                    <span className="ml-2 font-medium text-gray-900">{selectedPatient.grade}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">School:</span>
-                    <span className="ml-2 font-medium text-gray-900">{selectedPatient.school}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Last Visit:</span>
-                    <span className="ml-2 font-medium text-gray-900">{selectedPatient.lastVisit}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* AI Analysis */}
-              <div className="border border-purple-200 rounded-lg p-4 bg-purple-50">
-                <div className="flex items-center gap-2 mb-3">
-                  <Brain className="w-5 h-5 text-purple-600" />
-                  <h3 className="font-semibold text-purple-900">AI Analysis Results</h3>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <span className="text-sm font-medium text-purple-900">Risk Classification:</span>
-                    <span className={`ml-2 px-3 py-1 rounded-full text-xs font-medium ${getRiskBadgeColor(selectedPatient.riskLevel)}`}>
-                      {selectedPatient.riskLevel} Risk
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-purple-900">Confidence Score:</span>
-                    <span className="ml-2 text-sm text-gray-900">{selectedPatient.confidenceScore}%</span>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-purple-900">Model Version:</span>
-                    <span className="ml-2 text-sm text-gray-900">{selectedPatient.modelVersion}</span>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-purple-900">Detected Conditions:</span>
-                    <div className="mt-1 flex flex-wrap gap-2">
-                      {selectedPatient.aiDetectedConditions.map((cond: string, idx: number) => (
-                        <span key={idx} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
-                          {cond}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Clinical Findings */}
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Oral Condition (AI Assessment)</h3>
-                <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">{selectedPatient.oralCondition}</p>
-              </div>
-
-              {/* AI Recommendations */}
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">AI Treatment Recommendations</h3>
-                <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">{selectedPatient.aiRecommendation}</p>
-              </div>
-
-              {/* Validation Status */}
-              {selectedPatient.validated && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <h3 className="font-semibold text-green-900 mb-2">Validation Record</h3>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <span className="text-green-800">Validated By:</span>
-                      <span className="ml-2 font-medium">{selectedPatient.validatedBy}</span>
-                    </div>
-                    <div>
-                      <span className="text-green-800">Date:</span>
-                      <span className="ml-2 font-medium">{selectedPatient.validationDate}</span>
-                    </div>
-                    <div>
-                      <span className="text-green-800">Status:</span>
-                      <span className="ml-2 font-medium capitalize">{selectedPatient.validationStatus}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Validation Actions */}
-              {!selectedPatient.validated && (
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="font-semibold text-gray-900 mb-4">Dentist Validation</h3>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => handleValidation(selectedPatient.id, 'approved')}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      <ThumbsUp className="w-4 h-4" />
-                      Approve AI Prediction
-                    </button>
-                    <button
-                      onClick={() => handleValidation(selectedPatient.id, 'modified')}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <Info className="w-4 h-4" />
-                      Approve with Modifications
-                    </button>
-                    <button
-                      onClick={() => handleValidation(selectedPatient.id, 'rejected')}
-                      className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                    >
-                      <ThumbsDown className="w-4 h-4" />
-                      Reject Prediction
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-3">
-                    Note: Validation decisions help improve the AI model accuracy over time.
-                  </p>
-                </div>
-              )}
-
-              {selectedPatient.validated && (
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => setSelectedPatient(null)}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                  >
-                    Close
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>}
 
       {/* ── TREATMENT PENDING VIEW ── */}
