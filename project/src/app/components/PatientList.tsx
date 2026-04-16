@@ -43,7 +43,11 @@ export const PatientList = () => {
   const [riskFilter, setRiskFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newPatient, setNewPatient] = useState({ firstName:'', lastName:'', middleName:'', birthdate:'', gender:'', grade:'', section:'', school:'', guardianName:'', guardianContact:'', address:'' });
+  const [newPatient, setNewPatient] = useState({ firstName:'', lastName:'', middleName:'', birthdate:'', gender:'', grade:'', section:'', school:'', guardianName:'', guardianContact:'', address:'', philhealthNumber:'', philhealthStatus:'None', is4Ps:false, fourPsId:'', consentStatus:'pending' });
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [bulkFile, setBulkFile] = useState<File | null>(null);
+  const [bulkPreview, setBulkPreview] = useState<any[]>([]);
+  const [bulkStep, setBulkStep] = useState<'upload'|'preview'|'done'>('upload');
 
   const calculateAge = (birthdate: string) => {
     const today = new Date(); const birth = new Date(birthdate);
@@ -600,6 +604,11 @@ export const PatientList = () => {
               </div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Guardian Name *</label><input type="text" value={newPatient.guardianName} onChange={e => setNewPatient({...newPatient, guardianName: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Guardian Contact</label><input type="text" value={newPatient.guardianContact} onChange={e => setNewPatient({...newPatient, guardianContact: e.target.value})} placeholder="09XX-XXX-XXXX" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">PhilHealth Number</label><input type="text" value={newPatient.philhealthNumber} onChange={e => setNewPatient({...newPatient, philhealthNumber: e.target.value})} placeholder="XX-XXXXXXXXX-X" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">PhilHealth Status</label><select value={newPatient.philhealthStatus} onChange={e => setNewPatient({...newPatient, philhealthStatus: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="None">None</option><option value="Principal">Principal</option><option value="Dependent">Dependent</option></select></div>
+              <div className="flex items-center gap-3 pt-2"><input type="checkbox" id="is4ps" checked={newPatient.is4Ps} onChange={e => setNewPatient({...newPatient, is4Ps: e.target.checked})} className="w-4 h-4 rounded accent-blue-600" /><label htmlFor="is4ps" className="text-sm font-medium text-gray-700">4Ps / NHTS Member</label></div>
+              {newPatient.is4Ps && <div><label className="block text-sm font-medium text-gray-700 mb-1">4Ps ID</label><input type="text" value={newPatient.fourPsId} onChange={e => setNewPatient({...newPatient, fourPsId: e.target.value})} placeholder="4PS-XXXXXXXX" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>}
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Consent Status</label><select value={newPatient.consentStatus} onChange={e => setNewPatient({...newPatient, consentStatus: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="pending">Pending</option><option value="complete">Complete</option><option value="missing">Missing</option></select></div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Address</label><input type="text" value={newPatient.address} onChange={e => setNewPatient({...newPatient, address: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             </div>
             <div className="flex gap-3 p-6 border-t">
@@ -608,8 +617,134 @@ export const PatientList = () => {
                 if (!newPatient.firstName || !newPatient.lastName || !newPatient.school || !newPatient.grade) { alert('Please fill in all required fields.'); return; }
                 alert(`Student ${newPatient.firstName} ${newPatient.lastName} added successfully!`);
                 setShowAddForm(false);
-                setNewPatient({ firstName:'',lastName:'',middleName:'',birthdate:'',gender:'',grade:'',section:'',school:'',guardianName:'',guardianContact:'',address:'' });
+                setNewPatient({ firstName:'',lastName:'',middleName:'',birthdate:'',gender:'',grade:'',section:'',school:'',guardianName:'',guardianContact:'',address:'',philhealthNumber:'',philhealthStatus:'None',is4Ps:false,fourPsId:'',consentStatus:'pending' });
               }} className="flex-1 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">Add Student</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── BULK UPLOAD MODAL ── */}
+      {showBulkUpload && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-900">Bulk Upload Students</h2>
+              <button onClick={() => { setShowBulkUpload(false); setBulkStep('upload'); setBulkPreview([]); setBulkFile(null); }} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-4 h-4"/></button>
+            </div>
+            <div className="p-5 space-y-4">
+              {bulkStep === 'upload' && (
+                <>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
+                    <FileText className="w-3.5 h-3.5 inline mr-1" />
+                    Upload a CSV or Excel file. Required columns: <strong>Last Name, First Name, Sex, Grade Level, Section</strong>. Optional: Middle Name, Birthday, Address, Contact Number.
+                  </div>
+                  <div
+                    className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors cursor-pointer"
+                    onClick={() => document.getElementById('bulk-file-input')?.click()}
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => {
+                      e.preventDefault();
+                      const file = e.dataTransfer.files[0];
+                      if (file) { setBulkFile(file); }
+                    }}
+                  >
+                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-3" />
+                    <p className="text-sm text-gray-600 font-medium">{bulkFile ? bulkFile.name : 'Drop CSV / Excel file here'}</p>
+                    <p className="text-xs text-gray-400 mt-1">{bulkFile ? `${(bulkFile.size / 1024).toFixed(1)} KB` : 'or click to browse'}</p>
+                    <input id="bulk-file-input" type="file" accept=".csv,.xlsx,.xls" className="hidden"
+                      onChange={e => { if (e.target.files?.[0]) setBulkFile(e.target.files[0]); }} />
+                  </div>
+                  {bulkFile && (
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="text-xs font-medium text-gray-600 mb-2">CSV Template (expected format):</div>
+                      <div className="font-mono text-xs text-gray-500 overflow-x-auto whitespace-nowrap">
+                        last_name,first_name,middle_name,sex,grade_level,section,birthday,contact_number<br/>
+                        Dela Cruz,Juan,Santos,Male,Grade 4,Sampaguita,2016-03-15,09171234567<br/>
+                        Santos,Maria,Reyes,Female,Grade 3,Jasmine,2017-07-22,09281234567
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex gap-3">
+                    <button onClick={() => { setShowBulkUpload(false); setBulkFile(null); }}
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">Cancel</button>
+                    <button
+                      disabled={!bulkFile}
+                      onClick={() => {
+                        // Mock parse — generate preview students
+                        const mock = [
+                          { lastName:'Dela Cruz', firstName:'Juan', sex:'Male', grade:'Grade 4', section:'Sampaguita' },
+                          { lastName:'Santos', firstName:'Maria', sex:'Female', grade:'Grade 3', section:'Jasmine' },
+                          { lastName:'Reyes', firstName:'Pedro', sex:'Male', grade:'Grade 2', section:'Rose' },
+                          { lastName:'Garcia', firstName:'Ana', sex:'Female', grade:'Grade 5', section:'Sunflower' },
+                          { lastName:'Martinez', firstName:'Jose', sex:'Male', grade:'Grade 1', section:'Sampaguita' },
+                        ];
+                        setBulkPreview(mock);
+                        setBulkStep('preview');
+                      }}
+                      className="flex-1 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium disabled:opacity-40">
+                      Parse File →
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {bulkStep === 'preview' && (
+                <>
+                  <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg p-3">
+                    <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                    <span className="text-sm text-green-800">{bulkPreview.length} students parsed from <strong>{bulkFile?.name}</strong></span>
+                  </div>
+                  <div className="border border-gray-200 rounded-xl overflow-hidden max-h-60 overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="text-left px-3 py-2 font-semibold text-gray-600">Name</th>
+                          <th className="text-left px-3 py-2 font-semibold text-gray-600">Sex</th>
+                          <th className="text-left px-3 py-2 font-semibold text-gray-600">Grade</th>
+                          <th className="text-left px-3 py-2 font-semibold text-gray-600">Section</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {bulkPreview.map((s, i) => (
+                          <tr key={i} className="hover:bg-gray-50">
+                            <td className="px-3 py-2 font-medium text-gray-900">{s.lastName}, {s.firstName}</td>
+                            <td className="px-3 py-2 text-gray-600">{s.sex}</td>
+                            <td className="px-3 py-2 text-gray-600">{s.grade}</td>
+                            <td className="px-3 py-2 text-gray-600">{s.section}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs text-yellow-700">
+                    <AlertCircle className="w-3.5 h-3.5 inline mr-1" />
+                    All uploaded students will be assigned: consent status = <strong>Pending</strong>, risk level = <strong>Low</strong>, status = <strong>Active</strong>.
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => setBulkStep('upload')}
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">← Back</button>
+                    <button onClick={() => setBulkStep('done')}
+                      className="flex-1 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+                      Import {bulkPreview.length} Students
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {bulkStep === 'done' && (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-8 h-8 text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">{bulkPreview.length} Students Imported!</h3>
+                  <p className="text-sm text-gray-500 mb-6">Students have been added to the system with pending consent status.</p>
+                  <button onClick={() => { setShowBulkUpload(false); setBulkStep('upload'); setBulkPreview([]); setBulkFile(null); }}
+                    className="px-6 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+                    Done
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

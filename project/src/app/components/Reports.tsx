@@ -276,6 +276,45 @@ export const Reports = () => {
         <p className="text-gray-600 mt-1">Generate and export DOH-compliant dental health reports</p>
       </div>
 
+      {/* Consent Compliance */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <h3 className="text-sm font-bold text-gray-900 mb-4">Consent Compliance by School</h3>
+        <div className="space-y-4">
+          {[
+            { school: 'Bagong Tanyag Integrated School', complete: 48, total: 60, color: '#1E40AF' },
+            { school: 'Bagong Tanyag Elementary School Annex A', complete: 52, total: 60, color: '#0D9488' },
+            { school: 'South Daang Hari Elementary School Main', complete: 41, total: 60, color: '#EA580C' },
+          ].map(s => {
+            const pct = Math.round((s.complete / s.total) * 100);
+            return (
+              <div key={s.school}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-medium text-gray-700">{s.school.replace(' Elementary School','').replace(' Integrated School',' Integrated').replace(' Main','')}</span>
+                  <span className="text-xs font-bold" style={{ color: s.color }}>{s.complete}/{s.total} ({pct}%)</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: s.color }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-4 grid grid-cols-3 gap-3 pt-4 border-t border-gray-100">
+          <div className="text-center">
+            <div className="text-lg font-bold text-green-600">141</div>
+            <div className="text-xs text-gray-500">Complete</div>
+          </div>
+          <div className="text-center">
+            <div className="text-lg font-bold text-yellow-600">29</div>
+            <div className="text-xs text-gray-500">Pending</div>
+          </div>
+          <div className="text-center">
+            <div className="text-lg font-bold text-red-600">10</div>
+            <div className="text-xs text-gray-500">Missing</div>
+          </div>
+        </div>
+      </div>
+
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
