@@ -44,16 +44,16 @@ export const Root = () => {
       roles: ['dentist','dental_aide']
     },
     {
-      id: 6, path: '/ai-analytics', label: 'Predictive Module', icon: Brain,
-      roles: ['dentist']
-    },
-    {
-      id: 7, path: '/rpc', label: 'RPC Records', icon: Shield,
+      id: 6, path: '/rpc', label: 'RPC Records', icon: Shield,
       roles: ['dentist','dental_aide']
     },
     {
-      id: 8, path: '/reports', label: 'Consolidated Reports', icon: FileBarChart,
+      id: 7, path: '/reports', label: 'Consolidated Reports', icon: FileBarChart,
       roles: ['dentist','school_admin','barangay_health']
+    },
+    {
+      id: 8, path: '/ai-analytics', label: 'Predictive Module', icon: Brain,
+      roles: ['dentist']
     },
     {
       id: 9, path: '/accounts', label: 'User Management', icon: UserCog,
