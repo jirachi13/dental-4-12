@@ -30,6 +30,8 @@ export const DentalChartNav = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [schoolFilter, setSchoolFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState('all');
+  const [sectionFilter, setSectionFilter] = useState('all');
+  const [ageGroupFilter, setAgeGroupFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -78,7 +80,8 @@ export const DentalChartNav = () => {
         <div className="flex flex-wrap gap-2">
           <FS value={schoolFilter} onChange={setSchoolFilter} label="All Schools"
             opts={SCHOOLS.map(s => ({ v: s, l: s.replace(' Elementary School', '').replace(' Integrated School', ' Integrated').replace(' Main', '') }))} />
-          <FS value={gradeFilter} onChange={setGradeFilter} label="All Grades" opts={GRADES.map(g => ({ v: g, l: g }))} />
+          <FS value={gradeFilter} onChange={g => { setGradeFilter(g); setSectionFilter('all'); }} label="All Grades" opts={GRADES.map(g => ({ v: g, l: g }))} />
+          <FS value={sectionFilter} onChange={setSectionFilter} label="All Sections" opts={[...new Set((gradeFilter !== 'all' ? mockCharts.filter((r:any) => r.grade === gradeFilter) : mockCharts).map((r:any) => r.section))].sort().map((s:any) => ({ v: s, l: s }))} />
           <FS value={genderFilter} onChange={setGenderFilter} label="All Genders" opts={[{ v:'Male', l:'Male' }, { v:'Female', l:'Female' }]} />
           <FS value={statusFilter} onChange={setStatusFilter} label="All Statuses"
             opts={[{ v:'Complete', l:'Complete' }, { v:'Incomplete', l:'Incomplete' }, { v:'Pending Review', l:'Pending Review' }]} />

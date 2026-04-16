@@ -26,6 +26,7 @@ export const AIAnalytics = () => {
   const [viewMode, setViewMode] = useState<'school' | 'list'>('school');
   const [schoolFilter, setSchoolFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState('all');
+  const [sectionFilter, setSectionFilter] = useState('all');
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
   const [riskFilter, setRiskFilter] = useState('all');
@@ -454,7 +455,7 @@ export const AIAnalytics = () => {
             <label className="block text-xs text-gray-600 mb-1">Grade Level</label>
             <select
               value={gradeFilter}
-              onChange={(e) => setGradeFilter(e.target.value)}
+              onChange={(e) => { setGradeFilter(e.target.value); setSectionFilter('all'); }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF] appearance-none bg-white text-sm"
             >
               <option value="all">All Grades</option>
@@ -464,6 +465,20 @@ export const AIAnalytics = () => {
               <option value="Grade 4">Grade 4</option>
               <option value="Grade 5">Grade 5</option>
               <option value="Grade 6">Grade 6</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Section</label>
+            <select
+              value={sectionFilter}
+              onChange={(e) => setSectionFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF] appearance-none bg-white text-sm"
+            >
+              <option value="all">All Sections</option>
+              {[...new Set((gradeFilter !== 'all' ? contextStudents.filter(s => s.grade === gradeFilter) : contextStudents).map(s => s.section))].sort().map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
             </select>
           </div>
 

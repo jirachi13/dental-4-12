@@ -12,6 +12,10 @@ const SCHOOLS = [
 export const Appointments = () => {
   const { selectedSchool } = useAuth();
   const [schoolFilter, setSchoolFilter] = useState('all');
+  const [gradeFilter, setGradeFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [currentDate, setCurrentDate] = useState(new Date(2026, 3, 1));
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
@@ -77,8 +81,7 @@ export const Appointments = () => {
   const getAppointmentsForDay = (date: Date | null) => {
     if (!date) return [];
     const dateStr = date.toISOString().split('T')[0];
-    const filtered = schoolFilter !== 'all' ? appointments.filter(a => a.school === schoolFilter) : appointments;
-    return filtered.filter(a => a.date === dateStr);
+    return filteredAppointments.filter(a => a.date === dateStr);
   };
 
   const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth()-1, 1));
@@ -86,7 +89,15 @@ export const Appointments = () => {
   const monthName = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
   const days = getDaysInMonth(currentDate);
 
-  const filteredAppointments = schoolFilter !== 'all' ? appointments.filter(a => a.school === schoolFilter) : appointments;
+  const filteredAppointments = appointments.filter(a => {
+    if (gradeFilter !== 'all' && a.grade !== gradeFilter) return false;
+    if (statusFilter !== 'all' && a.status !== statusFilter) return false;
+    if (typeFilter !== 'all' && a.type !== typeFilter) return false;
+    if (searchTerm && !a.school.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !a.grade.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !a.section.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    return true;
+  });
 
   const handleCreateAppointment = () => {
     alert(`Appointment created for ${formSchool} — ${selectedGrade} ${selectedSection} with ${selectedStudents.length} students on ${appointmentDate} at ${appointmentTime}`);
@@ -114,26 +125,46 @@ export const Appointments = () => {
       </div>
 
       {/* Filters + Calendar Nav */}
-      <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          <select value={schoolFilter} onChange={e => setSchoolFilter(e.target.value)}
-            className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="all">All Schools</option>
-            {SCHOOLS.map(s => <option key={s} value={s}>{s.replace(' Elementary School','').replace(' Integrated School',' Integrated').replace(' Main','')}</option>)}
-          </select>
-          {schoolFilter !== 'all' && (
-            <button onClick={() => setSchoolFilter('all')} className="text-xs text-red-600 border border-red-200 rounded px-2 py-1.5 hover:bg-red-50">
-              <X className="w-3 h-3" />
-            </button>
-          )}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+        {/* Search */}
+        <div className="relative">
+          <input type="text" placeholder="Search by grade, section..." value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full pl-4 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-lg"><ChevronLeft className="w-4 h-4"/></button>
-          <div className="flex items-center gap-1.5">
-            <CalendarIcon className="w-4 h-4 text-gray-500"/>
-            <span className="text-sm font-semibold text-gray-900 min-w-[140px] text-center">{monthName}</span>
+        {/* Filter row + calendar nav */}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <select value={gradeFilter} onChange={e => setGradeFilter(e.target.value)}
+              className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="all">All Grades</option>
+              {['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'].map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+              className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="all">All Statuses</option>
+              {['Scheduled','In Progress','Completed','Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+              className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="all">All Types</option>
+              {['Screening','Bayanihan Mission','Fluoride Application','Extraction','Follow-up'].map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+            {(gradeFilter !== 'all' || statusFilter !== 'all' || typeFilter !== 'all' || searchTerm) && (
+              <button onClick={() => { setGradeFilter('all'); setStatusFilter('all'); setTypeFilter('all'); setSearchTerm(''); }}
+                className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
+                <X className="w-3 h-3" /> Clear
+              </button>
+            )}
           </div>
-          <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-lg"><ChevronRight className="w-4 h-4"/></button>
+          <div className="flex items-center gap-2">
+            <button onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-lg"><ChevronLeft className="w-4 h-4"/></button>
+            <div className="flex items-center gap-1.5">
+              <CalendarIcon className="w-4 h-4 text-gray-500"/>
+              <span className="text-sm font-semibold text-gray-900 min-w-[140px] text-center">{monthName}</span>
+            </div>
+            <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-lg"><ChevronRight className="w-4 h-4"/></button>
+          </div>
         </div>
       </div>
 

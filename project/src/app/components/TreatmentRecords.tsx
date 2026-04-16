@@ -33,6 +33,7 @@ export const TreatmentRecords = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [schoolFilter, setSchoolFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState('all');
+  const [sectionFilter, setSectionFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
   const [treatmentFilter, setTreatmentFilter] = useState('all');
@@ -85,7 +86,8 @@ export const TreatmentRecords = () => {
         <div className="flex flex-wrap gap-2">
           <FS value={schoolFilter} onChange={setSchoolFilter} label="All Schools"
             opts={SCHOOLS.map(s => ({ v: s, l: s.replace(' Elementary School', '').replace(' Integrated School', ' Integrated').replace(' Main', '') }))} />
-          <FS value={gradeFilter} onChange={setGradeFilter} label="All Grades" opts={GRADES.map(g => ({ v: g, l: g }))} />
+          <FS value={gradeFilter} onChange={g => { setGradeFilter(g); setSectionFilter('all'); }} label="All Grades" opts={GRADES.map(g => ({ v: g, l: g }))} />
+          <FS value={sectionFilter} onChange={setSectionFilter} label="All Sections" opts={[...new Set((gradeFilter !== 'all' ? mockTreatments.filter((r:any) => r.grade === gradeFilter) : mockTreatments).map((r:any) => r.section))].sort().map((s:any) => ({ v: s, l: s }))} />
           <FS value={genderFilter} onChange={setGenderFilter} label="All Genders" opts={[{ v:'Male', l:'Male' }, { v:'Female', l:'Female' }]} />
           <FS value={ageGroupFilter} onChange={setAgeGroupFilter} label="All Age Groups"
             opts={[{ v:'Under 5', l:'Under 5' }, { v:'6-10', l:'6–10' }, { v:'10-14', l:'10–14' }, { v:'15-19', l:'15–19' }]} />
