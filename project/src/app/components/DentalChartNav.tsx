@@ -100,16 +100,15 @@ export const DentalChartNav = () => {
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Date Charted</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">DMF Index</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-12 text-gray-400">No dental charts match the selected filters.</td></tr>
+                <tr><td colSpan={7} className="text-center py-12 text-gray-400">No dental charts match the selected filters.</td></tr>
               ) : filtered.map(c => {
                 const gc = getGradeColor(c.grade);
                 return (
-                  <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={c.id} onClick={() => navigate(`/dental-chart/${c.studentId}?tab=chart`)} className="hover:bg-gray-50 transition-colors cursor-pointer">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-xs flex-shrink-0">
@@ -134,12 +133,6 @@ export const DentalChartNav = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3">{statusBadge(c.status)}</td>
-                    <td className="px-4 py-3">
-                      <button onClick={() => navigate(`/dental-chart/${c.studentId}?tab=chart`)}
-                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" title="Open Chart">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </td>
                   </tr>
                 );
               })}

@@ -115,16 +115,15 @@ export const TreatmentRecords = () => {
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Treatment Type</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Diagnosis</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Treatment Done</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-12 text-gray-400">No treatment records match the selected filters.</td></tr>
+                <tr><td colSpan={7} className="text-center py-12 text-gray-400">No treatment records match the selected filters.</td></tr>
               ) : filtered.map(t => {
                 const gc = getGradeColor(t.grade);
                 return (
-                  <tr key={t.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={t.id} onClick={() => navigate(`/dental-chart/${t.studentId}?tab=treatments`)} className="hover:bg-gray-50 transition-colors cursor-pointer">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-xs flex-shrink-0">
@@ -145,9 +144,6 @@ export const TreatmentRecords = () => {
                     <td className="px-4 py-3"><span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">{t.treatmentType}</span></td>
                     <td className="px-4 py-3 text-gray-600 text-xs max-w-[160px] truncate">{t.diagnosis}</td>
                     <td className="px-4 py-3 text-gray-600 text-xs max-w-[160px] truncate">{t.treatmentDone}</td>
-                    <td className="px-4 py-3">
-                      <button onClick={() => navigate(`/dental-chart/${t.studentId}?tab=treatments`)} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg" title="View Treatment Log"><FileText className="w-4 h-4" /></button>
-                    </td>
                   </tr>
                 );
               })}
