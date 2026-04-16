@@ -139,3 +139,29 @@ cc876d27 — DOH report exact official format — age brackets per grade, summar
 
 ### LATEST COMMIT
 (pending commit)
+
+---
+
+## Session: April 17, 2026 — Part 2 (Polish)
+
+### COMPLETED THIS SESSION
+
+**DOH Report — sticky column hover fix (Reports.tsx):**
+- Added `group` class to body data rows (`<tr>`)
+- Sticky label `<td>` now has `group-hover:bg-yellow-50 transition-colors` so it turns yellow with the rest of the row on hover
+- Previously: label cell stayed white while data cells turned yellow (visual disconnect)
+
+**Appointments → Dental Charts link (Appointments.tsx):**
+- Added `FileText` icon button to every `AppointmentCard` (left of status badge)
+- Links to `/dental-charts` — jumps straight to the dental chart list
+- Blue tint (bg-blue-50 hover:bg-blue-100) to distinguish from action buttons (green/red)
+- `Link` and `FileText` added to imports
+
+**TypeScript: 0 errors**
+
+### PENDING / KNOWN ISSUES
+- DOH report is 77 columns wide — sticky + scroll works, but no "compact view" toggle yet
+- No real backend yet (all mock data)
+- Print-specific HTML layout for IPTR not yet done
+- Editable DOH report cells not yet done
+- Prev/next nav only covers 10 patients in patientNavList

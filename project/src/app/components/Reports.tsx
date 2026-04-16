@@ -328,9 +328,9 @@ export const Reports = () => {
                     const labelPadding = isSub ? 'pl-8 italic text-gray-400' : (row as any).indent ? 'pl-5 text-gray-700' : 'font-medium text-gray-800';
 
                     return (
-                      <tr key={idx} className="border-b border-gray-100 hover:bg-yellow-50 transition-colors">
+                      <tr key={idx} className="group border-b border-gray-100 hover:bg-yellow-50 transition-colors">
                         {/* Label */}
-                        <td className={`sticky left-0 bg-white border-r border-gray-200 px-2 py-0.5 text-[10px] ${labelPadding} min-w-[240px]`}>
+                        <td className={`sticky left-0 bg-white group-hover:bg-yellow-50 border-r border-gray-200 px-2 py-0.5 text-[10px] transition-colors ${labelPadding} min-w-[240px]`}>
                           {isSub && <span className="mr-1 text-gray-300">↳</span>}
                           {row.label}
                         </td>

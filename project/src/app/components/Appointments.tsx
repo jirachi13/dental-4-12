@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Check, Clock, Users, Stethoscope, AlertCircle, RotateCcw } from 'lucide-react';
+import { useNavigate, Link } from 'react-router';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Check, Clock, Users, Stethoscope, AlertCircle, RotateCcw, FileText } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 
@@ -175,6 +175,13 @@ export const Appointments = () => {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          <Link
+            to="/dental-charts"
+            className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-colors"
+            title="Open Dental Charts"
+          >
+            <FileText className="w-3.5 h-3.5" />
+          </Link>
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${statusBadge(status)}`}>{status}</span>
           {showActions && status === 'Scheduled' && (
             <>
