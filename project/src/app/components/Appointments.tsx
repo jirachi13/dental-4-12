@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Check } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Check, Clock, Users, Stethoscope, AlertCircle, RotateCcw } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
+import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 
 const SCHOOLS = [
   'Bagong Tanyag Integrated School',
@@ -9,21 +11,27 @@ const SCHOOLS = [
   'South Daang Hari Elementary School Main',
 ];
 
+const TODAY = '2026-04-16';
+
 export const Appointments = () => {
   const { selectedSchool } = useAuth();
-  const [schoolFilter, setSchoolFilter] = useState('all');
+  const navigate = useNavigate();
+
+  // Tabs
+  const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'past' | 'calendar' | 'rotation'>('today');
+
+  // Filters
   const [gradeFilter, setGradeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 3, 1));
+
+  // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
-  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
-  const [attendanceMap, setAttendanceMap] = useState<Record<string, boolean>>({});
-  const [studentSearchTerm, setStudentSearchTerm] = useState('');
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
+  const [showRotationModal, setShowRotationModal] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 3, 1));
+
+  // Create appointment form
   const [formSchool, setFormSchool] = useState('');
   const [selectedGrade, setSelectedGrade] = useState('');
   const [selectedSection, setSelectedSection] = useState('');
@@ -31,6 +39,17 @@ export const Appointments = () => {
   const [appointmentDate, setAppointmentDate] = useState('');
   const [appointmentTime, setAppointmentTime] = useState('');
   const [appointmentType, setAppointmentType] = useState('');
+  const [appointmentDentist, setAppointmentDentist] = useState('Dr. Maria Santos');
+
+  // Rotation form
+  const [rotSchool, setRotSchool] = useState('');
+  const [rotDentist, setRotDentist] = useState('');
+  const [rotWeekStart, setRotWeekStart] = useState('');
+  const [rotWeekEnd, setRotWeekEnd] = useState('');
+  const [rotNotes, setRotNotes] = useState('');
+
+  // Appointment statuses (mutable)
+  const [statusMap, setStatusMap] = useState<Record<string, string>>({});
 
   const grades = ['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
   const sectionsByGrade: Record<string, string[]> = {
@@ -38,81 +57,152 @@ export const Appointments = () => {
     'Grade 3':['Jasmine','Orchid'],'Grade 4':['Tulip','Lily'],
     'Grade 5':['Sunflower','Daisy'],'Grade 6':['Carnation','Ilang-Ilang'],
   };
-
   const studentsInSection = selectedSection ? [
-    { id: '1', name: 'Juan Dela Cruz', gender: 'Male', age: 10 },
-    { id: '2', name: 'Maria Santos', gender: 'Female', age: 9 },
-    { id: '3', name: 'Pedro Reyes', gender: 'Male', age: 10 },
-    { id: '4', name: 'Ana Garcia', gender: 'Female', age: 9 },
-    { id: '5', name: 'Jose Martinez', gender: 'Male', age: 10 },
-    { id: '6', name: 'Sofia Cruz', gender: 'Female', age: 10 },
-    { id: '7', name: 'Miguel Torres', gender: 'Male', age: 9 },
+    { id:'1', name:'Juan Dela Cruz', gender:'Male', age:10 },
+    { id:'2', name:'Maria Santos', gender:'Female', age:9 },
+    { id:'3', name:'Pedro Reyes', gender:'Male', age:10 },
+    { id:'4', name:'Ana Garcia', gender:'Female', age:9 },
+    { id:'5', name:'Jose Martinez', gender:'Male', age:10 },
   ] : [];
 
+  // Mock appointments — use today's date + future dates
   const allAppointmentsRaw = [
-    { id:'1', date:'2026-04-15', time:'09:00', school:'Bagong Tanyag Integrated School', grade:'Grade 4', section:'Sampaguita', studentCount:32, type:'Regular Checkup', status:'Scheduled', dentist:'Dr. Maria Santos', students:[
+    { id:'1', date: TODAY, time:'09:00', school:'Bagong Tanyag Integrated School', grade:'Grade 4', section:'Sampaguita', studentCount:32, type:'Regular Checkup', status:'Scheduled', dentist:'Dr. Maria Santos', students:[
       { id:'s1', name:'Juan Dela Cruz', gender:'Male', age:10, riskLevel:'High' },
       { id:'s2', name:'Maria Garcia', gender:'Female', age:9, riskLevel:'Low' },
       { id:'s3', name:'Pedro Reyes', gender:'Male', age:10, riskLevel:'Medium' },
     ]},
-    { id:'2', date:'2026-04-15', time:'13:00', school:'Bagong Tanyag Elementary School Annex A', grade:'Grade 3', section:'Topaz', studentCount:28, type:'Fluoride Application', status:'In Progress', dentist:'Dr. Maria Santos', students:[
+    { id:'2', date: TODAY, time:'13:00', school:'Bagong Tanyag Elementary School Annex A', grade:'Grade 3', section:'Topaz', studentCount:28, type:'Fluoride Application', status:'In Progress', dentist:'Dr. Maria Santos', students:[
       { id:'s6', name:'Sofia Cruz', gender:'Female', age:8, riskLevel:'Low' },
       { id:'s7', name:'Miguel Torres', gender:'Male', age:9, riskLevel:'Medium' },
     ]},
-    { id:'3', date:'2026-04-20', time:'08:00', school:'South Daang Hari Elementary School Main', grade:'Grade 5', section:'Yakal', studentCount:35, type:'Bayanihan Mission', status:'Scheduled', dentist:'Dr. Maria Santos', students:[
+    { id:'3', date: TODAY, time:'15:00', school:'Bagong Tanyag Integrated School', grade:'Grade 2', section:'Rose', studentCount:26, type:'Screening', status:'Scheduled', dentist:'Dr. Maria Santos', students:[]},
+    { id:'4', date:'2026-04-20', time:'08:00', school:'South Daang Hari Elementary School Main', grade:'Grade 5', section:'Yakal', studentCount:35, type:'Bayanihan Mission', status:'Scheduled', dentist:'Dr. Maria Santos', students:[
       { id:'s9', name:'Rafael Gomez', gender:'Male', age:11, riskLevel:'Medium' },
     ]},
-    { id:'4', date:'2026-04-15', time:'15:00', school:'Bagong Tanyag Integrated School', grade:'Grade 2', section:'Rose', studentCount:26, type:'Screening', status:'Scheduled', dentist:'Dr. Maria Santos', students:[] },
-    { id:'5', date:'2026-04-22', time:'09:00', school:'Bagong Tanyag Elementary School Annex A', grade:'Grade 4', section:'Opal', studentCount:30, type:'Fluoride Application', status:'Scheduled', dentist:'Dr. Maria Santos', students:[] },
-    { id:'6', date:'2026-04-28', time:'08:00', school:'South Daang Hari Elementary School Main', grade:'Grade 6', section:'Guijo', studentCount:40, type:'Bayanihan Mission', status:'Scheduled', dentist:'Dr. Maria Santos', students:[] },
+    { id:'5', date:'2026-04-22', time:'09:00', school:'Bagong Tanyag Elementary School Annex A', grade:'Grade 4', section:'Opal', studentCount:30, type:'Fluoride Application', status:'Scheduled', dentist:'Dr. Maria Santos', students:[]},
+    { id:'6', date:'2026-04-28', time:'08:00', school:'South Daang Hari Elementary School Main', grade:'Grade 6', section:'Guijo', studentCount:40, type:'Bayanihan Mission', status:'Scheduled', dentist:'Dr. Maria Santos', students:[]},
+    { id:'7', date:'2026-04-08', time:'09:00', school:'Bagong Tanyag Integrated School', grade:'Grade 5', section:'Sunflower', studentCount:33, type:'Fluoride Application', status:'Completed', dentist:'Dr. Maria Santos', students:[]},
+    { id:'8', date:'2026-04-10', time:'10:00', school:'Bagong Tanyag Elementary School Annex A', grade:'Grade 6', section:'Garnet', studentCount:29, type:'Screening', status:'Completed', dentist:'Dr. Maria Santos', students:[]},
+    { id:'9', date:'2026-04-12', time:'08:00', school:'South Daang Hari Elementary School Main', grade:'Grade 3', section:'Bamboo', studentCount:31, type:'Regular Checkup', status:'Missed', dentist:'Dr. Maria Santos', students:[]},
   ];
 
-  const allAppointments = allAppointmentsRaw;
-  const appointments = selectedSchool
-    ? allAppointments.filter(a => a.school === selectedSchool)
-    : allAppointments;
+  // Mock rotation schedules
+  const [rotations, setRotations] = useState([
+    { id:'r1', school:'Bagong Tanyag Integrated School', dentist:'Dr. Maria Santos', weekStart:'2026-04-13', weekEnd:'2026-04-18', notes:'Regular schedule' },
+    { id:'r2', school:'Bagong Tanyag Elementary School Annex A', dentist:'Dr. Maria Santos', weekStart:'2026-04-20', weekEnd:'2026-04-25', notes:'' },
+    { id:'r3', school:'South Daang Hari Elementary School Main', dentist:'Dr. Maria Santos', weekStart:'2026-04-27', weekEnd:'2026-05-02', notes:'Bayanihan week' },
+  ]);
 
+  const appointments = selectedSchool
+    ? allAppointmentsRaw.filter(a => a.school === selectedSchool)
+    : allAppointmentsRaw;
+
+  const getStatus = (a: any) => statusMap[a.id] || a.status;
+
+  // Tab filters
+  const todayAppts = appointments.filter(a => a.date === TODAY);
+  const upcomingAppts = appointments.filter(a => a.date > TODAY && getStatus(a) === 'Scheduled');
+  const pastAppts = appointments.filter(a => a.date < TODAY || ['Completed','Missed','Cancelled'].includes(getStatus(a)));
+
+  const filteredAppointments = appointments.filter(a => {
+    if (gradeFilter !== 'all' && a.grade !== gradeFilter) return false;
+    if (statusFilter !== 'all' && getStatus(a) !== statusFilter) return false;
+    if (typeFilter !== 'all' && a.type !== typeFilter) return false;
+    if (searchTerm && !a.grade.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !a.section.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    return true;
+  });
+
+  // Calendar helpers
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
-    const days = [];
+    const days: (Date | null)[] = [];
     for (let i = 0; i < firstDay.getDay(); i++) days.push(null);
     for (let i = 1; i <= lastDay.getDate(); i++) days.push(new Date(year, month, i));
     return days;
   };
-
   const getAppointmentsForDay = (date: Date | null) => {
     if (!date) return [];
-    const dateStr = date.toISOString().split('T')[0];
-    return filteredAppointments.filter(a => a.date === dateStr);
+    const ds = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+    return filteredAppointments.filter(a => a.date === ds);
   };
-
   const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth()-1, 1));
   const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 1));
   const monthName = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
   const days = getDaysInMonth(currentDate);
 
-  const filteredAppointments = appointments.filter(a => {
-    if (gradeFilter !== 'all' && a.grade !== gradeFilter) return false;
-    if (statusFilter !== 'all' && a.status !== statusFilter) return false;
-    if (typeFilter !== 'all' && a.type !== typeFilter) return false;
-    if (searchTerm && !a.school.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !a.grade.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !a.section.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-    return true;
-  });
-
-  const handleCreateAppointment = () => {
-    alert(`Appointment created for ${formSchool} — ${selectedGrade} ${selectedSection} with ${selectedStudents.length} students on ${appointmentDate} at ${appointmentTime}`);
-    setShowCreateModal(false);
-    setFormSchool(''); setSelectedGrade(''); setSelectedSection('');
-    setSelectedStudents([]); setAppointmentDate(''); setAppointmentTime(''); setAppointmentType('');
+  const markStatus = (id: string, status: string) => {
+    setStatusMap(prev => ({ ...prev, [id]: status }));
   };
 
-  const toggleStudentSelection = (id: string) => {
-    setSelectedStudents(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]);
+  const statusBadge = (status: string) => {
+    const map: Record<string, string> = {
+      'Scheduled': 'bg-blue-100 text-blue-700',
+      'In Progress': 'bg-yellow-100 text-yellow-700',
+      'Completed': 'bg-green-100 text-green-700',
+      'Missed': 'bg-red-100 text-red-700',
+      'Cancelled': 'bg-gray-100 text-gray-500',
+    };
+    return map[status] || 'bg-gray-100 text-gray-500';
+  };
+
+  const AppointmentCard = ({ a, showActions = false }: { a: any; showActions?: boolean }) => {
+    const gc = getGradeColor(a.grade);
+    const sc = getSchoolColor(a.school);
+    const status = getStatus(a);
+    return (
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+        <div className="flex items-center gap-3">
+          <div style={{ backgroundColor: gc.light, color: gc.solid }} className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0">
+            {a.grade.replace('Grade ', 'G')}
+          </div>
+          <div>
+            <div className="text-sm font-medium text-gray-900">{a.section} — {a.grade}</div>
+            <div className="text-xs text-gray-500 flex items-center gap-2">
+              <span style={{ color: sc.solid }}>{getSchoolShortName(a.school)}</span>
+              <span>·</span>
+              <Clock className="w-3 h-3" />
+              <span>{a.time}</span>
+              <span>·</span>
+              <Users className="w-3 h-3" />
+              <span>{a.studentCount} students</span>
+            </div>
+            <div className="text-xs text-gray-400 mt-0.5">{a.type} · {a.dentist}</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${statusBadge(status)}`}>{status}</span>
+          {showActions && status === 'Scheduled' && (
+            <>
+              <button onClick={() => markStatus(a.id, 'Completed')}
+                className="w-7 h-7 rounded-full bg-green-100 hover:bg-green-200 text-green-700 flex items-center justify-center transition-colors" title="Mark Attended">
+                <Check className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => markStatus(a.id, 'Missed')}
+                className="w-7 h-7 rounded-full bg-red-100 hover:bg-red-200 text-red-700 flex items-center justify-center transition-colors" title="Mark Missed">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
+          {showActions && status === 'In Progress' && (
+            <button onClick={() => markStatus(a.id, 'Completed')}
+              className="w-7 h-7 rounded-full bg-green-100 hover:bg-green-200 text-green-700 flex items-center justify-center transition-colors" title="Mark Completed">
+              <Check className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {showActions && (status === 'Completed' || status === 'Missed') && (
+            <button onClick={() => markStatus(a.id, 'Scheduled')}
+              className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition-colors" title="Reset">
+              <RotateCcw className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -121,503 +211,371 @@ export const Appointments = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Appointments</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{filteredAppointments.length} appointment{filteredAppointments.length !== 1 ? 's' : ''}</p>
+          <p className="text-sm text-gray-500 mt-0.5">{appointments.length} appointment{appointments.length !== 1 ? 's' : ''} total</p>
         </div>
-        <button onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-[#1E3A8A] text-sm font-medium">
-          <Plus className="w-4 h-4" /> New Appointment
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowRotationModal(true)}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">
+            <Stethoscope className="w-4 h-4" /> Set Rotation
+          </button>
+          <button onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+            <Plus className="w-4 h-4" /> New Appointment
+          </button>
+        </div>
       </div>
 
-      {/* Filters + Calendar Nav */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-        {/* Search */}
-        <div className="relative">
-          <input type="text" placeholder="Search by grade, section..." value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-4 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        </div>
-        {/* Filter row + calendar nav */}
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
-            <select value={gradeFilter} onChange={e => setGradeFilter(e.target.value)}
-              className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="all">All Grades</option>
-              {['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'].map(g => <option key={g} value={g}>{g}</option>)}
-            </select>
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-              className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="all">All Statuses</option>
-              {['Scheduled','In Progress','Completed','Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-              className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="all">All Types</option>
-              {['Screening','Bayanihan Mission','Fluoride Application','Extraction','Follow-up'].map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-            {(gradeFilter !== 'all' || statusFilter !== 'all' || typeFilter !== 'all' || searchTerm) && (
-              <button onClick={() => { setGradeFilter('all'); setStatusFilter('all'); setTypeFilter('all'); setSearchTerm(''); }}
-                className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
-                <X className="w-3 h-3" /> Clear
-              </button>
-            )}
+      {/* Tabs */}
+      <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit overflow-x-auto">
+        {[
+          { key: 'today', label: `Today (${todayAppts.length})` },
+          { key: 'upcoming', label: `Upcoming (${upcomingAppts.length})` },
+          { key: 'past', label: `Past (${pastAppts.length})` },
+          { key: 'calendar', label: 'Calendar' },
+          { key: 'rotation', label: 'Rotation' },
+        ].map(tab => (
+          <button key={tab.key} onClick={() => setActiveTab(tab.key as any)}
+            className={`flex-shrink-0 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.key ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── TODAY TAB ── */}
+      {activeTab === 'today' && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-sm font-semibold text-gray-900">Today — {new Date(TODAY).toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-lg"><ChevronLeft className="w-4 h-4"/></button>
-            <div className="flex items-center gap-1.5">
-              <CalendarIcon className="w-4 h-4 text-gray-500"/>
-              <span className="text-sm font-semibold text-gray-900 min-w-[140px] text-center">{monthName}</span>
+          {todayAppts.length === 0 ? (
+            <div className="py-12 text-center text-gray-400">
+              <CalendarIcon className="w-8 h-8 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">No appointments scheduled for today</p>
             </div>
-            <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-lg"><ChevronRight className="w-4 h-4"/></button>
+          ) : (
+            todayAppts.map(a => <AppointmentCard key={a.id} a={a} showActions />)
+          )}
+        </div>
+      )}
+
+      {/* ── UPCOMING TAB ── */}
+      {activeTab === 'upcoming' && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100">
+            <span className="text-sm font-semibold text-gray-900">Upcoming Appointments</span>
+          </div>
+          {upcomingAppts.length === 0 ? (
+            <div className="py-12 text-center text-gray-400">
+              <CalendarIcon className="w-8 h-8 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">No upcoming appointments</p>
+            </div>
+          ) : (
+            upcomingAppts.map(a => (
+              <div key={a.id} className="flex items-center gap-4 px-4 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                <div className="text-center min-w-[48px]">
+                  <div className="text-lg font-bold text-[#1E40AF]">{a.date.split('-')[2]}</div>
+                  <div className="text-xs text-gray-400">{new Date(a.date).toLocaleString('default', { month: 'short' })}</div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <AppointmentCard a={a} showActions />
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* ── PAST TAB ── */}
+      {activeTab === 'past' && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100">
+            <span className="text-sm font-semibold text-gray-900">Past Appointments</span>
+          </div>
+          {pastAppts.length === 0 ? (
+            <div className="py-12 text-center text-gray-400">
+              <p className="text-sm">No past appointments</p>
+            </div>
+          ) : (
+            pastAppts.map(a => <AppointmentCard key={a.id} a={a} showActions />)
+          )}
+        </div>
+      )}
+
+      {/* ── CALENDAR TAB ── */}
+      {activeTab === 'calendar' && (
+        <div className="space-y-3">
+          {/* Filters */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+            <div className="relative">
+              <input type="text" placeholder="Search by grade, section..." value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-4 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
+                <select value={gradeFilter} onChange={e => setGradeFilter(e.target.value)}
+                  className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="all">All Grades</option>
+                  {grades.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+                  className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="all">All Statuses</option>
+                  {['Scheduled','In Progress','Completed','Missed','Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+                  className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="all">All Types</option>
+                  {['Regular Checkup','Screening','Bayanihan Mission','Fluoride Application','Extraction','Follow-up'].map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+                {(gradeFilter !== 'all' || statusFilter !== 'all' || typeFilter !== 'all' || searchTerm) && (
+                  <button onClick={() => { setGradeFilter('all'); setStatusFilter('all'); setTypeFilter('all'); setSearchTerm(''); }}
+                    className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
+                    <X className="w-3 h-3" /> Clear
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-lg"><ChevronLeft className="w-4 h-4"/></button>
+                <div className="flex items-center gap-1.5">
+                  <CalendarIcon className="w-4 h-4 text-gray-500"/>
+                  <span className="text-sm font-semibold text-gray-900 min-w-[140px] text-center">{monthName}</span>
+                </div>
+                <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-lg"><ChevronRight className="w-4 h-4"/></button>
+              </div>
+            </div>
+          </div>
+
+          {/* Calendar grid */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="grid grid-cols-7 border-b border-gray-200">
+              {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
+                <div key={d} className="text-center text-xs font-semibold text-gray-600 py-2 bg-gray-50">{d}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7">
+              {days.map((day, idx) => {
+                const dayAppts = getAppointmentsForDay(day);
+                const isToday = day && day.toISOString().split('T')[0] === TODAY;
+                return (
+                  <div key={idx} className={`min-h-[80px] p-1.5 border-r border-b border-gray-100 ${!day ? 'bg-gray-50' : ''} ${isToday ? 'bg-blue-50' : ''}`}>
+                    {day && (
+                      <>
+                        <div className={`text-xs font-medium mb-1 w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-[#1E40AF] text-white' : 'text-gray-600'}`}>
+                          {day.getDate()}
+                        </div>
+                        {dayAppts.map(a => {
+                          const gc = getGradeColor(a.grade);
+                          return (
+                            <div key={a.id} style={{ backgroundColor: gc.light, color: gc.solid }}
+                              className="text-[10px] font-medium px-1.5 py-0.5 rounded mb-0.5 truncate cursor-pointer hover:opacity-80">
+                              {a.time} {a.section}
+                            </div>
+                          );
+                        })}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Calendar */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="grid grid-cols-7 border-b border-gray-200">
-          {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
-            <div key={d} className="text-center text-xs font-semibold text-gray-600 py-2 bg-gray-50">{d}</div>
-          ))}
-        </div>
-        <div className="grid grid-cols-7" style={{ gridAutoRows: '100px' }}>
-          {days.map((day, i) => {
-            const dayApts = day ? getAppointmentsForDay(day) : [];
-            const isToday = day && day.toDateString() === new Date().toDateString();
+      {/* ── ROTATION TAB ── */}
+      {activeTab === 'rotation' && (
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-gray-500">Dentist rotation schedule by school</p>
+            <button onClick={() => setShowRotationModal(true)}
+              className="flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
+              <Plus className="w-4 h-4" /> Add Rotation
+            </button>
+          </div>
+          {SCHOOLS.filter(s => !selectedSchool || s === selectedSchool).map(school => {
+            const sc = getSchoolColor(school);
+            const schoolRots = rotations.filter(r => r.school === school);
             return (
-              <div key={i} className={`border-b border-r border-gray-100 p-1.5 overflow-hidden ${!day ? 'bg-gray-50' : 'bg-white hover:bg-blue-50'} ${isToday ? 'ring-2 ring-inset ring-[#1E40AF]' : ''}`}>
-                {day && (
-                  <>
-                    <div className={`text-xs font-semibold mb-1 ${isToday ? 'text-[#1E40AF]' : 'text-gray-700'}`}>{day.getDate()}</div>
-                    <div className="space-y-0.5">
-                      {dayApts.slice(0,2).map(apt => {
-                        const gc = getGradeColor(apt.grade);
-                        return (
-                          <button key={apt.id}
-                            onClick={e => { e.stopPropagation(); setSelectedAppointment(apt); setShowAppointmentModal(true); setAttendanceMap({}); setStudentSearchTerm(''); }}
-                            className="w-full px-1.5 py-0.5 rounded text-left truncate hover:opacity-80"
-                            style={{ backgroundColor: gc.light, color: gc.solid, minHeight: '22px' }}>
-                            <span className="text-xs font-bold flex items-center gap-0.5">
-                              <span>●</span><span className="truncate">{apt.section} · {apt.studentCount}</span>
-                            </span>
-                          </button>
-                        );
-                      })}
-                      {dayApts.length > 2 && (
-                        <div className="px-1.5 py-0.5 text-xs text-gray-500 bg-gray-100 rounded" style={{ minHeight: '22px' }}>+{dayApts.length-2} more</div>
-                      )}
-                    </div>
-                  </>
+              <div key={school} style={{ borderColor: sc.border }} className="bg-white rounded-xl border-2 overflow-hidden">
+                <div style={{ backgroundColor: sc.light }} className="px-4 py-3 flex items-center gap-2">
+                  <Stethoscope style={{ color: sc.solid }} className="w-4 h-4" />
+                  <span style={{ color: sc.text }} className="font-bold text-sm">{getSchoolShortName(school)}</span>
+                </div>
+                {schoolRots.length === 0 ? (
+                  <div className="px-4 py-4 text-sm text-gray-400">No rotation schedule set</div>
+                ) : (
+                  <div className="divide-y divide-gray-100">
+                    {schoolRots.map(r => (
+                      <div key={r.id} className="px-4 py-3 flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{r.dentist}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">{r.weekStart} → {r.weekEnd}</div>
+                          {r.notes && <div className="text-xs text-gray-400 mt-0.5">{r.notes}</div>}
+                        </div>
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Active</span>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             );
           })}
         </div>
-      </div>
+      )}
 
-      {/* Appointment Detail Modal */}
-      {showAppointmentModal && selectedAppointment && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-          onClick={() => setShowAppointmentModal(false)}
-        >
-          <div
-            className="bg-white rounded-xl shadow-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
-              <h2 className="text-xl font-bold text-gray-900">Appointment Details</h2>
-              <button
-                onClick={() => setShowAppointmentModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      {/* ── CREATE APPOINTMENT MODAL ── */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-900">New Appointment</h2>
+              <button onClick={() => setShowCreateModal(false)} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-4 h-4"/></button>
             </div>
-
-            <div className="p-6 space-y-6">
-              {/* TOP SECTION - Appointment Info */}
-              <div className="space-y-3">
-                <h3 className="text-2xl font-bold text-gray-900">{selectedAppointment.school}</h3>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span
-                    className="px-3 py-1 rounded-full text-sm font-medium"
-                    style={{
-                      backgroundColor: getGradeColor(selectedAppointment.grade).light,
-                      color: getGradeColor(selectedAppointment.grade).solid
-                    }}
-                  >
-                    {selectedAppointment.grade}
-                  </span>
-                  <span className="text-gray-700 font-medium">Section {selectedAppointment.section}</span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    selectedAppointment.status === 'Scheduled' ? 'bg-blue-100 text-blue-800' :
-                    selectedAppointment.status === 'In Progress' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-green-100 text-green-800'
-                  }`}>
-                    {selectedAppointment.status}
-                  </span>
+            <div className="p-5 space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
+                <AlertCircle className="w-3.5 h-3.5 inline mr-1" />
+                Select a school, grade, and section. Students in that section will be listed for selection.
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">School</label>
+                  <select value={formSchool} onChange={e => setFormSchool(e.target.value)}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Select school</option>
+                    {SCHOOLS.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
                 </div>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Date & Time:</span>
-                    <div className="font-semibold text-gray-900">
-                      {new Date(selectedAppointment.date).toLocaleDateString('default', { weekday: 'long', month: 'long', day: 'numeric' })} at {selectedAppointment.time}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Dentist:</span>
-                    <div className="font-semibold text-gray-900">{selectedAppointment.dentist}</div>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Students Scheduled:</span>
-                    <div className="font-semibold text-gray-900">{selectedAppointment.studentCount}</div>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Type:</span>
-                    <div className="font-semibold text-gray-900">{selectedAppointment.type}</div>
-                  </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Grade</label>
+                  <select value={selectedGrade} onChange={e => { setSelectedGrade(e.target.value); setSelectedSection(''); }}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Grade</option>
+                    {grades.map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Section</label>
+                  <select value={selectedSection} onChange={e => setSelectedSection(e.target.value)}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Section</option>
+                    {(sectionsByGrade[selectedGrade] || []).map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
+                  <input type="date" value={appointmentDate} onChange={e => setAppointmentDate(e.target.value)}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Time</label>
+                  <input type="time" value={appointmentTime} onChange={e => setAppointmentTime(e.target.value)}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Appointment Type</label>
+                  <select value={appointmentType} onChange={e => setAppointmentType(e.target.value)}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Select type</option>
+                    {['Regular Checkup','Screening','Bayanihan Mission','Fluoride Application','Extraction','Follow-up'].map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Dentist</label>
+                  <input type="text" value={appointmentDentist} onChange={e => setAppointmentDentist(e.target.value)}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </div>
-
-              {/* MIDDLE SECTION - Student Checklist */}
-              <div className="border-t border-gray-200 pt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-bold text-gray-900">Student Attendance</h4>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        const newMap: Record<string, boolean> = {};
-                        selectedAppointment.students.forEach((s: any) => {
-                          newMap[s.id] = true;
-                        });
-                        setAttendanceMap(newMap);
-                      }}
-                      className="px-3 py-1 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium"
-                    >
-                      Mark All Present
-                    </button>
+              {studentsInSection.length > 0 && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-2">Select Students ({selectedStudents.length} selected)</label>
+                  <div className="border border-gray-200 rounded-lg max-h-40 overflow-y-auto divide-y divide-gray-100">
+                    {studentsInSection.map(s => (
+                      <label key={s.id} className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" checked={selectedStudents.includes(s.id)}
+                          onChange={() => setSelectedStudents(prev => prev.includes(s.id) ? prev.filter(x => x !== s.id) : [...prev, s.id])}
+                          className="w-4 h-4 rounded accent-blue-600" />
+                        <span className="text-sm text-gray-700">{s.name}</span>
+                        <span className="text-xs text-gray-400 ml-auto">{s.gender} · {s.age}y</span>
+                      </label>
+                    ))}
                   </div>
                 </div>
-
-                {/* Search bar */}
-                <div className="mb-4">
-                  <input
-                    type="text"
-                    placeholder="Search student by name..."
-                    value={studentSearchTerm}
-                    onChange={(e) => setStudentSearchTerm(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                {/* Student list */}
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {selectedAppointment.students
-                    .filter((student: any) =>
-                      student.name.toLowerCase().includes(studentSearchTerm.toLowerCase())
-                    )
-                    .map((student: any) => (
-                    <label
-                      key={student.id}
-                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={!!attendanceMap[student.id]}
-                        onChange={(e) => {
-                          setAttendanceMap(prev => ({
-                            ...prev,
-                            [student.id]: e.target.checked
-                          }));
-                        }}
-                        className="w-4 h-4 text-blue-600 rounded"
-                      />
-                      <div className="flex-1 grid grid-cols-4 gap-2">
-                        <div className="font-medium text-gray-900">{student.name}</div>
-                        <div className="text-sm text-gray-600">{student.gender}</div>
-                        <div className="text-sm text-gray-600">{student.age} years</div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium text-center ${
-                          student.riskLevel === 'High' ? 'bg-red-100 text-red-700' :
-                          student.riskLevel === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-green-100 text-green-700'
-                        }`}>
-                          {student.riskLevel}
-                        </span>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* BOTTOM SECTION - Actions */}
-              <div className="border-t border-gray-200 pt-6">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {selectedAppointment.status === 'Scheduled' && (
-                    <button
-                      onClick={() => {
-                        setShowAppointmentModal(false);
-                        setToastMessage('Session started successfully');
-                        setShowToast(true);
-                        setTimeout(() => setShowToast(false), 3000);
-                      }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                    >
-                      Start Session
-                    </button>
-                  )}
-                  {selectedAppointment.status === 'In Progress' && (
-                    <button
-                      onClick={() => {
-                        const presentCount = Object.values(attendanceMap).filter(Boolean).length;
-                        const totalCount = selectedAppointment.students.length;
-                        setShowAppointmentModal(false);
-                        setToastMessage(`Session completed — ${presentCount} of ${totalCount} students attended`);
-                        setShowToast(true);
-                        setTimeout(() => setShowToast(false), 4000);
-                      }}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                    >
-                      Complete Session
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      alert('Reschedule functionality coming soon');
-                    }}
-                    className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium"
-                  >
-                    Reschedule
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm('Are you sure you want to cancel this appointment?')) {
-                        setShowAppointmentModal(false);
-                        setToastMessage('Appointment cancelled');
-                        setShowToast(true);
-                        setTimeout(() => setShowToast(false), 3000);
-                      }
-                    }}
-                    className="px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium"
-                  >
-                    Cancel Appointment
-                  </button>
-                </div>
+              )}
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setShowCreateModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">
+                  Cancel
+                </button>
+                <button onClick={() => { alert(`Appointment created! ${formSchool} — ${selectedGrade} ${selectedSection}`); setShowCreateModal(false); }}
+                  className="flex-1 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+                  Create Appointment
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Toast Notification */}
-      {showToast && (
-        <div className="fixed bottom-6 right-6 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2">
-          <Check className="w-5 h-5" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
-      {/* Create Appointment Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Create New Appointment</h2>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      {/* ── SET ROTATION MODAL ── */}
+      {showRotationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-900">Set Rotation Schedule</h2>
+              <button onClick={() => setShowRotationModal(false)} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-4 h-4"/></button>
             </div>
-
-            <div className="p-6 space-y-4">
-              {/* Step 1: Select School */}
+            <div className="p-5 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  1. Select School *
-                </label>
-                <select
-                  value={formSchool}
-                  onChange={(e) => {
-                    setSelectedSchool(e.target.value);
-                    setSelectedGrade('');
-                    setSelectedSection('');
-                    setSelectedStudents([]);
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF]"
-                >
-                  <option value="">Choose a school...</option>
-                  {schools.map((school) => (
-                    <option key={school} value={school}>
-                      {school}
-                    </option>
-                  ))}
+                <label className="block text-xs font-medium text-gray-600 mb-1">School</label>
+                <select value={rotSchool} onChange={e => setRotSchool(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">Select school</option>
+                  {SCHOOLS.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
-
-              {/* Step 2: Select Grade */}
-              {formSchool && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Dentist Name</label>
+                <input type="text" value={rotDentist} onChange={e => setRotDentist(e.target.value)}
+                  placeholder="e.g. Dr. Maria Santos"
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    2. Select Grade *
-                  </label>
-                  <select
-                    value={selectedGrade}
-                    onChange={(e) => {
-                      setSelectedGrade(e.target.value);
-                      setSelectedSection('');
-                      setSelectedStudents([]);
-                    }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF]"
-                  >
-                    <option value="">Choose a grade...</option>
-                    {grades.map((grade) => (
-                      <option key={grade} value={grade}>
-                        {grade}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Week Start</label>
+                  <input type="date" value={rotWeekStart} onChange={e => setRotWeekStart(e.target.value)}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
-              )}
-
-              {/* Step 3: Select Section */}
-              {selectedGrade && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    3. Select Section *
-                  </label>
-                  <select
-                    value={selectedSection}
-                    onChange={(e) => {
-                      setSelectedSection(e.target.value);
-                      setSelectedStudents([]);
-                    }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF]"
-                  >
-                    <option value="">Choose a section...</option>
-                    {sections.map((section) => (
-                      <option key={section} value={section}>
-                        {section}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Week End</label>
+                  <input type="date" value={rotWeekEnd} onChange={e => setRotWeekEnd(e.target.value)}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
-              )}
-
-              {/* Step 4: Select Students */}
-              {selectedSection && (
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      4. Select Students * ({selectedStudents.length} selected)
-                    </label>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={selectAllStudents}
-                        className="text-xs text-[#1E40AF] hover:underline"
-                      >
-                        Select All
-                      </button>
-                      <button
-                        onClick={deselectAllStudents}
-                        className="text-xs text-gray-600 hover:underline"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                  </div>
-                  <div className="border border-gray-300 rounded-lg max-h-48 overflow-y-auto">
-                    {studentsInSection.map((student) => (
-                      <label
-                        key={student.id}
-                        className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedStudents.includes(student.id)}
-                          onChange={() => toggleStudentSelection(student.id)}
-                          className="w-4 h-4"
-                        />
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">{student.name}</div>
-                          <div className="text-xs text-gray-500">
-                            {student.gender} • {student.age} years old
-                          </div>
-                        </div>
-                        {selectedStudents.includes(student.id) && (
-                          <Check className="w-4 h-4 text-green-600" />
-                        )}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Appointment Details */}
-              {selectedStudents.length > 0 && (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Date *
-                      </label>
-                      <input
-                        type="date"
-                        value={appointmentDate}
-                        onChange={(e) => setAppointmentDate(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Time *
-                      </label>
-                      <input
-                        type="time"
-                        value={appointmentTime}
-                        onChange={(e) => setAppointmentTime(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF]"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Appointment Type *
-                    </label>
-                    <select
-                      value={appointmentType}
-                      onChange={(e) => setAppointmentType(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF]"
-                    >
-                      <option value="">Choose type...</option>
-                      <option value="Regular Checkup">Regular Checkup</option>
-                      <option value="Fluoride Application">Fluoride Application</option>
-                      <option value="Tooth Extraction">Tooth Extraction</option>
-                      <option value="Dental Cleaning">Dental Cleaning</option>
-                      <option value="Bayanihan Mission">Bayanihan Mission</option>
-                    </select>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="border-t border-gray-200 px-6 py-4 flex gap-3">
-              <button
-                onClick={handleCreateAppointment}
-                disabled={!formSchool || !selectedGrade || !selectedSection || selectedStudents.length === 0 || !appointmentDate || !appointmentTime || !appointmentType}
-                className="flex-1 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-[#1E3A8A] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Create Appointment
-              </button>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Notes (optional)</label>
+                <input type="text" value={rotNotes} onChange={e => setRotNotes(e.target.value)}
+                  placeholder="e.g. Bayanihan week"
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setShowRotationModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">
+                  Cancel
+                </button>
+                <button onClick={() => {
+                  if (rotSchool && rotDentist && rotWeekStart) {
+                    setRotations(prev => [...prev, { id: `r${Date.now()}`, school: rotSchool, dentist: rotDentist, weekStart: rotWeekStart, weekEnd: rotWeekEnd, notes: rotNotes }]);
+                    setRotSchool(''); setRotDentist(''); setRotWeekStart(''); setRotWeekEnd(''); setRotNotes('');
+                    setShowRotationModal(false);
+                    setActiveTab('rotation');
+                  }
+                }}
+                  className="flex-1 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+                  Save Schedule
+                </button>
+              </div>
             </div>
           </div>
         </div>
