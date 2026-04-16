@@ -1,7 +1,21 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router';
-import { ArrowLeft, Save, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router';
+import { ArrowLeft, Save, ChevronLeft, ChevronRight, Shield, Users } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
+
+// ─── Ordered patient nav list (matches DentalChartNav mockCharts order) ────────
+const patientNavList = [
+  { id: '1',  name: 'Juan Morales',        grade: 'Grade 4', section: 'Sampaguita' },
+  { id: '2',  name: 'Isabella Villanueva', grade: 'Grade 3', section: 'Jasmine'    },
+  { id: '3',  name: 'Aldrin Villanueva',   grade: 'Grade 2', section: 'Rose'       },
+  { id: '7',  name: 'Jose Martinez',       grade: 'Grade 6', section: 'Coral'      },
+  { id: '9',  name: 'Miguel Torres',       grade: 'Grade 4', section: 'Opal'       },
+  { id: '11', name: 'Pedro Reyes',         grade: 'Grade 5', section: 'Yakal'      },
+  { id: '13', name: 'Lucia Diaz',          grade: 'Grade 5', section: 'Lauan'      },
+  { id: '15', name: 'Valentina Cruz',      grade: 'Grade 3', section: 'Bamboo'     },
+  { id: '4',  name: 'Elena Morales',       grade: 'Grade 2', section: 'Dahlia'     },
+  { id: '8',  name: 'Carmen Flores',       grade: 'Grade 2', section: 'Diamond'    },
+];
 
 // ─── Mock patient data ────────────────────────────────────────────────────────
 const mockPatient = {
@@ -81,6 +95,11 @@ const computeDMFT = (chart: Record<number, { condition: string; treatment: strin
 // ─── Main component ───────────────────────────────────────────────────────────
 export const DentalChart = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+
+  const navIndex = patientNavList.findIndex(p => p.id === id);
+  const prevPatient = navIndex > 0 ? patientNavList[navIndex - 1] : null;
+  const nextPatient = navIndex < patientNavList.length - 1 ? patientNavList[navIndex + 1] : null;
   const [activeTab, setActiveTab] = useState<'history' | 'chart' | 'appointments'>('history');
   const [activeYears, setActiveYears] = useState<string[]>(['2024-2025', '2025-2026']);
   const [selectedYear, setSelectedYear] = useState(0); // index into activeYears
@@ -226,17 +245,43 @@ export const DentalChart = () => {
   return (
     <div className="space-y-4 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link to="/dental-charts" className="p-2 hover:bg-gray-100 rounded-lg">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link to="/dental-charts" className="p-2 hover:bg-gray-100 rounded-lg shrink-0">
             <ArrowLeft className="w-4 h-4 text-gray-600" />
           </Link>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-lg font-bold text-gray-900">Individual Patient Treatment Record</h1>
             <p className="text-xs text-gray-500">{mockPatient.lastName}, {mockPatient.firstName} · {mockPatient.school} · {mockPatient.grade}-{mockPatient.section}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Patient navigation */}
+          <div className="hidden sm:flex items-center gap-1 border border-gray-200 rounded-lg overflow-hidden">
+            <button
+              onClick={() => prevPatient && navigate(`/dental-chart/${prevPatient.id}`)}
+              disabled={!prevPatient}
+              title={prevPatient ? `← ${prevPatient.name}` : undefined}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default border-r border-gray-200"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              {prevPatient ? <span className="max-w-[80px] truncate">{prevPatient.name.split(' ')[0]}</span> : 'First'}
+            </button>
+            <span className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-500">
+              <Users className="w-3 h-3" />
+              {navIndex >= 0 ? `${navIndex + 1}/${patientNavList.length}` : '—'}
+            </span>
+            <button
+              onClick={() => nextPatient && navigate(`/dental-chart/${nextPatient.id}`)}
+              disabled={!nextPatient}
+              title={nextPatient ? `${nextPatient.name} →` : undefined}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default border-l border-gray-200"
+            >
+              {nextPatient ? <span className="max-w-[80px] truncate">{nextPatient.name.split(' ')[0]}</span> : 'Last'}
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          {/* Year navigation */}
           <button onClick={() => setSelectedYear(Math.max(0, selectedYear - 1))} disabled={selectedYear === 0} className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30">
             <ChevronLeft className="w-4 h-4" />
           </button>

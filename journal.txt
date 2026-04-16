@@ -88,3 +88,54 @@
 
 ### LATEST COMMIT
 cc876d27 — DOH report exact official format — age brackets per grade, summary columns, blank when zero
+
+---
+
+## Session: April 17, 2026 (Sprint 5 — Patient UX)
+
+### COMPLETED THIS SESSION
+
+**Prev/Next patient navigation in DentalChart (IPTR):**
+- `patientNavList` constant added at top of DentalChart.tsx (10 patients, matches DentalChartNav order)
+- `navIndex`, `prevPatient`, `nextPatient` computed from URL param `id`
+- Patient nav bar added to IPTR header — shows first name of prev/next patient, current position (e.g. "2/10"), hidden on mobile (sm:flex)
+- Clicking prev/next calls `navigate('/dental-chart/${id}')` via useNavigate
+- Year navigation (ChevronLeft/Right for school years) is unchanged — both nav types coexist in header
+
+**Treatment History tab on PatientProfile:**
+- New "Treatment History" tab (FileText icon) added to PatientProfile
+- 5 mock treatment entries with date, complaint, diagnosis, treatment, dentist, remarks
+- Desktop: full table with all 6 columns
+- Mobile: stacked cards with CC/Dx/Tx labels
+- "Add Entry" button toggles inline form (date, dentist, CC, diagnosis, treatment, remarks)
+
+**Dental Records tab on PatientProfile:**
+- New "Dental Records" tab (TrendingUp icon) added to PatientProfile
+- DMFT by year table: 3 school years (2023–2026) with d/m/f/x/dmft and D/M/F/X/DMFT columns
+- Color-coded columns: red=D/d, slate=M/m, blue=F/f, orange=X/x, gray=totals
+- Blank when zero (falsy display)
+- Oral Status badge per year (Orally Fit / Under Treatment / Needs Treatment)
+- 4 KPI cards below: latest dmft, latest DMFT, # school years, trend arrow
+- "Open IPTR" button links to `/dental-chart/:id`
+
+**TypeScript: 0 errors**
+
+### CURRENT FILE STATE
+- DentalChart.tsx: ~800 lines (prev/next patient nav added)
+- PatientProfile.tsx: ~620 lines (Dental Records + Treatment History tabs added)
+- Appointments.tsx: ~585 lines
+- Reports.tsx: ~500 lines
+- PatientList.tsx: ~754 lines
+- AIAnalytics.tsx: ~870 lines
+- TreatmentRecords.tsx: ~170 lines
+
+### PENDING / KNOWN ISSUES
+- DOH report is 77 columns wide — hard to read on screen, needs print optimization
+- No real backend yet (all mock data)
+- Print-specific HTML layout for IPTR not yet done
+- Editable DOH report cells not yet done
+- Link appointments → dental form not done
+- Prev/next nav only works for the 10 patients in patientNavList; fallback shows "—" for position
+
+### LATEST COMMIT
+(pending commit)
