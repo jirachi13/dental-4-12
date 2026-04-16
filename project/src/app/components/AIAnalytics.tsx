@@ -32,6 +32,7 @@ export const AIAnalytics = () => {
   const [riskFilter, setRiskFilter] = useState('all');
   const [validationFilter, setValidationFilter] = useState('all');
   const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
+  const [analyticsSubTab, setAnalyticsSubTab] = useState<'risk' | 'pending'>('risk');
 
   // Helper functions
   const calculateAge = (birthdate: string) => {
@@ -52,120 +53,113 @@ export const AIAnalytics = () => {
     return 'Other';
   };
 
+  // ── Risk Scoring Algorithm (mirrors Base44 logic) ──────────────────────────
+  const computeRiskScore = (s: any) => {
+    let score = 0;
+    const factors: string[] = [];
+
+    const dmft = (s.dmft_D || 0) + (s.dmft_M || 0) + (s.dmft_F || 0);
+    if (dmft >= 4) { score += 3; factors.push(`DMFT score: ${dmft}`); }
+    if ((s.dmft_D || 0) >= 3) { score += 3; factors.push('Untreated decayed teeth ≥ 3'); }
+    if (s.dmftIncreased) { score += 3; factors.push('DMFT increased ≥ 2 over time'); }
+    if ((s.dmft_X || 0) > 0) { score += 3; factors.push('Unresolved DX teeth'); }
+    if (!s.lastVisit) { score += 2; factors.push('No treatment visits recorded'); }
+    else {
+      const daysSince = (Date.now() - new Date(s.lastVisit).getTime()) / 86400000;
+      if (daysSince > 365) { score += 2; factors.push('Last visit > 12 months ago'); }
+    }
+    if (s.recurringGingivitis) { score += 2; factors.push('Recurring gingivitis'); }
+    if (s.recurringDebris) { score += 2; factors.push('Recurring debris'); }
+    if (s.sugarHabit) { score += 2; factors.push('Sugar habit'); }
+    if (s.tobaccoUser) { score += 2; factors.push('Tobacco use'); }
+    if (s.betelNut) { score += 2; factors.push('Betel nut use'); }
+    if (s.diabetes) { score += 2; factors.push('Diabetes'); }
+    if (!s.preventiveTreatment) { score += 2; factors.push('No preventive treatment recorded'); }
+    if (s.is4Ps) { score += 1; factors.push('4Ps/NHTS member'); }
+    if (s.thumbsucking) { score += 1; factors.push('Thumbsucking'); }
+
+    const riskLevel = score >= 6 ? 'High' : score >= 3 ? 'Medium' : 'Low';
+    const predictedIssue = score >= 6 ? 'Dental Caries Progression / Tooth Loss Risk'
+      : score >= 3 ? 'Moderate oral health concern' : 'Good oral health';
+    const recommendedAction = score >= 6 ? 'Priority scheduling; refer to City Health Office'
+      : score >= 3 ? 'Schedule preventive care; oral hygiene counseling'
+      : 'Standard annual monitoring';
+
+    return { score, factors, riskLevel, predictedIssue, recommendedAction };
+  };
+
   const [students, setStudents] = useState([
     {
-      id: '1',
-      name: 'Juan Dela Cruz',
-      birthdate: '2016-03-15',
-      gender: 'Male',
-      grade: 'Grade 4',
-      school: 'Bagong Tanyag Integrated School',
+      id: '1', name: 'Juan Dela Cruz', birthdate: '2016-03-15', gender: 'Male',
+      grade: 'Grade 4', section: 'Sampaguita', school: 'Bagong Tanyag Integrated School',
       oralCondition: 'Severe Caries (Tooth #36, #46), Gingivitis (Generalized)',
-      aiRecommendation: 'Immediate extraction tooth #36, Fluoride varnish application, Oral hygiene instruction',
-      riskLevel: 'High',
-      confidenceScore: 94,
-      lastVisit: '2026-02-15',
-      validated: false,
-      validatedBy: null,
-      validationDate: null,
-      validationStatus: null,
-      aiDetectedConditions: ['Severe Caries', 'Gingivitis', 'Poor Oral Hygiene'],
-      modelVersion: 'v2.3.1',
+      riskLevel: 'High', confidenceScore: 94, lastVisit: '2026-02-15',
+      validated: false, validatedBy: null, validationDate: null, validationStatus: null,
+      aiDetectedConditions: ['Severe Caries', 'Gingivitis', 'Poor Oral Hygiene'], modelVersion: 'v2.3.1',
+      dmft_D: 5, dmft_M: 1, dmft_F: 2, dmft_X: 1, dmftIncreased: true,
+      recurringGingivitis: true, recurringDebris: true, sugarHabit: true,
+      tobaccoUser: false, betelNut: false, diabetes: false,
+      preventiveTreatment: false, is4Ps: true, thumbsucking: false,
     },
     {
-      id: '2',
-      name: 'Maria Santos',
-      birthdate: '2017-07-22',
-      gender: 'Female',
-      grade: 'Grade 3',
-      school: 'Bagong Tanyag Elementary School Annex A',
+      id: '2', name: 'Maria Santos', birthdate: '2017-07-22', gender: 'Female',
+      grade: 'Grade 3', section: 'Topaz', school: 'Bagong Tanyag Elementary School Annex A',
       oralCondition: 'Deep caries (Tooth #16), Abscess present',
-      aiRecommendation: 'Emergency extraction, Antibiotic prescription (Amoxicillin), Pain management',
-      riskLevel: 'High',
-      confidenceScore: 98,
-      lastVisit: '2026-03-01',
-      validated: true,
-      validatedBy: 'Dr. Maria Santos',
-      validationDate: '2026-03-02',
-      validationStatus: 'approved',
-      aiDetectedConditions: ['Deep Caries', 'Abscess', 'Infection'],
-      modelVersion: 'v2.3.1',
+      riskLevel: 'High', confidenceScore: 98, lastVisit: '2026-03-01',
+      validated: true, validatedBy: 'Dr. Maria Santos', validationDate: '2026-03-02', validationStatus: 'approved',
+      aiDetectedConditions: ['Deep Caries', 'Abscess', 'Infection'], modelVersion: 'v2.3.1',
+      dmft_D: 4, dmft_M: 0, dmft_F: 1, dmft_X: 1, dmftIncreased: false,
+      recurringGingivitis: false, recurringDebris: true, sugarHabit: true,
+      tobaccoUser: false, betelNut: false, diabetes: false,
+      preventiveTreatment: false, is4Ps: false, thumbsucking: false,
     },
     {
-      id: '3',
-      name: 'Pedro Reyes',
-      birthdate: '2014-11-08',
-      gender: 'Male',
-      grade: 'Grade 5',
-      school: 'South Daang Hari Elementary School Main',
+      id: '3', name: 'Pedro Reyes', birthdate: '2014-11-08', gender: 'Male',
+      grade: 'Grade 5', section: 'Yakal', school: 'South Daang Hari Elementary School Main',
       oralCondition: 'Multiple caries (Teeth #14, #24, #36), Calculus build-up',
-      aiRecommendation: 'Scaling and prophylaxis, Multiple permanent fillings (GIC), Fluoride treatment',
-      riskLevel: 'High',
-      confidenceScore: 91,
-      lastVisit: '2026-01-20',
-      validated: false,
-      validatedBy: null,
-      validationDate: null,
-      validationStatus: null,
-      aiDetectedConditions: ['Multiple Caries', 'Calculus', 'Plaque'],
-      modelVersion: 'v2.3.1',
+      riskLevel: 'High', confidenceScore: 91, lastVisit: '2026-01-20',
+      validated: false, validatedBy: null, validationDate: null, validationStatus: null,
+      aiDetectedConditions: ['Multiple Caries', 'Calculus', 'Plaque'], modelVersion: 'v2.3.1',
+      dmft_D: 3, dmft_M: 2, dmft_F: 3, dmft_X: 0, dmftIncreased: true,
+      recurringGingivitis: false, recurringDebris: true, sugarHabit: false,
+      tobaccoUser: false, betelNut: false, diabetes: false,
+      preventiveTreatment: false, is4Ps: true, thumbsucking: false,
     },
     {
-      id: '4',
-      name: 'Ana Garcia',
-      birthdate: '2018-05-12',
-      gender: 'Female',
-      grade: 'Grade 2',
-      school: 'Bagong Tanyag Integrated School',
+      id: '4', name: 'Ana Garcia', birthdate: '2018-05-12', gender: 'Female',
+      grade: 'Grade 2', section: 'Dahlia', school: 'Bagong Tanyag Integrated School',
       oralCondition: 'Moderate gingivitis',
-      aiRecommendation: 'Oral prophylaxis, Oral hygiene instruction, Follow-up in 3 months',
-      riskLevel: 'Medium',
-      confidenceScore: 87,
-      lastVisit: '2026-03-10',
-      validated: true,
-      validatedBy: 'Dr. Maria Santos',
-      validationDate: '2026-03-10',
-      validationStatus: 'approved',
-      aiDetectedConditions: ['Gingivitis'],
-      modelVersion: 'v2.3.1',
+      riskLevel: 'Medium', confidenceScore: 87, lastVisit: '2026-03-10',
+      validated: true, validatedBy: 'Dr. Maria Santos', validationDate: '2026-03-10', validationStatus: 'approved',
+      aiDetectedConditions: ['Gingivitis'], modelVersion: 'v2.3.1',
+      dmft_D: 1, dmft_M: 0, dmft_F: 1, dmft_X: 0, dmftIncreased: false,
+      recurringGingivitis: true, recurringDebris: false, sugarHabit: true,
+      tobaccoUser: false, betelNut: false, diabetes: false,
+      preventiveTreatment: true, is4Ps: false, thumbsucking: false,
     },
     {
-      id: '5',
-      name: 'Jose Martinez',
-      birthdate: '2013-09-30',
-      gender: 'Male',
-      grade: 'Grade 6',
-      school: 'Bagong Tanyag Elementary School Annex A',
+      id: '5', name: 'Jose Martinez', birthdate: '2013-09-30', gender: 'Male',
+      grade: 'Grade 6', section: 'Garnet', school: 'Bagong Tanyag Elementary School Annex A',
       oralCondition: 'Mild calculus build-up, Early caries (Tooth #26)',
-      aiRecommendation: 'Routine cleaning, Pit and fissure sealant, Fluoride varnish',
-      riskLevel: 'Medium',
-      confidenceScore: 85,
-      lastVisit: '2026-02-28',
-      validated: true,
-      validatedBy: 'Dr. Elena Reyes',
-      validationDate: '2026-03-01',
-      validationStatus: 'modified',
-      aiDetectedConditions: ['Calculus', 'Early Caries'],
-      modelVersion: 'v2.3.1',
+      riskLevel: 'Medium', confidenceScore: 85, lastVisit: '2026-02-28',
+      validated: true, validatedBy: 'Dr. Elena Reyes', validationDate: '2026-03-01', validationStatus: 'modified',
+      aiDetectedConditions: ['Calculus', 'Early Caries'], modelVersion: 'v2.3.1',
+      dmft_D: 1, dmft_M: 0, dmft_F: 2, dmft_X: 0, dmftIncreased: false,
+      recurringGingivitis: false, recurringDebris: true, sugarHabit: true,
+      tobaccoUser: false, betelNut: false, diabetes: false,
+      preventiveTreatment: true, is4Ps: false, thumbsucking: false,
     },
     {
-      id: '6',
-      name: 'Rosa Fernandez',
-      birthdate: '2019-01-25',
-      gender: 'Female',
-      grade: 'Grade 1',
-      school: 'Bagong Tanyag Integrated School',
+      id: '6', name: 'Rosa Fernandez', birthdate: '2019-01-25', gender: 'Female',
+      grade: 'Grade 1', section: 'Sampaguita', school: 'Bagong Tanyag Integrated School',
       oralCondition: 'Orally fit - No caries detected',
-      aiRecommendation: 'Continue good oral hygiene, Regular 6-month checkup, Fluoride varnish application',
-      riskLevel: 'Low',
-      confidenceScore: 96,
-      lastVisit: '2026-03-05',
-      validated: true,
-      validatedBy: 'Dr. Maria Santos',
-      validationDate: '2026-03-05',
-      validationStatus: 'approved',
-      aiDetectedConditions: [],
-      modelVersion: 'v2.3.1',
+      riskLevel: 'Low', confidenceScore: 96, lastVisit: '2026-03-05',
+      validated: true, validatedBy: 'Dr. Maria Santos', validationDate: '2026-03-05', validationStatus: 'approved',
+      aiDetectedConditions: [], modelVersion: 'v2.3.1',
+      dmft_D: 0, dmft_M: 0, dmft_F: 0, dmft_X: 0, dmftIncreased: false,
+      recurringGingivitis: false, recurringDebris: false, sugarHabit: false,
+      tobaccoUser: false, betelNut: false, diabetes: false,
+      preventiveTreatment: true, is4Ps: false, thumbsucking: false,
     },
   ]);
 
@@ -250,6 +244,12 @@ export const AIAnalytics = () => {
     ? students.filter(s => s.school === selectedSchool)
     : students;
 
+  // Apply computed risk to each student
+  const studentsWithRisk = contextStudents.map(s => {
+    const { riskLevel, predictedIssue, recommendedAction, factors, score } = computeRiskScore(s);
+    return { ...s, riskLevel, predictedIssue, recommendedAction, riskFactors: factors, riskScore: score };
+  });
+
   // School view data
   const schoolRiskSummary = (selectedSchool ? [selectedSchool] : SCHOOLS).map(school => {
     const schoolStudents = contextStudents.filter(s => s.school === school);
@@ -315,6 +315,22 @@ export const AIAnalytics = () => {
       )}
 
       {true && <div className="space-y-6">
+
+      {/* Update Risk Scores button */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500">{studentsWithRisk.filter(s => s.riskLevel === 'High').length} high risk · {studentsWithRisk.filter(s => s.riskLevel === 'Medium').length} medium · {studentsWithRisk.filter(s => s.riskLevel === 'Low').length} low</p>
+        <button
+          onClick={() => {
+            setStudents(prev => prev.map(s => {
+              const { riskLevel, predictedIssue, recommendedAction } = computeRiskScore(s);
+              return { ...s, riskLevel };
+            }));
+            alert('Risk scores updated for all students based on current clinical data.');
+          }}
+          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium">
+          <Brain className="w-4 h-4" /> Update Risk Scores
+        </button>
+      </div>
 
       {/* AI Model Info Banner */}
       <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
@@ -776,6 +792,77 @@ export const AIAnalytics = () => {
         </div>
       )}
     </div>}
+
+      {/* ── TREATMENT PENDING VIEW ── */}
+      {analyticsSubTab === 'pending' && (
+        <div className="space-y-4">
+          {(() => {
+            const gradeOrder = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
+            const pendingStudents = studentsWithRisk.filter(s => s.riskLevel !== 'Low');
+            const byGrade: Record<string, any[]> = {};
+            pendingStudents.forEach(s => {
+              if (!byGrade[s.grade]) byGrade[s.grade] = [];
+              byGrade[s.grade].push(s);
+            });
+            const sortedGrades = gradeOrder.filter(g => byGrade[g]);
+            return sortedGrades.map(grade => {
+              const gradeStudents = byGrade[grade];
+              const bySec: Record<string, any[]> = {};
+              gradeStudents.forEach(s => { if (!bySec[s.section]) bySec[s.section] = []; bySec[s.section].push(s); });
+              return (
+                <div key={grade} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200">
+                    <span className="text-sm font-bold text-gray-800">{grade}</span>
+                    <span className="ml-2 text-xs text-gray-500">{gradeStudents.length} student{gradeStudents.length !== 1 ? 's' : ''} need attention</span>
+                  </div>
+                  {Object.entries(bySec).map(([section, students]) => (
+                    <div key={section}>
+                      <div className="px-4 py-1.5 bg-blue-50 border-b border-gray-100">
+                        <span className="text-xs font-semibold text-blue-700">Section: {section}</span>
+                      </div>
+                      {students.map((s: any) => {
+                        const { riskFactors = [], riskLevel, predictedIssue, recommendedAction } = s;
+                        return (
+                          <div key={s.id} className="px-4 py-3 border-b border-gray-100 last:border-0">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <span className="text-sm font-semibold text-gray-900">{s.name}</span>
+                                <span className="ml-2 text-xs text-gray-400">{s.grade} · {s.section}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${riskLevel === 'High' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                  {riskLevel} Risk
+                                </span>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 text-xs">
+                              <div className="bg-red-50 rounded-lg p-2">
+                                <div className="font-semibold text-red-700 mb-1">Predicted Issue</div>
+                                <div className="text-red-600">{predictedIssue}</div>
+                              </div>
+                              <div className="bg-blue-50 rounded-lg p-2">
+                                <div className="font-semibold text-blue-700 mb-1">Recommended Action</div>
+                                <div className="text-blue-600">{recommendedAction}</div>
+                              </div>
+                            </div>
+                            {riskFactors.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {riskFactors.map((f: string) => (
+                                  <span key={f} className="text-[10px] bg-orange-50 text-orange-700 border border-orange-200 px-1.5 py-0.5 rounded">{f}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              );
+            });
+          })()}
+        </div>
+      )}
     </div>
   );
 };
