@@ -99,7 +99,8 @@ export const DentalChart = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const canEdit = user?.role === 'dentist' || user?.role === 'dental_aide';
+  const canEdit = user?.role === 'dentist';
+  const canEditHistory = user?.role === 'dentist' || user?.role === 'dental_aide';
 
   const navIndex = patientNavList.findIndex(p => p.id === id);
   const prevPatient = navIndex > 0 ? patientNavList[navIndex - 1] : null;
@@ -388,6 +389,7 @@ export const DentalChart = () => {
               {activeYears.map(yr => <span key={yr} className={`w-16 text-center ${activeYears.indexOf(yr) === selectedYear ? 'text-blue-700' : ''}`}>{yr}</span>)}
             </div>
 
+            <fieldset disabled={!canEditHistory} className={!canEditHistory ? 'opacity-60' : ''}>
             {/* Date Examined */}
             <div className="flex items-center justify-between py-2 border-b border-gray-100">
               <span className="text-xs font-semibold text-gray-700">Date Examined</span>
@@ -467,7 +469,10 @@ export const DentalChart = () => {
               ))}
             </div>
 
-            {/* Oral Health Condition */}
+            </fieldset>
+
+            {/* Oral Health Condition — dentist only */}
+            <fieldset disabled={!canEdit} className={!canEdit ? 'opacity-60' : ''}>
             <div>
               <div className="text-xs font-bold text-gray-800 uppercase tracking-wide mb-2 pb-1 border-b-2 border-gray-200">Oral Health Condition</div>
               {[
@@ -502,6 +507,7 @@ export const DentalChart = () => {
                 </div>
               ))}
             </div>
+            </fieldset>
           </div>
         )}
 
