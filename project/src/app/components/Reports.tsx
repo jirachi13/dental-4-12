@@ -187,12 +187,26 @@ export const Reports = () => {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-        <p className="text-gray-500 text-sm mt-0.5">
-          {reportSchool ? getSchoolShortName(reportSchool) : 'All Schools'} · DOH-compliant dental health reports
-        </p>
+      {/* Header — title left, controls right */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
+          <p className="text-gray-500 text-sm mt-0.5">DOH Consolidated Report &amp; Internal Reports</p>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <select value={reportMonth} onChange={e => setReportMonth(Number(e.target.value))}
+            className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            {MONTHS.map((m,i) => <option key={m} value={i+1}>{m}</option>)}
+          </select>
+          <select value={reportYear} onChange={e => setReportYear(Number(e.target.value))}
+            className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            {[2023,2024,2025,2026].map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <button onClick={() => window.print()}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium whitespace-nowrap">
+            <Printer className="w-4 h-4" /> Print
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -209,38 +223,15 @@ export const Reports = () => {
 
       {/* ── DOH CONSOLIDATED ── */}
       {activeReportTab === 'doh' && (
-        <div className="space-y-4">
-          {/* Controls */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-4 flex-wrap">
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">School</label>
-              <select value={reportSchool ?? ''} onChange={e => setReportSchool(e.target.value || null)}
-                className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">All Schools</option>
-                {REPORT_SCHOOLS.map(s => <option key={s} value={s}>{getSchoolShortName(s)}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Month</label>
-              <select value={reportMonth} onChange={e => setReportMonth(Number(e.target.value))}
-                className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                {MONTHS.map((m,i) => <option key={m} value={i+1}>{m}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Year</label>
-              <select value={reportYear} onChange={e => setReportYear(Number(e.target.value))}
-                className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                {[2023,2024,2025,2026].map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </div>
-            <div className="ml-auto flex items-center gap-3">
-              <span className="text-xs text-gray-400 italic hidden sm:block">Mock data · connect backend for live values</span>
-              <button onClick={() => window.print()}
-                className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium whitespace-nowrap">
-                <Printer className="w-4 h-4" /> Print Report
-              </button>
-            </div>
+        <div className="space-y-3">
+          {/* School filter — thin bar, doesn't scroll */}
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-gray-500 whitespace-nowrap">School:</label>
+            <select value={reportSchool ?? ''} onChange={e => setReportSchool(e.target.value || null)}
+              className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">All Schools</option>
+              {REPORT_SCHOOLS.map(s => <option key={s} value={s}>{getSchoolShortName(s)}</option>)}
+            </select>
           </div>
 
           {/* Table */}
