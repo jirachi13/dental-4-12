@@ -35,37 +35,47 @@ const lowerTemporary = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
 const temporaryTeeth = new Set([...upperTemporary, ...lowerTemporary]);
 
 const conditionColors: Record<string, string> = {
-  '√': 'bg-green-50 border-green-400',
-  'D': 'bg-red-100 border-red-500',
-  'd': 'bg-red-100 border-red-400',
-  'M': 'bg-slate-200 border-slate-500',
-  'm': 'bg-slate-200 border-slate-400',
-  'F': 'bg-blue-100 border-blue-500',
-  'f': 'bg-blue-100 border-blue-400',
-  'DX': 'bg-orange-100 border-orange-500',
-  'dx': 'bg-orange-100 border-orange-400',
-  'Un': 'bg-purple-100 border-purple-400',
+  '✓': 'bg-green-50 border-green-400',
+  '√': 'bg-green-50 border-green-400',   // fallback alias
+  'D': 'bg-red-100 border-red-400',
+  'd': 'bg-red-100 border-red-300',
+  'M': 'bg-slate-200 border-slate-400',
+  'm': 'bg-slate-200 border-slate-300',
+  'F': 'bg-blue-100 border-blue-400',
+  'f': 'bg-blue-100 border-blue-300',
+  'DX': 'bg-orange-100 border-orange-400',
+  'dx': 'bg-orange-100 border-orange-300',
+  'Un': 'bg-purple-50 border-purple-300',
+  'un': 'bg-purple-50 border-purple-200',
+  'S': 'bg-yellow-50 border-yellow-400',
+  's': 'bg-yellow-50 border-yellow-300',
+  'JC': 'bg-pink-50 border-pink-400',
+  'jc': 'bg-pink-50 border-pink-300',
+  'P': 'bg-indigo-50 border-indigo-400',
+  'p': 'bg-indigo-50 border-indigo-300',
 };
 
 const ALL_SCHOOL_YEARS = ['2023-2024', '2024-2025', '2025-2026', '2026-2027', '2027-2028', '2028-2029', '2029-2030'];
 
 // ─── DMFT calculation ─────────────────────────────────────────────────────────
 const computeDMFT = (chart: Record<number, { condition: string; treatment: string }>) => {
-  let d = 0, m = 0, f = 0, D = 0, M = 0, F = 0;
+  let d = 0, m = 0, f = 0, x = 0, D = 0, M = 0, F = 0, X = 0;
   Object.entries(chart).forEach(([tooth, data]) => {
     const n = parseInt(tooth);
     const c = data.condition;
     if (temporaryTeeth.has(n)) {
       if (c === 'd') d++;
-      if (c === 'm') m++;
-      if (c === 'f') f++;
+      else if (c === 'm') m++;
+      else if (c === 'f') f++;
+      else if (c === 'dx') x++;
     } else {
       if (c === 'D') D++;
-      if (c === 'M') M++;
-      if (c === 'F') F++;
+      else if (c === 'M') M++;
+      else if (c === 'F') F++;
+      else if (c === 'DX') X++;
     }
   });
-  return { d, m, f, t: d + m + f, D, M, F, T: D + M + F };
+  return { d, m, f, x, t: d+m+f+x, D, M, F, X, T: D+M+F+X };
 };
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -82,7 +92,7 @@ export const DentalChart = () => {
 
   // Per-year dental chart data
   const [chartData, setChartData] = useState<Record<number, Record<number, { condition: string; treatment: string }>>>({
-    0: { 36: { condition: 'D', treatment: 'PF' }, 46: { condition: 'M', treatment: '' }, 11: { condition: '√', treatment: 'FV' }, 16: { condition: 'F', treatment: '' } },
+    0: { 36: { condition: 'D', treatment: 'PF' }, 46: { condition: 'M', treatment: '' }, 11: { condition: '✓', treatment: 'FV' }, 16: { condition: 'F', treatment: '' } },
     1: {},
   });
 
@@ -109,7 +119,9 @@ export const DentalChart = () => {
   const handleToothClick = (toothNumber: number) => {
     const isTemp = temporaryTeeth.has(toothNumber);
     if (selectedCondition) {
-      const code = isTemp ? selectedCondition.toLowerCase() : selectedCondition.toUpperCase();
+      // Find the correct perm/temp variant from conditionCodes
+      const codeObj = conditionCodes.find(c => c.code === selectedCondition);
+      const code = codeObj ? (isTemp ? codeObj.temp : codeObj.perm) : selectedCondition;
       const current = currentChart[toothNumber]?.condition;
       setChartData(prev => ({
         ...prev,
@@ -157,16 +169,16 @@ export const DentalChart = () => {
     const data = currentChart[num];
     const cond = data?.condition || '';
     const treat = data?.treatment || '';
-    const colorClass = conditionColors[cond] || 'bg-white border-gray-300';
+    const colorClass = conditionColors[cond] || conditionColors[cond.toLowerCase()] || 'bg-white border-gray-300';
     const isSelected = selectedCondition || selectedTreatment;
     return (
       <button
         onClick={() => handleToothClick(num)}
-        className={`relative w-9 h-10 border-2 rounded-sm text-center transition-all ${colorClass} ${isSelected ? 'hover:border-blue-700 hover:ring-2 hover:ring-blue-300 cursor-pointer' : 'cursor-default'}`}
+        className={`relative w-9 h-10 border-2 rounded-sm text-center transition-all ${colorClass} ${isSelected ? 'hover:border-teal-500 hover:ring-2 hover:ring-teal-300 hover:bg-teal-50 cursor-pointer' : 'cursor-default'}`}
       >
         <div className="text-[7px] text-slate-400 leading-none mt-0.5">{num}</div>
         {cond && <div className="text-[9px] font-bold text-slate-700 leading-none">{cond}</div>}
-        {treat && <div className="text-[7px] text-blue-600 leading-none">{treat}</div>}
+        {treat && <div className="text-[7px] text-teal-600 leading-none">{treat}</div>}
       </button>
     );
   };
@@ -184,25 +196,27 @@ export const DentalChart = () => {
     </div>
   );
 
+  // Base44-exact condition codes: uppercase=permanent, lowercase=temporary (auto-applied)
   const conditionCodes = [
-    { code: '√', label: 'Sound/Sealed' },
-    { code: 'D', label: 'Decayed' },
-    { code: 'M', label: 'Missing' },
-    { code: 'F', label: 'Filled' },
-    { code: 'DX', label: 'For Extraction' },
-    { code: 'Un', label: 'Unerupted' },
-    { code: 'S', label: 'Supernumerary' },
-    { code: 'JC', label: 'Jacket Crown' },
-    { code: 'P', label: 'Pontic' },
+    { code: '✓', label: 'Sound/Sealed',           perm: '✓',  temp: '✓'  },
+    { code: 'D',  label: 'Decayed',                perm: 'D',  temp: 'd'  },
+    { code: 'M',  label: 'Missing',                perm: 'M',  temp: 'm'  },
+    { code: 'F',  label: 'Filled',                 perm: 'F',  temp: 'f'  },
+    { code: 'DX', label: 'Indicated for Extr.',    perm: 'DX', temp: 'dx' },
+    { code: 'Un', label: 'Unerupted',              perm: 'Un', temp: 'un' },
+    { code: 'S',  label: 'Supernumerary Tooth',    perm: 'S',  temp: 's'  },
+    { code: 'JC', label: 'Jacket Crown',           perm: 'JC', temp: 'jc' },
+    { code: 'P',  label: 'Pontic',                 perm: 'P',  temp: 'p'  },
   ];
 
+  // Base44-exact treatment codes
   const treatmentCodes = [
-    { code: 'FV', label: 'Fluoride Varnish' },
-    { code: 'PFS', label: 'Pit & Fissure Sealant' },
-    { code: 'PF', label: 'Permanent Filling' },
-    { code: 'TF', label: 'Temporary Filling' },
-    { code: 'X', label: 'Extraction' },
-    { code: 'SDF', label: 'Silver Diamine Fluoride' },
+    { code: 'FV',  label: 'Fluoride Varnish'        },
+    { code: 'PFS', label: 'Pit and Fissure Sealant'  },
+    { code: 'PF',  label: 'Permanent Filling'        },
+    { code: 'TF',  label: 'Temporary Filling'        },
+    { code: 'X',   label: 'Extraction'               },
+    { code: 'SDF', label: 'Silver Diamine Fluoride'  },
   ];
 
   const med = medHistory[selectedYear] || {};
@@ -453,24 +467,24 @@ export const DentalChart = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Condition Codes</div>
-                  <div className="grid grid-cols-3 gap-1.5">
+                  <div className="grid grid-cols-2 gap-1.5">
                     {conditionCodes.map(c => (
                       <button key={c.code} onClick={() => { setSelectedCondition(selectedCondition === c.code ? null : c.code); setSelectedTreatment(null); }}
-                        className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedCondition === c.code ? 'bg-blue-700 text-white ring-2 ring-blue-300' : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-400'}`}>
-                        {c.code}
-                        <div className="text-[9px] font-normal truncate">{c.label}</div>
+                        className={`px-2 py-2 rounded-lg text-xs transition-all text-left ${selectedCondition === c.code ? 'bg-teal-600 text-white ring-2 ring-teal-300' : 'bg-white border border-gray-300 text-gray-700 hover:border-teal-400'}`}>
+                        <div className="font-bold font-mono">{c.perm}/{c.temp}</div>
+                        <div className="text-[9px] font-normal leading-tight mt-0.5 truncate">{c.label}</div>
                       </button>
                     ))}
                   </div>
                 </div>
                 <div>
                   <div className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Treatment Codes</div>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="flex flex-col gap-1.5">
                     {treatmentCodes.map(t => (
                       <button key={t.code} onClick={() => { setSelectedTreatment(selectedTreatment === t.code ? null : t.code); setSelectedCondition(null); }}
-                        className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedTreatment === t.code ? 'bg-green-600 text-white ring-2 ring-green-300' : 'bg-white border border-gray-300 text-gray-700 hover:border-green-400'}`}>
-                        {t.code}
-                        <div className="text-[9px] font-normal truncate">{t.label}</div>
+                        className={`px-3 py-2 rounded-lg text-xs transition-all text-left flex items-center gap-2 ${selectedTreatment === t.code ? 'bg-blue-600 text-white ring-2 ring-blue-300' : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-400'}`}>
+                        <span className="font-bold font-mono w-8 flex-shrink-0">{t.code}</span>
+                        <span className="text-[10px] leading-tight">{t.label}</span>
                       </button>
                     ))}
                   </div>
@@ -478,9 +492,19 @@ export const DentalChart = () => {
               </div>
               {(selectedCondition || selectedTreatment) && (
                 <div className="mt-3 flex items-center gap-2">
-                  <span className={`text-xs font-semibold px-3 py-1 rounded-full ${selectedCondition ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
-                    {selectedCondition ? `Applying condition: ${selectedCondition}` : `Applying treatment: ${selectedTreatment}`}
-                  </span>
+                  {selectedCondition && (() => {
+                    const c = conditionCodes.find(x => x.code === selectedCondition);
+                    return (
+                      <span className="text-xs font-semibold px-3 py-1 rounded-full bg-teal-100 text-teal-800">
+                        Applying: {c?.perm}/{c?.temp} — {c?.label} · Click teeth to apply
+                      </span>
+                    );
+                  })()}
+                  {selectedTreatment && (
+                    <span className="text-xs font-semibold px-3 py-1 rounded-full bg-blue-100 text-blue-800">
+                      Applying treatment: {selectedTreatment} · Click teeth to apply
+                    </span>
+                  )}
                   <button onClick={() => { setSelectedCondition(null); setSelectedTreatment(null); }} className="text-xs text-gray-500 hover:text-gray-700 underline">Clear</button>
                 </div>
               )}
@@ -521,10 +545,10 @@ export const DentalChart = () => {
               <div className="text-xs font-semibold text-gray-600 mb-3 uppercase tracking-wide">DMFT / dmft Scores (Auto-computed)</div>
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <div className="text-xs text-gray-500 mb-2">Primary teeth (dmft)</div>
+                  <div className="text-xs text-gray-500 mb-2">Primary teeth (dmft+x)</div>
                   <div className="flex gap-2">
-                    {[['d', dmft.d], ['m', dmft.m], ['f', dmft.f], ['t', dmft.t]].map(([label, val]) => (
-                      <div key={label} className="flex-1 border border-gray-300 rounded text-center py-1.5">
+                    {[['d', dmft.d], ['m', dmft.m], ['f', dmft.f], ['x', dmft.x], ['t', dmft.t]].map(([label, val]) => (
+                      <div key={label as string} className={`flex-1 border rounded text-center py-1.5 ${label === 't' ? 'border-blue-400 bg-blue-50' : 'border-gray-300'}`}>
                         <div className="text-xs text-gray-500">{label}</div>
                         <div className="text-sm font-bold font-mono text-gray-900">{val}</div>
                       </div>
@@ -532,10 +556,10 @@ export const DentalChart = () => {
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500 mb-2">Permanent teeth (DMFT)</div>
+                  <div className="text-xs text-gray-500 mb-2">Permanent teeth (DMFT+X)</div>
                   <div className="flex gap-2">
-                    {[['D', dmft.D], ['M', dmft.M], ['F', dmft.F], ['T', dmft.T]].map(([label, val]) => (
-                      <div key={label} className="flex-1 border border-gray-300 rounded text-center py-1.5">
+                    {[['D', dmft.D], ['M', dmft.M], ['F', dmft.F], ['X', dmft.X], ['T', dmft.T]].map(([label, val]) => (
+                      <div key={label as string} className={`flex-1 border rounded text-center py-1.5 ${label === 'T' ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}>
                         <div className="text-xs text-gray-500">{label}</div>
                         <div className="text-sm font-bold font-mono text-gray-900">{val}</div>
                       </div>
@@ -594,15 +618,35 @@ export const DentalChart = () => {
               <div className="bg-gray-50 rounded-xl p-3">
                 <div className="font-semibold text-gray-600 mb-2 uppercase tracking-wide text-[10px]">Condition Codes</div>
                 <div className="space-y-1">
-                  {[['√/√', 'Sound/Sealed'], ['D/d', 'Decayed'], ['M/m', 'Missing'], ['F/f', 'Filled'], ['DX/dx', 'For Extraction'], ['Un/un', 'Unerupted'], ['S/s', 'Supernumerary'], ['JC/jc', 'Jacket Crown'], ['P/p', 'Pontic']].map(([code, label]) => (
-                    <div key={code} className="flex gap-2"><span className="font-mono font-bold text-gray-700 w-12">{code}</span><span className="text-gray-500">{label}</span></div>
+                  {[
+                    { codes:'✓/✓',   label:'Sound/Sealed',            bg:'bg-green-50'   },
+                    { codes:'D/d',   label:'Decayed',                  bg:'bg-red-100'    },
+                    { codes:'M/m',   label:'Missing',                  bg:'bg-slate-200'  },
+                    { codes:'F/f',   label:'Filled',                   bg:'bg-blue-100'   },
+                    { codes:'DX/dx', label:'Indicated for Extraction', bg:'bg-orange-100' },
+                    { codes:'Un/un', label:'Unerupted',                bg:'bg-purple-50'  },
+                    { codes:'S/s',   label:'Supernumerary Tooth',      bg:'bg-yellow-50'  },
+                    { codes:'JC/jc', label:'Jacket Crown',             bg:'bg-pink-50'    },
+                    { codes:'P/p',   label:'Pontic',                   bg:'bg-indigo-50'  },
+                  ].map(({ codes, label, bg }) => (
+                    <div key={codes} className="flex items-center gap-2">
+                      <span className={`font-mono font-bold text-gray-700 text-[10px] px-1.5 py-0.5 rounded border border-gray-300 w-14 text-center ${bg}`}>{codes}</span>
+                      <span className="text-gray-500">{label}</span>
+                    </div>
                   ))}
                 </div>
               </div>
               <div className="bg-gray-50 rounded-xl p-3">
                 <div className="font-semibold text-gray-600 mb-2 uppercase tracking-wide text-[10px]">Treatment Codes</div>
                 <div className="space-y-1">
-                  {[['FV', 'Fluoride Varnish'], ['PFS', 'Pit and Fissure Sealant'], ['PF', 'Permanent Filling'], ['TF', 'Temporary Filling'], ['X', 'Extraction'], ['SDF', 'Silver Diamine Fluoride']].map(([code, label]) => (
+                  {[
+                    ['FV',  'Fluoride Varnish'],
+                    ['PFS', 'Pit and Fissure Sealant'],
+                    ['PF',  'Permanent Filling'],
+                    ['TF',  'Temporary Filling'],
+                    ['X',   'Extraction'],
+                    ['SDF', 'Silver Diamine Fluoride'],
+                  ].map(([code, label]) => (
                     <div key={code} className="flex gap-2"><span className="font-mono font-bold text-blue-700 w-10">{code}</span><span className="text-gray-500">{label}</span></div>
                   ))}
                 </div>
