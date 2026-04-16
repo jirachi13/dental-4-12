@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router';
 import { ArrowLeft, Save, ChevronLeft, ChevronRight, Shield, Users, TrendingUp, FileText, Plus } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
+import { useAuth } from '../context/AuthContext';
 
 // ─── Ordered patient nav list (matches DentalChartNav mockCharts order) ────────
 const patientNavList = [
@@ -97,6 +98,8 @@ export const DentalChart = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const canEdit = user?.role === 'dentist' || user?.role === 'dental_aide';
 
   const navIndex = patientNavList.findIndex(p => p.id === id);
   const prevPatient = navIndex > 0 ? patientNavList[navIndex - 1] : null;
@@ -212,10 +215,10 @@ export const DentalChart = () => {
     const cond = data?.condition || '';
     const treat = data?.treatment || '';
     const colorClass = conditionColors[cond] || conditionColors[cond.toLowerCase()] || 'bg-white border-gray-300';
-    const isSelected = selectedCondition || selectedTreatment;
+    const isSelected = canEdit && (selectedCondition || selectedTreatment);
     return (
       <button
-        onClick={() => handleToothClick(num)}
+        onClick={() => canEdit && handleToothClick(num)}
         className={`relative w-9 h-10 border-2 rounded-sm text-center transition-all ${colorClass} ${isSelected ? 'hover:border-teal-500 hover:ring-2 hover:ring-teal-300 hover:bg-teal-50 cursor-pointer' : 'cursor-default'}`}
       >
         <div className="text-[7px] text-slate-400 leading-none mt-0.5">{num}</div>
@@ -231,8 +234,9 @@ export const DentalChart = () => {
       <div className="flex gap-3">
         {activeYears.map((yr, idx) => (
           <input key={idx} type="checkbox" checked={idx === selectedYear ? value : false}
-            onChange={e => idx === selectedYear && onChange(field, e.target.checked)}
-            className="w-4 h-4 rounded accent-blue-600" />
+            onChange={e => canEdit && idx === selectedYear && onChange(field, e.target.checked)}
+            disabled={!canEdit}
+            className="w-4 h-4 rounded accent-blue-600 disabled:opacity-60 disabled:cursor-not-allowed" />
         ))}
       </div>
     </div>
@@ -312,10 +316,12 @@ export const DentalChart = () => {
           <button onClick={() => setSelectedYear(Math.min(activeYears.length - 1, selectedYear + 1))} disabled={selectedYear === activeYears.length - 1} className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30">
             <ChevronRight className="w-4 h-4" />
           </button>
-          <button onClick={handleSave} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${saved ? 'bg-green-600 text-white' : 'bg-blue-700 text-white hover:bg-blue-700'}`}>
-            <Save className="w-4 h-4" />
-            {saved ? 'Saved!' : 'Save'}
-          </button>
+          {canEdit && (
+            <button onClick={handleSave} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${saved ? 'bg-green-600 text-white' : 'bg-blue-700 text-white hover:bg-blue-700'}`}>
+              <Save className="w-4 h-4" />
+              {saved ? 'Saved!' : 'Save'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -532,8 +538,9 @@ export const DentalChart = () => {
               )}
             </div>
             <div className="p-4 space-y-4">
-            {/* Code selector */}
-            <div className="bg-blue-50 rounded-xl p-4">
+            {/* Code selector — edit only */}
+            <div className={`bg-blue-50 rounded-xl p-4 ${!canEdit ? 'opacity-50 pointer-events-none select-none' : ''}`}>
+              {!canEdit && <p className="text-xs text-gray-500 mb-2 italic">View only — editing restricted to Dentist / Dental Aide</p>}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Condition Codes</div>
@@ -763,8 +770,8 @@ export const DentalChart = () => {
                   <div className="text-xs text-gray-400">Pirma sa itaas ng pangalan</div>
                 </div>
               </div>
-              <label className="flex items-center gap-2 mt-4 cursor-pointer">
-                <input type="checkbox" checked={consentGiven} onChange={e => setConsentGiven(e.target.checked)} className="w-4 h-4 rounded accent-blue-600" />
+              <label className={`flex items-center gap-2 mt-4 ${canEdit ? 'cursor-pointer' : 'cursor-default'}`}>
+                <input type="checkbox" checked={consentGiven} onChange={e => canEdit && setConsentGiven(e.target.checked)} disabled={!canEdit} className="w-4 h-4 rounded accent-blue-600 disabled:opacity-60 disabled:cursor-not-allowed" />
                 <span className="text-xs text-gray-700">Nakumpleto na ang pahintulot / Consent has been obtained</span>
               </label>
             </div>
@@ -778,8 +785,8 @@ export const DentalChart = () => {
                   <p className="text-xs text-blue-700 leading-relaxed mb-3">
                     Ang impormasyong nakolekta sa form na ito ay gagamitin lamang para sa mga layuning pangkalusugan ng Dental Health Program ng Barangay Tanyag, Lungsod ng Taguig. Ang inyong personal na impormasyon ay protektado ng Batas Republika Blg. 10173 o ang Data Privacy Act ng 2012. Ang inyong datos ay hindi ibabahagi sa anumang partido na walang pahintulot maliban kung kinakailangan ng batas.
                   </p>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={dataPrivacyAck} onChange={e => setDataPrivacyAck(e.target.checked)} className="w-4 h-4 rounded accent-blue-600" />
+                  <label className={`flex items-center gap-2 ${canEdit ? 'cursor-pointer' : 'cursor-default'}`}>
+                    <input type="checkbox" checked={dataPrivacyAck} onChange={e => canEdit && setDataPrivacyAck(e.target.checked)} disabled={!canEdit} className="w-4 h-4 rounded accent-blue-600 disabled:opacity-60 disabled:cursor-not-allowed" />
                     <span className="text-xs text-blue-800 font-medium">Kinikilala at sinasang-ayunan ko ang Data Privacy Act of 2012</span>
                   </label>
                 </div>
@@ -869,10 +876,12 @@ export const DentalChart = () => {
           <div className="p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-gray-900">Treatment History</h3>
-              <button onClick={() => setShowAddTreatment(v => !v)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700">
-                <Plus className="w-3.5 h-3.5" /> Add Entry
-              </button>
+              {canEdit && (
+                <button onClick={() => setShowAddTreatment(v => !v)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700">
+                  <Plus className="w-3.5 h-3.5" /> Add Entry
+                </button>
+              )}
             </div>
             {showAddTreatment && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
