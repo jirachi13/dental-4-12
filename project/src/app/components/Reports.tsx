@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { FileText, Download, Eye, Calendar, BarChart3, PieChart, TrendingUp, FileDown } from 'lucide-react';
+import { FileText, Download, Eye, Calendar, BarChart3, PieChart, TrendingUp, FileDown, Printer, FileSpreadsheet } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart as RPieChart, Pie, Cell } from 'recharts';
 
 export const Reports = () => {
+  const [activeReportTab, setActiveReportTab] = useState<'doh' | 'internal'>('doh');
+  const [reportMonth, setReportMonth] = useState(4);
+  const [reportYear, setReportYear] = useState(2026);
   const [reportType, setReportType] = useState('monthly');
   const [selectedSchool, setSelectedSchool] = useState('all');
   const [startDate, setStartDate] = useState('2026-01-01');
@@ -54,8 +57,219 @@ export const Reports = () => {
     alert(`✓ Generating ${reportName}\nFormat: ${format.toUpperCase()}\nPeriod: ${startDate} to ${endDate}\nSchool: ${selectedSchool}\n\nReport will be downloaded shortly...`);
   };
 
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const GRADES = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
+
+  // Mock DOH data per grade per sex
+  const getMockVal = (grade: string, sex: 'M'|'F', field: string): number => {
+    const base: Record<string, number> = {
+      attended: sex === 'M' ? 28 : 30, examined: sex === 'M' ? 25 : 27,
+      allergies: 2, hypertension: 0, diabetes: 0, bloodDisorders: 0, cardiovascular: 0,
+      thyroid: 0, hepatitis: 0, malignancy: 0, hospitalization: 1, bloodTransfusion: 0, tattoo: 0,
+      sugarSweetened: sex === 'M' ? 15 : 14, alcoholDrinker: 0, tobaccoUser: 0, betelNut: 0,
+      dentalCaries: sex === 'M' ? 12 : 10, edentulous: 0, gingivitis: 4, debris: 8, calculus: 3, anomaly: 1,
+      dmf_d: 3, dmf_f: 2, DMF_D: 4, DMF_M: 1, DMF_F: 3,
+      extraction: sex === 'M' ? 5 : 4, fluoride1: 18, fluoride2: 15,
+      filling_perm: 6, filling_temp: 3, cleaning: 8, sealant: 5, counseling: 12,
+      ofc_exam: sex === 'M' ? 8 : 10, ofc_rehab: sex === 'M' ? 4 : 5,
+    };
+    const gradeMultiplier: Record<string, number> = { Kinder:0.8, 'Grade 1':0.9, 'Grade 2':1.0, 'Grade 3':1.0, 'Grade 4':1.1, 'Grade 5':1.1, 'Grade 6':1.2 };
+    return Math.round((base[field] || 0) * (gradeMultiplier[grade] || 1));
+  };
+
+  const getTotalVal = (field: string, sex?: 'M'|'F') => {
+    return GRADES.reduce((sum, g) => {
+      if (sex) return sum + getMockVal(g, sex, field);
+      return sum + getMockVal(g, 'M', field) + getMockVal(g, 'F', field);
+    }, 0);
+  };
+
+  const DOH_ROWS: { label: string; field?: string; isHeader?: boolean; indent?: boolean }[] = [
+    { label: 'No. of Person Attended', field: 'attended' },
+    { label: 'No. Orally Examined', field: 'examined' },
+    { label: 'MEDICAL HISTORY STATUS', isHeader: true },
+    { label: 'Total No. with Allergies', field: 'allergies', indent: true },
+    { label: 'Total No. with Hypertension/CVA', field: 'hypertension', indent: true },
+    { label: 'Total No. with Diabetes Mellitus', field: 'diabetes', indent: true },
+    { label: 'Total No. with Blood Disorders', field: 'bloodDisorders', indent: true },
+    { label: 'Total No. with Cardiovascular/Heart Diseases', field: 'cardiovascular', indent: true },
+    { label: 'Total No. with Thyroid Disorders', field: 'thyroid', indent: true },
+    { label: 'Total No. with Hepatitis', field: 'hepatitis', indent: true },
+    { label: 'Total No. with Malignancy', field: 'malignancy', indent: true },
+    { label: 'Total No. with History of Hospitalization', field: 'hospitalization', indent: true },
+    { label: 'Total No. with Blood Transfusion', field: 'bloodTransfusion', indent: true },
+    { label: 'Total No. with Tattoo', field: 'tattoo', indent: true },
+    { label: 'DIETARY / SOCIAL HISTORY STATUS', isHeader: true },
+    { label: 'Total No. of Sugar Sweetened Beverages/Food', field: 'sugarSweetened', indent: true },
+    { label: 'Total No. of Alcohol Drinkers', field: 'alcoholDrinker', indent: true },
+    { label: 'Total No. of Tobacco Users', field: 'tobaccoUser', indent: true },
+    { label: 'Total No. of Betel Nut Chewers', field: 'betelNut', indent: true },
+    { label: 'ORAL HEALTH STATUS', isHeader: true },
+    { label: 'Total No. with Dental Caries', field: 'dentalCaries', indent: true },
+    { label: 'Total No. of Edentulous/No Dentition', field: 'edentulous', indent: true },
+    { label: 'Total No. with Gingivitis/Periodontal Disease', field: 'gingivitis', indent: true },
+    { label: 'Total No. with Oral Debris', field: 'debris', indent: true },
+    { label: 'Total No. with Calcular Deposit', field: 'calculus', indent: true },
+    { label: 'Total No. with Dento-Facial Anomaly', field: 'anomaly', indent: true },
+    { label: 'Total df', field: 'dmf_d', indent: true },
+    { label: 'Total Decayed (d)', field: 'dmf_d', indent: true },
+    { label: 'Total Filled (f)', field: 'dmf_f', indent: true },
+    { label: 'Total DMF', field: 'DMF_D', indent: true },
+    { label: 'Total Decayed (D)', field: 'DMF_D', indent: true },
+    { label: 'Total Missing (M)', field: 'DMF_M', indent: true },
+    { label: 'Total Filled (F)', field: 'DMF_F', indent: true },
+    { label: 'SERVICES RENDERED', isHeader: true },
+    { label: 'No. Given Extraction', field: 'extraction', indent: true },
+    { label: 'No. Given Permanent Fillings', field: 'filling_perm', indent: true },
+    { label: 'No. Given Temporary Fillings', field: 'filling_temp', indent: true },
+    { label: 'No. Given Teeth Cleaning/Oral Prophylaxis', field: 'cleaning', indent: true },
+    { label: 'No. Given Pit & Fissure Sealant', field: 'sealant', indent: true },
+    { label: 'No. Given Fluoride Therapy — 1st Dose', field: 'fluoride1', indent: true },
+    { label: 'No. Given Fluoride Therapy — 2nd Dose', field: 'fluoride2', indent: true },
+    { label: 'No. Given Counselling/Oral Health Education', field: 'counseling', indent: true },
+    { label: 'NO. OF ORALLY FIT CHILDREN (OFC)', isHeader: true },
+    { label: 'OFC Upon Oral Examination', field: 'ofc_exam', indent: true },
+    { label: 'OFC Upon Complete Oral Rehabilitation', field: 'ofc_rehab', indent: true },
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
+          <p className="text-gray-500 text-sm mt-0.5">Generate and export DOH-compliant dental health reports</p>
+        </div>
+        <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+          <Printer className="w-4 h-4" /> Print Report
+        </button>
+      </div>
+
+      {/* Tab toggle */}
+      <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+        <button onClick={() => setActiveReportTab('doh')} className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeReportTab === 'doh' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+          <FileSpreadsheet className="w-4 h-4" /> DOH Consolidated
+        </button>
+        <button onClick={() => setActiveReportTab('internal')} className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeReportTab === 'internal' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+          <FileText className="w-4 h-4" /> Internal Reports
+        </button>
+      </div>
+
+      {/* ── DOH CONSOLIDATED REPORT ── */}
+      {activeReportTab === 'doh' && (
+        <div className="space-y-4">
+          {/* Controls */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-4 flex-wrap">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Month</label>
+              <select value={reportMonth} onChange={e => setReportMonth(Number(e.target.value))}
+                className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Year</label>
+              <select value={reportYear} onChange={e => setReportYear(Number(e.target.value))}
+                className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+            <div className="ml-auto text-xs text-gray-400">
+              Data shown is mock. Connect backend for real values.
+            </div>
+          </div>
+
+          {/* DOH Report Table */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="text-xs" style={{ minWidth: '1100px', width: '100%', borderCollapse: 'collapse' }}>
+                {/* ── Report Header ── */}
+                <thead>
+                  <tr>
+                    <td colSpan={2 + GRADES.length * 2 + 2} className="text-center py-3 px-4 border-b border-gray-200 bg-gray-50">
+                      <div className="font-bold text-sm text-gray-900">DENTAL SECTION — CONSOLIDATED ORAL HEALTH STATUS AND SERVICE REPORT</div>
+                      <div className="text-gray-600 text-xs mt-0.5">City of Taguig · Department of Health · {MONTHS[reportMonth - 1]} {reportYear}</div>
+                    </td>
+                  </tr>
+                  {/* Grade headers */}
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="text-left px-3 py-2 font-semibold text-gray-700 border-r border-gray-200 sticky left-0 bg-gray-50 z-10" style={{ minWidth: '220px' }}>Indicator</th>
+                    {GRADES.map(g => (
+                      <th key={g} colSpan={2} className="text-center px-2 py-2 font-semibold text-gray-700 border-r border-gray-200 text-[10px]">{g}</th>
+                    ))}
+                    <th colSpan={2} className="text-center px-2 py-2 font-bold text-[#1E40AF] border-r border-gray-200 text-[10px]">TOTAL</th>
+                    <th className="text-center px-2 py-2 font-bold text-[#1E40AF] text-[10px]">GRAND TOTAL</th>
+                  </tr>
+                  {/* M/F headers */}
+                  <tr className="bg-gray-50 border-b-2 border-gray-300">
+                    <th className="sticky left-0 bg-gray-50 z-10 border-r border-gray-200" />
+                    {GRADES.map(g => (
+                      <>
+                        <th key={g + 'M'} className="text-center px-1 py-1.5 font-semibold text-blue-600 border-r border-gray-100 text-[10px] w-10">M</th>
+                        <th key={g + 'F'} className="text-center px-1 py-1.5 font-semibold text-pink-600 border-r border-gray-200 text-[10px] w-10">F</th>
+                      </>
+                    ))}
+                    <th className="text-center px-1 py-1.5 font-semibold text-blue-600 border-r border-gray-100 text-[10px] w-10">M</th>
+                    <th className="text-center px-1 py-1.5 font-semibold text-pink-600 border-r border-gray-200 text-[10px] w-10">F</th>
+                    <th className="text-center px-1 py-1.5 font-bold text-gray-700 text-[10px] w-14" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {DOH_ROWS.map((row, idx) => {
+                    if (row.isHeader) {
+                      return (
+                        <tr key={idx} className="bg-blue-50 border-t border-b border-blue-200">
+                          <td colSpan={2 + GRADES.length * 2 + 2} className="px-3 py-1.5 font-bold text-blue-800 text-[10px] uppercase tracking-wide sticky left-0 bg-blue-50">
+                            {row.label}
+                          </td>
+                        </tr>
+                      );
+                    }
+                    const field = row.field || '';
+                    const grandTotal = getTotalVal(field);
+                    return (
+                      <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td className={`px-3 py-1.5 text-gray-700 sticky left-0 bg-white border-r border-gray-200 ${row.indent ? 'pl-6' : 'font-medium'}`} style={{ minWidth: '220px' }}>
+                          {row.label}
+                        </td>
+                        {GRADES.map(g => (
+                          <>
+                            <td key={g + 'M'} className="text-center px-1 py-1.5 font-mono text-gray-700 border-r border-gray-100 text-[11px]">
+                              {getMockVal(g, 'M', field)}
+                            </td>
+                            <td key={g + 'F'} className="text-center px-1 py-1.5 font-mono text-gray-700 border-r border-gray-200 text-[11px]">
+                              {getMockVal(g, 'F', field)}
+                            </td>
+                          </>
+                        ))}
+                        <td className="text-center px-1 py-1.5 font-mono font-bold text-blue-700 border-r border-gray-100 text-[11px]">
+                          {getTotalVal(field, 'M')}
+                        </td>
+                        <td className="text-center px-1 py-1.5 font-mono font-bold text-pink-700 border-r border-gray-200 text-[11px]">
+                          {getTotalVal(field, 'F')}
+                        </td>
+                        <td className="text-center px-1 py-1.5 font-mono font-bold text-gray-900 text-[11px] bg-blue-50">
+                          {grandTotal}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {/* Footer */}
+            <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
+              <span>Prepared by: Dr. Maria Santos, Dentist · Barangay Tanyag Dental Clinic</span>
+              <span>Date: {MONTHS[reportMonth - 1]} {reportYear}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── INTERNAL REPORTS ── */}
+      {activeReportTab === 'internal' && (
+
+        <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Report Generation</h1>
@@ -450,6 +664,8 @@ export const Reports = () => {
           ))}
         </div>
       </div>
+    </div>
+      )}
     </div>
   );
 };
