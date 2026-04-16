@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, useParams } from "react-router";
 import { RootLayout } from "./components/RootLayout";
 import { Login } from "./components/Login";
 import { SchoolSelect } from "./components/SchoolSelect";
@@ -14,6 +14,8 @@ import { Reports } from "./components/Reports";
 import { AccountManagement } from "./components/AccountManagement";
 import { AuditTrail } from "./components/AuditTrail";
 
+const DentalChartKeyed = () => { const { id } = useParams(); return <DentalChart key={id} />; };
+
 export const router = createBrowserRouter([
   { path: "/login", Component: Login },
   { path: "/select-school", Component: SchoolSelect },
@@ -24,7 +26,7 @@ export const router = createBrowserRouter([
       { index: true, Component: Dashboard },
       { path: "patients", Component: PatientList },
       { path: "dental-charts", Component: DentalChartNav },
-      { path: "dental-chart/:id", Component: DentalChart },
+      { path: "dental-chart/:id", Component: DentalChartKeyed },
       { path: "treatment-records", Component: TreatmentRecords },
 
       { path: "appointments", Component: Appointments },
