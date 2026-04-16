@@ -115,12 +115,14 @@ export const DentalChart = () => {
 
   // ── Treatment History ────────────────────────────────────────────────────
   const [showAddTreatment, setShowAddTreatment] = useState(false);
-  const treatmentHistory = [
-    { date:'2026-03-10', complaint:'Toothache on lower right molar', diagnosis:'Deep caries on tooth #36', treatment:'Temporary filling; scheduled for extraction', dentist:'Dr. Maria Santos', remarks:'Avoid hard foods. Follow-up in 1 week.' },
-    { date:'2026-02-15', complaint:'Routine checkup', diagnosis:'Gingivitis, multiple caries', treatment:'Oral prophylaxis, fluoride varnish application', dentist:'Dr. Maria Santos', remarks:'Oral hygiene instruction given.' },
-    { date:'2025-11-20', complaint:'Bleeding gums', diagnosis:'Moderate gingivitis', treatment:'Scaling, oral hygiene instruction', dentist:'Dr. Ana Cruz', remarks:'Recommended twice-daily brushing.' },
-    { date:'2025-08-05', complaint:'Routine screening', diagnosis:'Dental caries (primary) — teeth 84, 85', treatment:'Fluoride varnish, SDF application', dentist:'Dr. Maria Santos', remarks:'Consent obtained. No adverse reactions.' },
-    { date:'2025-03-12', complaint:'Toothache', diagnosis:'Irreversible pulpitis — tooth #75', treatment:'Extraction of primary tooth #75', dentist:'Dr. Ana Cruz', remarks:'Post-extraction instruction given.' },
+  const treatmentHistory: { date:string; complaint:string; diagnosis:string; treatment:string; dentist:string; remarks:string; type:'regular'|'rpc'; rpcVisit?:number }[] = [
+    { date:'2026-03-20', complaint:'RPC Visit 2 — scheduled follow-up', diagnosis:'Post-prophylaxis check; gingivitis resolved', treatment:'Oral prophylaxis, scaling, fluoride varnish', dentist:'Dr. Maria Santos', remarks:'RPC cycle complete. Next regular visit in 6 months.', type:'rpc', rpcVisit:2 },
+    { date:'2026-03-10', complaint:'Toothache on lower right molar', diagnosis:'Deep caries on tooth #36', treatment:'Temporary filling; scheduled for extraction', dentist:'Dr. Maria Santos', remarks:'Avoid hard foods. Follow-up in 1 week.', type:'regular' },
+    { date:'2026-02-15', complaint:'Routine checkup', diagnosis:'Gingivitis, multiple caries', treatment:'Oral prophylaxis, fluoride varnish application', dentist:'Dr. Maria Santos', remarks:'Oral hygiene instruction given.', type:'regular' },
+    { date:'2026-01-15', complaint:'RPC Visit 1 — initial pre-care', diagnosis:'Moderate gingivitis; calculus deposits', treatment:'Oral prophylaxis, scaling, oral hygiene instruction', dentist:'Dr. Maria Santos', remarks:'Patient tolerated procedure well. Schedule Visit 2 in 6 weeks.', type:'rpc', rpcVisit:1 },
+    { date:'2025-11-20', complaint:'Bleeding gums', diagnosis:'Moderate gingivitis', treatment:'Scaling, oral hygiene instruction', dentist:'Dr. Ana Cruz', remarks:'Recommended twice-daily brushing.', type:'regular' },
+    { date:'2025-08-05', complaint:'Routine screening', diagnosis:'Dental caries (primary) — teeth 84, 85', treatment:'Fluoride varnish, SDF application', dentist:'Dr. Maria Santos', remarks:'Consent obtained. No adverse reactions.', type:'regular' },
+    { date:'2025-03-12', complaint:'Toothache', diagnosis:'Irreversible pulpitis — tooth #75', treatment:'Extraction of primary tooth #75', dentist:'Dr. Ana Cruz', remarks:'Post-extraction instruction given.', type:'regular' },
   ];
   const [activeYears, setActiveYears] = useState<string[]>(['2024-2025', '2025-2026']);
   const [selectedYear, setSelectedYear] = useState(0); // index into activeYears
@@ -898,14 +900,20 @@ export const DentalChart = () => {
             <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>{['Date','Chief Complaint','Diagnosis','Treatment Done','Dentist','Remarks'].map(h=>(
+                  <tr>{['Date','Type','Chief Complaint','Diagnosis','Treatment Done','Dentist','Remarks'].map(h=>(
                     <th key={h} className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
                   ))}</tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">
                   {treatmentHistory.map((t,i)=>(
-                    <tr key={i} className="hover:bg-gray-50">
+                    <tr key={i} className={`hover:bg-gray-50 ${t.type==='rpc' ? 'bg-purple-50/30' : ''}`}>
                       <td className="px-4 py-2 whitespace-nowrap font-medium text-gray-900 text-xs">{new Date(t.date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})}</td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        {t.type === 'rpc'
+                          ? <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">RPC Visit {t.rpcVisit}</span>
+                          : <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Regular</span>
+                        }
+                      </td>
                       <td className="px-4 py-2 text-xs text-gray-900">{t.complaint}</td>
                       <td className="px-4 py-2 text-xs text-gray-900">{t.diagnosis}</td>
                       <td className="px-4 py-2 text-xs text-gray-900">{t.treatment}</td>
@@ -919,10 +927,16 @@ export const DentalChart = () => {
             {/* Mobile cards */}
             <div className="md:hidden space-y-3">
               {treatmentHistory.map((t,i)=>(
-                <div key={i} className="bg-white rounded-lg border border-gray-200 p-3 space-y-1.5">
+                <div key={i} className={`rounded-lg border p-3 space-y-1.5 ${t.type==='rpc' ? 'bg-purple-50 border-purple-200' : 'bg-white border-gray-200'}`}>
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-gray-900 text-xs">{new Date(t.date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})}</span>
-                    <span className="text-xs text-gray-500">{t.dentist}</span>
+                    <div className="flex items-center gap-2">
+                      {t.type === 'rpc'
+                        ? <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">RPC Visit {t.rpcVisit}</span>
+                        : <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Regular</span>
+                      }
+                      <span className="text-xs text-gray-500">{t.dentist}</span>
+                    </div>
                   </div>
                   <p className="text-xs text-gray-600"><span className="font-medium">CC:</span> {t.complaint}</p>
                   <p className="text-xs text-gray-600"><span className="font-medium">Dx:</span> {t.diagnosis}</p>
