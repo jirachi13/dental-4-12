@@ -164,7 +164,7 @@ export const DentalChart = () => {
   const currentChart = chartData[selectedYear] || {};
   const dmft = computeDMFT(currentChart);
   const gc = getGradeColor(patientInfo.grade);
-  const canEditInfo = user?.role === 'dentist' || user?.role === 'school_admin';
+  const canEditInfo = user?.role === 'dentist' || user?.role === 'dental_aide';
   const computeAge = (birthday: string) => {
     const today = new Date();
     const birth = new Date(birthday);
