@@ -850,19 +850,11 @@ export const DentalChart = () => {
         {/* ── TAB 3: Consent & Appointments ── */}
         {activeTab === 'appointments' && (
           <div className="p-4 space-y-4">
-            {/* Risk & Consent Summary */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-50 rounded-xl p-4">
-                <div className="text-xs text-gray-500 mb-1">Risk Level</div>
-                <div className={mockPatient.riskLevel === 'high' ? 'text-sm font-bold uppercase text-red-600' : mockPatient.riskLevel === 'medium' ? 'text-sm font-bold uppercase text-yellow-600' : 'text-sm font-bold uppercase text-green-600'}>
-                  {mockPatient.riskLevel}
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-xl p-4">
-                <div className="text-xs text-gray-500 mb-1">Consent Status</div>
-                <div className={`text-sm font-bold ${consentGiven ? 'text-green-600' : 'text-gray-400'}`}>
-                  {consentGiven ? 'Completed' : 'Pending'}
-                </div>
+            {/* Consent Summary */}
+            <div className="bg-gray-50 rounded-xl p-4 w-48">
+              <div className="text-xs text-gray-500 mb-1">Consent Status</div>
+              <div className={`text-sm font-bold ${consentGiven ? 'text-green-600' : 'text-gray-400'}`}>
+                {consentGiven ? 'Completed' : 'Pending'}
               </div>
             </div>
 
