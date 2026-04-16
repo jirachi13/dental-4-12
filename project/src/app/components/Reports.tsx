@@ -1,136 +1,148 @@
 import { useState } from 'react';
-import { FileText, Download, Eye, Calendar, BarChart3, PieChart, TrendingUp, FileDown, Printer, FileSpreadsheet } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart as RPieChart, Pie, Cell } from 'recharts';
+import { FileSpreadsheet, FileText, Printer, AlertTriangle, AlertCircle, CheckCircle, TrendingUp } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useAuth } from '../context/AuthContext';
+import { getSchoolShortName } from '../utils/schoolColors';
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const GRADES = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
+
+// Mock value generator — per grade per sex per field
+const V = (grade: string, sex: 'M'|'F', field: string): number => {
+  const base: Record<string, number> = {
+    attended: sex==='M'?28:30, examined: sex==='M'?25:27,
+    allergies:2, hypertension:0, diabetes:0, bloodDisorders:0, cardiovascular:0,
+    thyroid:0, hepatitis:0, malignancy:0, hospitalization:1, bloodTransfusion:0, tattoo:0,
+    sugarSweetened:sex==='M'?15:14, alcoholDrinker:0, tobaccoUser:0, betelNut:0,
+    dentalCaries:sex==='M'?12:10, edentulous:0, gingivitis:4, debris:8, calculus:3, anomaly:1,
+    dmf_d:3, dmf_f:2, DMF_D:4, DMF_M:1, DMF_F:3,
+    bohc_hc:3, bohc_out:8, bohc_sch:sex==='M'?18:20,
+    oph_scaling:8, fill_perm_head:6, fill_perm_tooth:8,
+    fill_temp_head:3, fill_temp_tooth:4,
+    gum_treatment:2, ext_head:sex==='M'?5:4, ext_tooth:sex==='M'?6:5,
+    sealant_head:5, sealant_tooth:9,
+    fluor1:18, fluor2:15, post_op:2, abscess:1, other:4,
+    referred:3, counseling:12, toothbrush_drill:sex==='M'?8:9,
+    ofc_exam:sex==='M'?8:10, ofc_rehab:sex==='M'?4:5,
+  };
+  const m: Record<string,number> = {Kinder:0.8,'Grade 1':0.9,'Grade 2':1.0,'Grade 3':1.0,'Grade 4':1.1,'Grade 5':1.1,'Grade 6':1.2};
+  return Math.round((base[field]||0)*(m[grade]||1));
+};
+const TV = (field: string, sex?: 'M'|'F') =>
+  GRADES.reduce((s,g) => s + (sex ? V(g,sex,field) : V(g,'M',field)+V(g,'F',field)), 0);
+
+// Row types
+type RowDef =
+  | { type: 'header'; label: string }
+  | { type: 'data'; label: string; field: string; indent?: boolean }
+  | { type: 'sub'; label: string; field: string };
+
+const DOH_ROWS: RowDef[] = [
+  { type:'data', label:'No. of Person Attended', field:'attended' },
+  { type:'data', label:'No. Orally Examined', field:'examined' },
+
+  { type:'header', label:'MEDICAL HISTORY STATUS' },
+  { type:'data', label:'Total No. with Allergies', field:'allergies', indent:true },
+  { type:'data', label:'Total No. with Hypertension/CVA', field:'hypertension', indent:true },
+  { type:'data', label:'Total No. with Diabetes Mellitus', field:'diabetes', indent:true },
+  { type:'data', label:'Total No. with Blood Disorders', field:'bloodDisorders', indent:true },
+  { type:'data', label:'Total No. with Cardiovascular/Heart Diseases', field:'cardiovascular', indent:true },
+  { type:'data', label:'Total No. with Thyroid Disorders', field:'thyroid', indent:true },
+  { type:'data', label:'Total No. with Hepatitis', field:'hepatitis', indent:true },
+  { type:'data', label:'Total No. with Malignancy', field:'malignancy', indent:true },
+  { type:'data', label:'Total No. with History of Previous Hospitalization', field:'hospitalization', indent:true },
+  { type:'data', label:'Total No. with Blood Transfusion', field:'bloodTransfusion', indent:true },
+  { type:'data', label:'Total No. with Tattoo', field:'tattoo', indent:true },
+
+  { type:'header', label:'DIETARY / SOCIAL HISTORY STATUS' },
+  { type:'data', label:'Total No. of Sugar Sweetened Beverages/Food Drinker/Eater', field:'sugarSweetened', indent:true },
+  { type:'data', label:'Total No. of Alcoholic Drinker', field:'alcoholDrinker', indent:true },
+  { type:'data', label:'Total No. of Tobacco User', field:'tobaccoUser', indent:true },
+  { type:'data', label:'Total No. of Betel Nut Chewer', field:'betelNut', indent:true },
+
+  { type:'header', label:'ORAL HEALTH STATUS' },
+  { type:'data', label:'Total No. with Dental Caries', field:'dentalCaries', indent:true },
+  { type:'data', label:'Total No. of Edentulous/No Dentition', field:'edentulous', indent:true },
+  { type:'data', label:'Total No. with Gingivitis/Periodontal Disease', field:'gingivitis', indent:true },
+  { type:'data', label:'Total No. with Oral Debris', field:'debris', indent:true },
+  { type:'data', label:'Total No. with Calcular Deposit', field:'calculus', indent:true },
+  { type:'data', label:'Total No. with Dento-Facial Anomaly', field:'anomaly', indent:true },
+  { type:'data', label:'Total df (primary)', field:'dmf_d', indent:true },
+  { type:'data', label:'Total decayed (d)', field:'dmf_d', indent:true },
+  { type:'data', label:'Total filled (f)', field:'dmf_f', indent:true },
+  { type:'data', label:'Total DMF (permanent)', field:'DMF_D', indent:true },
+  { type:'data', label:'Total Decayed (D)', field:'DMF_D', indent:true },
+  { type:'data', label:'Total Missing (M)', field:'DMF_M', indent:true },
+  { type:'data', label:'Total Filled (F)', field:'DMF_F', indent:true },
+
+  { type:'header', label:'SERVICES RENDERED' },
+  { type:'data', label:'No. Provided BOHC (Basic Oral Health Care)', field:'bohc_sch', indent:true },
+  { type:'sub',  label:'Health Center', field:'bohc_hc' },
+  { type:'sub',  label:'Outreach', field:'bohc_out' },
+  { type:'sub',  label:'Schools', field:'bohc_sch' },
+  { type:'data', label:'No. Given OP / Oral Prophylaxis / Scaling', field:'oph_scaling', indent:true },
+  { type:'data', label:'No. Given Permanent Fillings', field:'fill_perm_head', indent:true },
+  { type:'sub',  label:'Head count', field:'fill_perm_head' },
+  { type:'sub',  label:'Tooth count', field:'fill_perm_tooth' },
+  { type:'data', label:'No. Given Temporary Fillings', field:'fill_temp_head', indent:true },
+  { type:'sub',  label:'Head count', field:'fill_temp_head' },
+  { type:'sub',  label:'Tooth count', field:'fill_temp_tooth' },
+  { type:'data', label:'No. Given Gum Treatment', field:'gum_treatment', indent:true },
+  { type:'data', label:'No. Given Extraction', field:'ext_head', indent:true },
+  { type:'sub',  label:'Head count', field:'ext_head' },
+  { type:'sub',  label:'Tooth count', field:'ext_tooth' },
+  { type:'data', label:'No. Given Pit & Fissure Sealant', field:'sealant_head', indent:true },
+  { type:'sub',  label:'Head count', field:'sealant_head' },
+  { type:'sub',  label:'Tooth count', field:'sealant_tooth' },
+  { type:'data', label:'No. Given Fluoride Therapy', field:'fluor1', indent:true },
+  { type:'sub',  label:'1st Dose', field:'fluor1' },
+  { type:'sub',  label:'2nd Dose', field:'fluor2' },
+  { type:'sub',  label:'No. Given Post Operative Treatment', field:'post_op' },
+  { type:'sub',  label:'No. of Patient with Oral Abscess Drained', field:'abscess' },
+  { type:'data', label:'No. Given Other Services', field:'other', indent:true },
+  { type:'sub',  label:'No. Referred', field:'referred' },
+  { type:'data', label:'No. Given Counselling / Oral Health Education', field:'counseling', indent:true },
+  { type:'sub',  label:'No. of Under 6 Children Completed Toothbrush Drill', field:'toothbrush_drill' },
+
+  { type:'header', label:'NO. OF ORALLY FIT CHILDREN (OFC)' },
+  { type:'data', label:'OFC Upon Oral Examination', field:'ofc_exam', indent:true },
+  { type:'data', label:'OFC Upon Complete Oral Rehabilitation', field:'ofc_rehab', indent:true },
+];
+
+// Mock referral data
+const mockReferrals = [
+  { student:'Juan Dela Cruz', date:'2026-03-15', facility:'Taguig City Health Office', reason:'Severe caries, abscess', outcome:'pending' },
+  { student:'Maria Santos', date:'2026-03-02', facility:'Taguig City Health Office', reason:'Deep caries, emergency extraction', outcome:'completed' },
+  { student:'Pedro Reyes', date:'2026-02-20', facility:'Taguig District Hospital', reason:'Multiple extractions needed', outcome:'completed' },
+  { student:'Ana Garcia', date:'2026-03-10', facility:'Taguig City Health Office', reason:'Recurring gingivitis', outcome:'ongoing' },
+];
+
+const treatmentChartData = [
+  { name: 'Extraction', value: 38 },
+  { name: 'Fluoride', value: 142 },
+  { name: 'Cleaning', value: 67 },
+  { name: 'Perm Fill', value: 51 },
+  { name: 'Temp Fill', value: 28 },
+  { name: 'Sealant', value: 44 },
+  { name: 'Counseling', value: 95 },
+  { name: 'Other', value: 33 },
+];
 
 export const Reports = () => {
+  const { selectedSchool } = useAuth();
   const [activeReportTab, setActiveReportTab] = useState<'doh' | 'internal'>('doh');
   const [reportMonth, setReportMonth] = useState(4);
   const [reportYear, setReportYear] = useState(2026);
-  const [reportType, setReportType] = useState('monthly');
-  const [selectedSchool, setSelectedSchool] = useState('all');
-  const [startDate, setStartDate] = useState('2026-01-01');
-  const [endDate, setEndDate] = useState('2026-04-10');
-  const [showPreview, setShowPreview] = useState(false);
 
-  const reportTypes = [
-    { value: 'monthly', label: 'Monthly Oral Health Report (DOH IPTR Format)' },
-    { value: 'appointment', label: 'Appointment Summary Report' },
-    { value: 'fluoride', label: 'Fluoride Coverage Report' },
-    { value: 'procedure', label: 'Procedure Volume Report' },
-    { value: 'risk', label: 'Risk Stratification Report' },
-    { value: 'doh-compliance', label: 'DOH Compliance Report' },
-    { value: 'bayanihan', label: 'Bayanihan Event Summary' },
-  ];
-
-  const schools = [
-    { value: 'all', label: 'All Schools' },
-    { value: 'bagong-tanyag', label: 'Bagong Tanyag Integrated School' },
-    { value: 'bagong-annex', label: 'Bagong Tanyag Elementary School Annex A' },
-    { value: 'south-daang', label: 'South Daang Hari Elementary School Main' },
-  ];
-
-  // Sample Data for Previews
-  const procedureData = [
-    { month: 'Jan', extractions: 12, fillings: 25, fluoride: 85, cleaning: 42 },
-    { month: 'Feb', extractions: 15, fillings: 30, fluoride: 92, cleaning: 38 },
-    { month: 'Mar', extractions: 18, fillings: 28, fluoride: 88, cleaning: 45 },
-    { month: 'Apr', extractions: 10, fillings: 22, fluoride: 95, cleaning: 40 },
-  ];
-
-  const riskData = [
-    { name: 'High Risk', value: 35, color: '#E31E24' },
-    { name: 'Medium Risk', value: 48, color: '#FBBF24' },
-    { name: 'Low Risk', value: 67, color: '#16A34A' },
-  ];
-
-  const fluorideCoverage = [
-    { grade: 'Grade 1', target: 120, completed: 115, percentage: 96 },
-    { grade: 'Grade 2', target: 110, completed: 105, percentage: 95 },
-    { grade: 'Grade 3', target: 125, completed: 108, percentage: 86 },
-    { grade: 'Grade 4', target: 118, completed: 112, percentage: 95 },
-    { grade: 'Grade 5', target: 115, completed: 98, percentage: 85 },
-    { grade: 'Grade 6', target: 108, completed: 102, percentage: 94 },
-  ];
-
-  const generateReport = (format: 'pdf' | 'excel') => {
-    const reportName = reportTypes.find(r => r.value === reportType)?.label || 'Report';
-    alert(`✓ Generating ${reportName}\nFormat: ${format.toUpperCase()}\nPeriod: ${startDate} to ${endDate}\nSchool: ${selectedSchool}\n\nReport will be downloaded shortly...`);
-  };
-
-  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const GRADES = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
-
-  // Mock DOH data per grade per sex
-  const getMockVal = (grade: string, sex: 'M'|'F', field: string): number => {
-    const base: Record<string, number> = {
-      attended: sex === 'M' ? 28 : 30, examined: sex === 'M' ? 25 : 27,
-      allergies: 2, hypertension: 0, diabetes: 0, bloodDisorders: 0, cardiovascular: 0,
-      thyroid: 0, hepatitis: 0, malignancy: 0, hospitalization: 1, bloodTransfusion: 0, tattoo: 0,
-      sugarSweetened: sex === 'M' ? 15 : 14, alcoholDrinker: 0, tobaccoUser: 0, betelNut: 0,
-      dentalCaries: sex === 'M' ? 12 : 10, edentulous: 0, gingivitis: 4, debris: 8, calculus: 3, anomaly: 1,
-      dmf_d: 3, dmf_f: 2, DMF_D: 4, DMF_M: 1, DMF_F: 3,
-      extraction: sex === 'M' ? 5 : 4, fluoride1: 18, fluoride2: 15,
-      filling_perm: 6, filling_temp: 3, cleaning: 8, sealant: 5, counseling: 12,
-      ofc_exam: sex === 'M' ? 8 : 10, ofc_rehab: sex === 'M' ? 4 : 5,
+  const outcomeBadge = (o: string) => {
+    const m: Record<string,string> = {
+      completed: 'bg-green-100 text-green-700',
+      pending: 'bg-yellow-100 text-yellow-700',
+      ongoing: 'bg-blue-100 text-blue-700',
+      no_show: 'bg-red-100 text-red-700',
     };
-    const gradeMultiplier: Record<string, number> = { Kinder:0.8, 'Grade 1':0.9, 'Grade 2':1.0, 'Grade 3':1.0, 'Grade 4':1.1, 'Grade 5':1.1, 'Grade 6':1.2 };
-    return Math.round((base[field] || 0) * (gradeMultiplier[grade] || 1));
+    return m[o] || 'bg-gray-100 text-gray-500';
   };
-
-  const getTotalVal = (field: string, sex?: 'M'|'F') => {
-    return GRADES.reduce((sum, g) => {
-      if (sex) return sum + getMockVal(g, sex, field);
-      return sum + getMockVal(g, 'M', field) + getMockVal(g, 'F', field);
-    }, 0);
-  };
-
-  const DOH_ROWS: { label: string; field?: string; isHeader?: boolean; indent?: boolean }[] = [
-    { label: 'No. of Person Attended', field: 'attended' },
-    { label: 'No. Orally Examined', field: 'examined' },
-    { label: 'MEDICAL HISTORY STATUS', isHeader: true },
-    { label: 'Total No. with Allergies', field: 'allergies', indent: true },
-    { label: 'Total No. with Hypertension/CVA', field: 'hypertension', indent: true },
-    { label: 'Total No. with Diabetes Mellitus', field: 'diabetes', indent: true },
-    { label: 'Total No. with Blood Disorders', field: 'bloodDisorders', indent: true },
-    { label: 'Total No. with Cardiovascular/Heart Diseases', field: 'cardiovascular', indent: true },
-    { label: 'Total No. with Thyroid Disorders', field: 'thyroid', indent: true },
-    { label: 'Total No. with Hepatitis', field: 'hepatitis', indent: true },
-    { label: 'Total No. with Malignancy', field: 'malignancy', indent: true },
-    { label: 'Total No. with History of Hospitalization', field: 'hospitalization', indent: true },
-    { label: 'Total No. with Blood Transfusion', field: 'bloodTransfusion', indent: true },
-    { label: 'Total No. with Tattoo', field: 'tattoo', indent: true },
-    { label: 'DIETARY / SOCIAL HISTORY STATUS', isHeader: true },
-    { label: 'Total No. of Sugar Sweetened Beverages/Food', field: 'sugarSweetened', indent: true },
-    { label: 'Total No. of Alcohol Drinkers', field: 'alcoholDrinker', indent: true },
-    { label: 'Total No. of Tobacco Users', field: 'tobaccoUser', indent: true },
-    { label: 'Total No. of Betel Nut Chewers', field: 'betelNut', indent: true },
-    { label: 'ORAL HEALTH STATUS', isHeader: true },
-    { label: 'Total No. with Dental Caries', field: 'dentalCaries', indent: true },
-    { label: 'Total No. of Edentulous/No Dentition', field: 'edentulous', indent: true },
-    { label: 'Total No. with Gingivitis/Periodontal Disease', field: 'gingivitis', indent: true },
-    { label: 'Total No. with Oral Debris', field: 'debris', indent: true },
-    { label: 'Total No. with Calcular Deposit', field: 'calculus', indent: true },
-    { label: 'Total No. with Dento-Facial Anomaly', field: 'anomaly', indent: true },
-    { label: 'Total df', field: 'dmf_d', indent: true },
-    { label: 'Total Decayed (d)', field: 'dmf_d', indent: true },
-    { label: 'Total Filled (f)', field: 'dmf_f', indent: true },
-    { label: 'Total DMF', field: 'DMF_D', indent: true },
-    { label: 'Total Decayed (D)', field: 'DMF_D', indent: true },
-    { label: 'Total Missing (M)', field: 'DMF_M', indent: true },
-    { label: 'Total Filled (F)', field: 'DMF_F', indent: true },
-    { label: 'SERVICES RENDERED', isHeader: true },
-    { label: 'No. Given Extraction', field: 'extraction', indent: true },
-    { label: 'No. Given Permanent Fillings', field: 'filling_perm', indent: true },
-    { label: 'No. Given Temporary Fillings', field: 'filling_temp', indent: true },
-    { label: 'No. Given Teeth Cleaning/Oral Prophylaxis', field: 'cleaning', indent: true },
-    { label: 'No. Given Pit & Fissure Sealant', field: 'sealant', indent: true },
-    { label: 'No. Given Fluoride Therapy — 1st Dose', field: 'fluoride1', indent: true },
-    { label: 'No. Given Fluoride Therapy — 2nd Dose', field: 'fluoride2', indent: true },
-    { label: 'No. Given Counselling/Oral Health Education', field: 'counseling', indent: true },
-    { label: 'NO. OF ORALLY FIT CHILDREN (OFC)', isHeader: true },
-    { label: 'OFC Upon Oral Examination', field: 'ofc_exam', indent: true },
-    { label: 'OFC Upon Complete Oral Rehabilitation', field: 'ofc_rehab', indent: true },
-  ];
 
   return (
     <div className="space-y-4">
@@ -138,24 +150,29 @@ export const Reports = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Generate and export DOH-compliant dental health reports</p>
+          <p className="text-gray-500 text-sm mt-0.5">
+            {selectedSchool ? getSchoolShortName(selectedSchool) : 'All Schools'} · DOH-compliant dental health reports
+          </p>
         </div>
-        <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+        <button onClick={() => window.print()}
+          className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
           <Printer className="w-4 h-4" /> Print Report
         </button>
       </div>
 
-      {/* Tab toggle */}
+      {/* Tabs */}
       <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
-        <button onClick={() => setActiveReportTab('doh')} className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeReportTab === 'doh' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+        <button onClick={() => setActiveReportTab('doh')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeReportTab === 'doh' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
           <FileSpreadsheet className="w-4 h-4" /> DOH Consolidated
         </button>
-        <button onClick={() => setActiveReportTab('internal')} className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeReportTab === 'internal' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+        <button onClick={() => setActiveReportTab('internal')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeReportTab === 'internal' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
           <FileText className="w-4 h-4" /> Internal Reports
         </button>
       </div>
 
-      {/* ── DOH CONSOLIDATED REPORT ── */}
+      {/* ── DOH CONSOLIDATED ── */}
       {activeReportTab === 'doh' && (
         <div className="space-y-4">
           {/* Controls */}
@@ -164,103 +181,100 @@ export const Reports = () => {
               <label className="block text-xs text-gray-500 mb-1">Month</label>
               <select value={reportMonth} onChange={e => setReportMonth(Number(e.target.value))}
                 className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+                {MONTHS.map((m,i) => <option key={m} value={i+1}>{m}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">Year</label>
               <select value={reportYear} onChange={e => setReportYear(Number(e.target.value))}
                 className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                {[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+                {[2023,2024,2025,2026].map(y => <option key={y} value={y}>{y}</option>)}
               </select>
             </div>
-            <div className="ml-auto text-xs text-gray-400">
-              Data shown is mock. Connect backend for real values.
-            </div>
+            <div className="ml-auto text-xs text-gray-400 italic">Mock data — connect backend for real values</div>
           </div>
 
-          {/* DOH Report Table */}
+          {/* Table */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="text-xs" style={{ minWidth: '1100px', width: '100%', borderCollapse: 'collapse' }}>
-                {/* ── Report Header ── */}
+              <table style={{ minWidth:'1150px', width:'100%', borderCollapse:'collapse' }}>
                 <thead>
+                  {/* Title row */}
                   <tr>
-                    <td colSpan={2 + GRADES.length * 2 + 2} className="text-center py-3 px-4 border-b border-gray-200 bg-gray-50">
-                      <div className="font-bold text-sm text-gray-900">DENTAL SECTION — CONSOLIDATED ORAL HEALTH STATUS AND SERVICE REPORT</div>
-                      <div className="text-gray-600 text-xs mt-0.5">City of Taguig · Department of Health · {MONTHS[reportMonth - 1]} {reportYear}</div>
+                    <td colSpan={2 + GRADES.length*2 + 3}
+                      className="text-center py-3 px-4 border-b border-gray-200 bg-gray-50">
+                      <div className="font-bold text-sm text-gray-900 uppercase tracking-wide">
+                        DENTAL SECTION — CONSOLIDATED ORAL HEALTH STATUS AND SERVICE REPORT
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        Department of Health · City of Taguig · {MONTHS[reportMonth-1]} {reportYear}
+                        {selectedSchool && ` · ${getSchoolShortName(selectedSchool)}`}
+                      </div>
                     </td>
                   </tr>
-                  {/* Grade headers */}
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="text-left px-3 py-2 font-semibold text-gray-700 border-r border-gray-200 sticky left-0 bg-gray-50 z-10" style={{ minWidth: '220px' }}>Indicator</th>
+                  {/* Grade header */}
+                  <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-semibold text-gray-600">
+                    <th className="sticky left-0 bg-gray-50 z-10 text-left px-3 py-2 border-r border-gray-200" style={{minWidth:'220px'}}>Indicator</th>
                     {GRADES.map(g => (
-                      <th key={g} colSpan={2} className="text-center px-2 py-2 font-semibold text-gray-700 border-r border-gray-200 text-[10px]">{g}</th>
+                      <th key={g} colSpan={2} className="text-center px-1 py-2 border-r border-gray-200">{g}</th>
                     ))}
-                    <th colSpan={2} className="text-center px-2 py-2 font-bold text-[#1E40AF] border-r border-gray-200 text-[10px]">TOTAL</th>
-                    <th className="text-center px-2 py-2 font-bold text-[#1E40AF] text-[10px]">GRAND TOTAL</th>
+                    <th colSpan={2} className="text-center px-1 py-2 border-r border-gray-200 text-[#1E40AF] font-bold">TOTAL</th>
+                    <th className="text-center px-1 py-2 text-[#1E40AF] font-bold">GRAND<br/>TOTAL</th>
                   </tr>
-                  {/* M/F headers */}
-                  <tr className="bg-gray-50 border-b-2 border-gray-300">
+                  {/* M/F header */}
+                  <tr className="bg-gray-50 border-b-2 border-gray-300 text-[10px]">
                     <th className="sticky left-0 bg-gray-50 z-10 border-r border-gray-200" />
                     {GRADES.map(g => (
                       <>
-                        <th key={g + 'M'} className="text-center px-1 py-1.5 font-semibold text-blue-600 border-r border-gray-100 text-[10px] w-10">M</th>
-                        <th key={g + 'F'} className="text-center px-1 py-1.5 font-semibold text-pink-600 border-r border-gray-200 text-[10px] w-10">F</th>
+                        <th key={g+'M'} className="text-center px-1 py-1 font-semibold text-blue-600 border-r border-gray-100 w-9">M</th>
+                        <th key={g+'F'} className="text-center px-1 py-1 font-semibold text-pink-600 border-r border-gray-200 w-9">F</th>
                       </>
                     ))}
-                    <th className="text-center px-1 py-1.5 font-semibold text-blue-600 border-r border-gray-100 text-[10px] w-10">M</th>
-                    <th className="text-center px-1 py-1.5 font-semibold text-pink-600 border-r border-gray-200 text-[10px] w-10">F</th>
-                    <th className="text-center px-1 py-1.5 font-bold text-gray-700 text-[10px] w-14" />
+                    <th className="text-center px-1 py-1 font-semibold text-blue-600 border-r border-gray-100 w-9">M</th>
+                    <th className="text-center px-1 py-1 font-semibold text-pink-600 border-r border-gray-200 w-9">F</th>
+                    <th className="w-12" />
                   </tr>
                 </thead>
                 <tbody>
                   {DOH_ROWS.map((row, idx) => {
-                    if (row.isHeader) {
+                    if (row.type === 'header') {
                       return (
                         <tr key={idx} className="bg-blue-50 border-t border-b border-blue-200">
-                          <td colSpan={2 + GRADES.length * 2 + 2} className="px-3 py-1.5 font-bold text-blue-800 text-[10px] uppercase tracking-wide sticky left-0 bg-blue-50">
+                          <td colSpan={2 + GRADES.length*2 + 3}
+                            className="px-3 py-1.5 font-bold text-blue-800 text-[10px] uppercase tracking-wide sticky left-0 bg-blue-50">
                             {row.label}
                           </td>
                         </tr>
                       );
                     }
-                    const field = row.field || '';
-                    const grandTotal = getTotalVal(field);
+                    const isSub = row.type === 'sub';
+                    const field = row.field;
+                    const grandTotal = TV(field);
                     return (
                       <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                        <td className={`px-3 py-1.5 text-gray-700 sticky left-0 bg-white border-r border-gray-200 ${row.indent ? 'pl-6' : 'font-medium'}`} style={{ minWidth: '220px' }}>
+                        <td className={`px-3 py-1 text-gray-700 sticky left-0 bg-white border-r border-gray-200 text-xs ${isSub ? 'pl-10 italic text-gray-500' : (row as any).indent ? 'pl-6' : 'font-medium'}`}
+                          style={{minWidth:'220px'}}>
+                          {isSub && <span className="mr-1 text-gray-400">↳</span>}
                           {row.label}
                         </td>
                         {GRADES.map(g => (
                           <>
-                            <td key={g + 'M'} className="text-center px-1 py-1.5 font-mono text-gray-700 border-r border-gray-100 text-[11px]">
-                              {getMockVal(g, 'M', field)}
-                            </td>
-                            <td key={g + 'F'} className="text-center px-1 py-1.5 font-mono text-gray-700 border-r border-gray-200 text-[11px]">
-                              {getMockVal(g, 'F', field)}
-                            </td>
+                            <td key={g+'M'} className="text-center px-1 py-1 font-mono text-gray-700 border-r border-gray-100 text-[11px]">{V(g,'M',field)}</td>
+                            <td key={g+'F'} className="text-center px-1 py-1 font-mono text-gray-700 border-r border-gray-200 text-[11px]">{V(g,'F',field)}</td>
                           </>
                         ))}
-                        <td className="text-center px-1 py-1.5 font-mono font-bold text-blue-700 border-r border-gray-100 text-[11px]">
-                          {getTotalVal(field, 'M')}
-                        </td>
-                        <td className="text-center px-1 py-1.5 font-mono font-bold text-pink-700 border-r border-gray-200 text-[11px]">
-                          {getTotalVal(field, 'F')}
-                        </td>
-                        <td className="text-center px-1 py-1.5 font-mono font-bold text-gray-900 text-[11px] bg-blue-50">
-                          {grandTotal}
-                        </td>
+                        <td className="text-center px-1 py-1 font-mono font-bold text-blue-700 border-r border-gray-100 text-[11px]">{TV(field,'M')}</td>
+                        <td className="text-center px-1 py-1 font-mono font-bold text-pink-700 border-r border-gray-200 text-[11px]">{TV(field,'F')}</td>
+                        <td className="text-center px-1 py-1 font-mono font-bold text-gray-900 text-[11px] bg-blue-50">{grandTotal}</td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
-            {/* Footer */}
             <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
               <span>Prepared by: Dr. Maria Santos, Dentist · Barangay Tanyag Dental Clinic</span>
-              <span>Date: {MONTHS[reportMonth - 1]} {reportYear}</span>
+              <span>{MONTHS[reportMonth-1]} {reportYear}</span>
             </div>
           </div>
         </div>
@@ -268,350 +282,102 @@ export const Reports = () => {
 
       {/* ── INTERNAL REPORTS ── */}
       {activeReportTab === 'internal' && (
+        <div className="space-y-5">
 
-        <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Report Generation</h1>
-        <p className="text-gray-600 mt-1">Generate and export DOH-compliant dental health reports</p>
-      </div>
-
-      {/* Consent Compliance */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 className="text-sm font-bold text-gray-900 mb-4">Consent Compliance by School</h3>
-        <div className="space-y-4">
-          {[
-            { school: 'Bagong Tanyag Integrated School', complete: 48, total: 60, color: '#1E40AF' },
-            { school: 'Bagong Tanyag Elementary School Annex A', complete: 52, total: 60, color: '#0D9488' },
-            { school: 'South Daang Hari Elementary School Main', complete: 41, total: 60, color: '#EA580C' },
-          ].map(s => {
-            const pct = Math.round((s.complete / s.total) * 100);
-            return (
-              <div key={s.school}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-medium text-gray-700">{s.school.replace(' Elementary School','').replace(' Integrated School',' Integrated').replace(' Main','')}</span>
-                  <span className="text-xs font-bold" style={{ color: s.color }}>{s.complete}/{s.total} ({pct}%)</span>
-                </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: s.color }} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <div className="mt-4 grid grid-cols-3 gap-3 pt-4 border-t border-gray-100">
-          <div className="text-center">
-            <div className="text-lg font-bold text-green-600">141</div>
-            <div className="text-xs text-gray-500">Complete</div>
-          </div>
-          <div className="text-center">
-            <div className="text-lg font-bold text-yellow-600">29</div>
-            <div className="text-xs text-gray-500">Pending</div>
-          </div>
-          <div className="text-center">
-            <div className="text-lg font-bold text-red-600">10</div>
-            <div className="text-xs text-gray-500">Missing</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-2 text-blue-600 mb-2">
-            <FileText className="w-5 h-5" />
-            <span className="text-sm font-medium">Reports Generated</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900">127</p>
-          <p className="text-xs text-gray-500 mt-1">This quarter</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-2 text-green-600 mb-2">
-            <TrendingUp className="w-5 h-5" />
-            <span className="text-sm font-medium">Treatment Rate</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900">89%</p>
-          <p className="text-xs text-gray-500 mt-1">Completion rate</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-2 text-purple-600 mb-2">
-            <BarChart3 className="w-5 h-5" />
-            <span className="text-sm font-medium">Total Procedures</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900">1,248</p>
-          <p className="text-xs text-gray-500 mt-1">Year to date</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-2 text-orange-600 mb-2">
-            <PieChart className="w-5 h-5" />
-            <span className="text-sm font-medium">Fluoride Coverage</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900">92%</p>
-          <p className="text-xs text-gray-500 mt-1">Target: 90%</p>
-        </div>
-      </div>
-
-      {/* Report Configuration */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Report Configuration</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Report Type */}
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Report Type *</label>
-            <select
-              value={reportType}
-              onChange={(e) => setReportType(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF]"
-            >
-              {reportTypes.map(type => (
-                <option key={type.value} value={type.value}>{type.label}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* School Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">School *</label>
-            <select
-              value={selectedSchool}
-              onChange={(e) => setSelectedSchool(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF]"
-            >
-              {schools.map(school => (
-                <option key={school.value} value={school.value}>{school.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Reporting Period *</label>
-            <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF]">
-              <option>Q1 2026 (Jan - Mar)</option>
-              <option>Q2 2026 (Apr - Jun)</option>
-              <option>Q3 2026 (Jul - Sep)</option>
-              <option>Q4 2026 (Oct - Dec)</option>
-              <option>Custom Range</option>
-            </select>
-          </div>
-
-          {/* Start Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF]"
-              />
+          {/* Monthly Treatment Summary Chart */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <h3 className="text-sm font-bold text-gray-900 mb-4">Monthly Treatment Summary</h3>
+            <div style={{height:220}}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={treatmentChartData} margin={{top:4, right:8, bottom:24, left:0}}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="name" tick={{fontSize:11}} angle={-20} textAnchor="end" interval={0} />
+                  <YAxis tick={{fontSize:11}} />
+                  <Tooltip />
+                  <Bar dataKey="value" name="Procedures" fill="#1E40AF" radius={[4,4,0,0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
-          {/* End Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF]"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-200">
-          <button
-            onClick={() => setShowPreview(!showPreview)}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <Eye className="w-4 h-4" />
-            {showPreview ? 'Hide Preview' : 'Preview Report'}
-          </button>
-          <button
-            onClick={() => generateReport('pdf')}
-            className="flex items-center gap-2 px-4 py-2 bg-[#E31E24] text-white rounded-lg hover:bg-[#C41E3A] transition-colors"
-          >
-            <FileDown className="w-4 h-4" />
-            Download PDF
-          </button>
-          <button
-            onClick={() => generateReport('excel')}
-            className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-[#1E3A8A] transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            Download Excel
-          </button>
-          <button
-            className="flex items-center gap-2 px-4 py-2 bg-[#06B6D4] text-white rounded-lg hover:bg-[#0891B2] transition-colors"
-          >
-            <FileText className="w-4 h-4" />
-            Email Report
-          </button>
-        </div>
-      </div>
-
-      {/* Report Preview */}
-      {showPreview && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Report Preview</h2>
-          
-          {/* Report Header */}
-          <div className="border-b border-gray-200 pb-4 mb-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">
-                  {reportTypes.find(r => r.value === reportType)?.label}
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  Floral Dental Clinic Management System - Barangay Tanyag, Taguig City
-                </p>
-                <p className="text-sm text-gray-600">
-                  Period: {new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-600">Generated: {new Date().toLocaleDateString()}</p>
-                <p className="text-sm text-gray-600">DOH IPTR Compliant</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Report Content Based on Type */}
-          {reportType === 'procedure' && (
-            <div className="space-y-6">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-4">Procedure Volume Trends</h4>
-                <ResponsiveContainer width="100%" height={300} key="procedure-chart-container">
-                  <BarChart data={procedureData} id="procedure-volume-chart">
-                    <CartesianGrid strokeDasharray="3 3" key="procedure-grid" />
-                    <XAxis dataKey="month" key="procedure-xaxis" />
-                    <YAxis key="procedure-yaxis" />
-                    <Tooltip key="procedure-tooltip" />
-                    <Legend key="procedure-legend" />
-                    <Bar dataKey="extractions" fill="#E31E24" name="Extractions" key="procedure-bar-extractions" />
-                    <Bar dataKey="fillings" fill="#1E40AF" name="Fillings" key="procedure-bar-fillings" />
-                    <Bar dataKey="fluoride" fill="#06B6D4" name="Fluoride" key="procedure-bar-fluoride" />
-                    <Bar dataKey="cleaning" fill="#16A34A" name="Cleaning" key="procedure-bar-cleaning" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-red-50 p-4 rounded-lg">
-                  <div className="text-sm text-red-600 font-medium">Total Extractions</div>
-                  <div className="text-2xl font-bold text-red-900 mt-1">55</div>
-                </div>
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="text-sm text-blue-600 font-medium">Total Fillings</div>
-                  <div className="text-2xl font-bold text-blue-900 mt-1">105</div>
-                </div>
-                <div className="bg-cyan-50 p-4 rounded-lg">
-                  <div className="text-sm text-cyan-600 font-medium">Fluoride Applications</div>
-                  <div className="text-2xl font-bold text-cyan-900 mt-1">360</div>
-                </div>
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <div className="text-sm text-green-600 font-medium">Cleanings</div>
-                  <div className="text-2xl font-bold text-green-900 mt-1">165</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {reportType === 'risk' && (
-            <div className="space-y-6">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-4">Risk Stratification Distribution</h4>
-                <ResponsiveContainer width="100%" height={300} key="risk-chart-container">
-                  <RPieChart id="risk-distribution-chart">
-                    <Pie
-                      data={riskData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={(entry) => `${entry.name}: ${entry.value}`}
-                      outerRadius={100}
-                      dataKey="value"
-                      key="risk-pie"
-                    >
-                      {riskData.map((entry, index) => (
-                        <Cell key={`risk-cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip key="risk-tooltip" />
-                  </RPieChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                {riskData.map((item) => (
-                  <div key={item.name} className="p-4 rounded-lg border-2" style={{ borderColor: item.color }}>
-                    <div className="text-sm font-medium" style={{ color: item.color }}>{item.name}</div>
-                    <div className="text-2xl font-bold text-gray-900 mt-1">{item.value}</div>
-                    <div className="text-xs text-gray-600 mt-1">
-                      {Math.round((item.value / riskData.reduce((sum, r) => sum + r.value, 0)) * 100)}% of total
+          {/* Two-column: Consent Compliance + Quick Stats */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Consent Compliance */}
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <h3 className="text-sm font-bold text-gray-900 mb-4">Consent Compliance by School</h3>
+              <div className="space-y-4">
+                {[
+                  { school:'Bagong Tanyag Integrated School', complete:48, total:60, color:'#1E40AF' },
+                  { school:'Bagong Tanyag Elementary School Annex A', complete:52, total:60, color:'#0D9488' },
+                  { school:'South Daang Hari Elementary School Main', complete:41, total:60, color:'#EA580C' },
+                ].map(s => {
+                  const pct = Math.round((s.complete/s.total)*100);
+                  return (
+                    <div key={s.school}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-gray-700">{getSchoolShortName(s.school)}</span>
+                        <span className="text-xs font-bold" style={{color:s.color}}>{s.complete}/{s.total} ({pct}%)</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{width:`${pct}%`, backgroundColor:s.color}} />
+                      </div>
                     </div>
+                  );
+                })}
+              </div>
+              <div className="mt-4 pt-3 border-t border-gray-100 grid grid-cols-3 gap-2 text-center text-xs">
+                <div><div className="text-base font-bold text-green-600">141</div><div className="text-gray-400">Complete</div></div>
+                <div><div className="text-base font-bold text-yellow-600">29</div><div className="text-gray-400">Pending</div></div>
+                <div><div className="text-base font-bold text-red-600">10</div><div className="text-gray-400">Missing</div></div>
+              </div>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <h3 className="text-sm font-bold text-gray-900 mb-4">Quick Stats</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label:'High Risk Students', value:3, color:'red', Icon:AlertTriangle },
+                  { label:'Medium Risk Students', value:2, color:'amber', Icon:AlertCircle },
+                  { label:'Pending Referrals', value:1, color:'blue', Icon:TrendingUp },
+                  { label:'Completed Referrals', value:2, color:'green', Icon:CheckCircle },
+                ].map(s => (
+                  <div key={s.label} className={`bg-${s.color}-50 rounded-xl p-4`}>
+                    <s.Icon className={`w-5 h-5 text-${s.color}-600 mb-2`} />
+                    <div className={`text-2xl font-bold text-${s.color}-700`}>{s.value}</div>
+                    <div className={`text-xs text-${s.color}-600 mt-0.5`}>{s.label}</div>
                   </div>
                 ))}
               </div>
             </div>
-          )}
+          </div>
 
-          {reportType === 'fluoride' && (
-            <div className="space-y-6">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-4">Fluoride Coverage by Grade Level</h4>
-                <ResponsiveContainer width="100%" height={300} key="fluoride-chart-container">
-                  <BarChart data={fluorideCoverage} id="fluoride-coverage-chart">
-                    <CartesianGrid strokeDasharray="3 3" key="fluoride-grid" />
-                    <XAxis dataKey="grade" key="fluoride-xaxis" />
-                    <YAxis key="fluoride-yaxis" />
-                    <Tooltip key="fluoride-tooltip" />
-                    <Legend key="fluoride-legend" />
-                    <Bar dataKey="target" fill="#E5E7EB" name="Target" key="fluoride-bar-target" />
-                    <Bar dataKey="completed" fill="#06B6D4" name="Completed" key="fluoride-bar-completed" />
-                  </BarChart>
-                </ResponsiveContainer>
+          {/* Referral Tracking */}
+          {mockReferrals.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="px-5 py-3 border-b border-gray-100">
+                <h3 className="text-sm font-bold text-gray-900">Referral Tracking</h3>
               </div>
-
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full text-xs">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Grade Level</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Target</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Completed</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Remaining</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Coverage %</th>
+                      {['Student','Date','Facility','Reason','Outcome'].map(h => (
+                        <th key={h} className="text-left px-4 py-2.5 font-semibold text-gray-500 uppercase tracking-wide text-[10px]">{h}</th>
+                      ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {fluorideCoverage.map((item) => (
-                      <tr key={item.grade} className="hover:bg-gray-50">
-                        <td className="px-4 py-2 text-sm font-medium text-gray-900">{item.grade}</td>
-                        <td className="px-4 py-2 text-sm text-gray-600">{item.target}</td>
-                        <td className="px-4 py-2 text-sm text-gray-600">{item.completed}</td>
-                        <td className="px-4 py-2 text-sm text-gray-600">{item.target - item.completed}</td>
-                        <td className="px-4 py-2">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 bg-gray-200 rounded-full h-2">
-                              <div
-                                className={`h-2 rounded-full ${
-                                  item.percentage >= 90 ? 'bg-green-600' : item.percentage >= 75 ? 'bg-yellow-600' : 'bg-red-600'
-                                }`}
-                                style={{ width: `${item.percentage}%` }}
-                              />
-                            </div>
-                            <span className="text-sm font-medium text-gray-900">{item.percentage}%</span>
-                          </div>
+                  <tbody className="divide-y divide-gray-100">
+                    {mockReferrals.map((r, i) => (
+                      <tr key={i} className="hover:bg-gray-50">
+                        <td className="px-4 py-2.5 font-medium text-gray-900">{r.student}</td>
+                        <td className="px-4 py-2.5 text-gray-500">{r.date}</td>
+                        <td className="px-4 py-2.5 text-gray-600">{r.facility}</td>
+                        <td className="px-4 py-2.5 text-gray-600 max-w-[200px] truncate">{r.reason}</td>
+                        <td className="px-4 py-2.5">
+                          <span className={`px-2 py-0.5 rounded-full font-semibold capitalize ${outcomeBadge(r.outcome)}`}>
+                            {r.outcome}
+                          </span>
                         </td>
                       </tr>
                     ))}
@@ -620,90 +386,7 @@ export const Reports = () => {
               </div>
             </div>
           )}
-
-          {(reportType === 'monthly' || reportType === 'doh-compliance') && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="text-sm text-blue-600 font-medium">Total Students</div>
-                  <div className="text-2xl font-bold text-blue-900 mt-1">696</div>
-                </div>
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <div className="text-sm text-green-600 font-medium">Screened</div>
-                  <div className="text-2xl font-bold text-green-900 mt-1">652</div>
-                  <div className="text-xs text-green-700 mt-1">94% coverage</div>
-                </div>
-                <div className="bg-orange-50 p-4 rounded-lg">
-                  <div className="text-sm text-orange-600 font-medium">Needs Treatment</div>
-                  <div className="text-2xl font-bold text-orange-900 mt-1">187</div>
-                </div>
-                <div className="bg-purple-50 p-4 rounded-lg">
-                  <div className="text-sm text-purple-600 font-medium">Treatment Complete</div>
-                  <div className="text-2xl font-bold text-purple-900 mt-1">142</div>
-                  <div className="text-xs text-purple-700 mt-1">76% completion</div>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-gray-900 mb-3">DOH IPTR Compliance Checklist</h4>
-                <div className="space-y-2">
-                  {[
-                    { item: 'Patient medical history forms completed', status: true },
-                    { item: 'FDI notation system implemented', status: true },
-                    { item: 'DOH treatment codes applied', status: true },
-                    { item: 'Fluoride application records maintained', status: true },
-                    { item: 'Risk stratification documented', status: true },
-                    { item: 'Follow-up schedules tracked', status: true },
-                  ].map((check, idx) => (
-                    <div key={idx} className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded ${check.status ? 'bg-green-500' : 'bg-gray-300'} flex items-center justify-center`}>
-                        {check.status && <span className="text-white text-xs">✓</span>}
-                      </div>
-                      <span className="text-sm text-gray-700">{check.item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
-      )}
-
-      {/* Pre-generated Reports */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900">Recently Generated Reports</h2>
-        </div>
-        <div className="divide-y divide-gray-200">
-          {[
-            { name: 'Monthly Oral Health Report - March 2026', date: '2026-04-01', type: 'monthly', size: '2.4 MB' },
-            { name: 'Fluoride Coverage Report - Q1 2026', date: '2026-04-01', type: 'fluoride', size: '1.8 MB' },
-            { name: 'DOH Compliance Report - March 2026', date: '2026-03-31', type: 'doh-compliance', size: '3.2 MB' },
-            { name: 'Procedure Volume Report - February 2026', date: '2026-03-01', type: 'procedure', size: '1.5 MB' },
-          ].map((report, idx) => (
-            <div key={idx} className="px-6 py-4 hover:bg-gray-50 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-gray-400" />
-                <div>
-                  <div className="font-medium text-gray-900">{report.name}</div>
-                  <div className="text-sm text-gray-600">
-                    Generated: {new Date(report.date).toLocaleDateString()} • {report.size}
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded">
-                  <Eye className="w-4 h-4" />
-                </button>
-                <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded">
-                  <Download className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
       )}
     </div>
   );
