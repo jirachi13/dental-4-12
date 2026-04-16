@@ -322,7 +322,6 @@ export const AIAnalytics = () => {
           <p className="text-3xl font-bold text-gray-900">{highRiskCount}</p>
           <p className="text-xs text-gray-500 mt-1">Immediate attention needed</p>
         </div>
-
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center gap-2 text-yellow-600 mb-2">
             <TrendingUp className="w-5 h-5" />
@@ -331,7 +330,6 @@ export const AIAnalytics = () => {
           <p className="text-3xl font-bold text-gray-900">{mediumRiskCount}</p>
           <p className="text-xs text-gray-500 mt-1">Requires monitoring</p>
         </div>
-
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center gap-2 text-green-600 mb-2">
             <CheckCircle className="w-5 h-5" />
@@ -340,7 +338,6 @@ export const AIAnalytics = () => {
           <p className="text-3xl font-bold text-gray-900">{lowRiskCount}</p>
           <p className="text-xs text-gray-500 mt-1">Healthy oral status</p>
         </div>
-
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center gap-2 text-blue-600 mb-2">
             <Activity className="w-5 h-5" />
@@ -349,7 +346,6 @@ export const AIAnalytics = () => {
           <p className="text-3xl font-bold text-gray-900">{avgConfidence}%</p>
           <p className="text-xs text-gray-500 mt-1">Model certainty</p>
         </div>
-
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center gap-2 text-orange-600 mb-2">
             <Eye className="w-5 h-5" />
