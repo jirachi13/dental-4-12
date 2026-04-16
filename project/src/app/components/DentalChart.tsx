@@ -272,6 +272,8 @@ export const DentalChart = () => {
 
   return (
     <div className="space-y-4 max-w-5xl mx-auto">
+      {/* Sticky header + patient card */}
+      <div className="sticky top-0 z-30 bg-gray-50 pb-2 space-y-2">
       {/* Header */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-3 min-w-0">
@@ -363,6 +365,7 @@ export const DentalChart = () => {
           ))}
         </div>
       </div>
+      </div>{/* end sticky wrapper */}
 
       {/* Tabs */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -383,30 +386,52 @@ export const DentalChart = () => {
 
         {/* ── TAB 1: History ── */}
         {activeTab === 'history' && (
-          <div className="p-4 space-y-5">
-            {/* Year columns header */}
-            <div className="flex items-center justify-end gap-8 text-xs font-semibold text-gray-500 mb-1">
-              {activeYears.map(yr => <span key={yr} className={`w-16 text-center ${activeYears.indexOf(yr) === selectedYear ? 'text-blue-700' : ''}`}>{yr}</span>)}
-            </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr>
+                  <th className="sticky left-0 z-10 bg-gray-50 px-4 py-2.5 text-left font-semibold text-gray-600 border border-gray-200 min-w-[180px]"></th>
+                  {activeYears.map((yr, idx) => (
+                    <th key={yr} onClick={() => setSelectedYear(idx)}
+                      className={`px-3 py-2.5 text-center font-semibold border border-gray-200 min-w-[110px] cursor-pointer select-none ${idx === selectedYear ? 'bg-blue-100 text-blue-800' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
+                      {yr}
+                    </th>
+                  ))}
+                  <th className="bg-gray-50 border border-gray-200 px-2 py-2.5 text-center min-w-[90px]">
+                    {canEdit && activeYears.length < ALL_SCHOOL_YEARS.length && (
+                      <button onClick={() => {
+                        const ni = activeYears.length;
+                        const nextYr = ALL_SCHOOL_YEARS[ni];
+                        setActiveYears(prev => [...prev, nextYr]);
+                        setChartData(prev => ({ ...prev, [ni]: {} }));
+                        setMedHistory(prev => ({ ...prev, [ni]: { dateExamined:'', allergies:'', hypertension:false, diabetes:false, bloodDisorders:false, cardiovascular:false, thyroid:false, hepatitis:'', malignancy:'', hospitalization:'', bloodTransfusion:'', tattoo:false, others:'' } }));
+                        setDietHistory(prev => ({ ...prev, [ni]: { sugarSweetened:false, alcoholDrinker:false, tobaccoUser:false, betelNut:false, bodyPiercing:false, nailBiting:false, thumbsucking:false } }));
+                        setOralCondition(prev => ({ ...prev, [ni]: { orallyFit:false, dentalCaries:false, gingivitis:false, periodontal:false, debris:false, calculus:false, abnormalGrowth:false, cleftLipPalate:false, edentulous:false, others:'' } }));
+                        setSelectedYear(ni);
+                      }} className="text-xs text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap">+ Year</button>
+                    )}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* ── Date Examined ── */}
+                <fieldset disabled={!canEditHistory} className={!canEditHistory ? 'opacity-60' : ''} style={{ display: 'contents' }}>
+                <tr>
+                  <td className="sticky left-0 z-10 bg-white px-4 py-2 font-semibold text-gray-700 border border-gray-200">Date Examined</td>
+                  {activeYears.map((yr, idx) => (
+                    <td key={yr} className={`px-2 py-1.5 border border-gray-200 ${idx === selectedYear ? 'bg-blue-50/40' : ''}`}>
+                      <input type="date" value={idx === selectedYear ? (med.dateExamined || '') : ''}
+                        onChange={e => idx === selectedYear && updateMedField('dateExamined', e.target.value)}
+                        className="w-full text-xs border border-gray-300 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    </td>
+                  ))}
+                  <td className="border border-gray-200" />
+                </tr>
 
-            <fieldset disabled={!canEditHistory} className={!canEditHistory ? 'opacity-60' : ''}>
-            {/* Date Examined */}
-            <div className="flex items-center justify-between py-2 border-b border-gray-100">
-              <span className="text-xs font-semibold text-gray-700">Date Examined</span>
-              <div className="flex gap-8">
-                {activeYears.map((yr, idx) => (
-                  <input key={idx} type="date" value={idx === selectedYear ? (med.dateExamined || '') : ''}
-                    onChange={e => idx === selectedYear && updateMedField('dateExamined', e.target.value)}
-                    className="w-36 text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                ))}
-              </div>
-            </div>
+                {/* ── Medical History header ── */}
+                <tr><td colSpan={activeYears.length + 2} className="px-4 py-2 font-bold text-gray-800 uppercase tracking-wide text-[10px] bg-gray-100 border border-gray-200">Medical History</td></tr>
 
-            {/* Medical History */}
-            <div>
-              <div className="text-xs font-bold text-gray-800 uppercase tracking-wide mb-2 pb-1 border-b-2 border-gray-200">Medical History</div>
-              <div className="space-y-0">
-                {[
+                {([
                   ['Allergies', 'allergies', 'text'],
                   ['Hypertension / CVA', 'hypertension', 'check'],
                   ['Diabetes Mellitus', 'diabetes', 'check'],
@@ -419,95 +444,79 @@ export const DentalChart = () => {
                   ['Blood Transfusion', 'bloodTransfusion', 'text'],
                   ['Tattoo', 'tattoo', 'check'],
                   ['Others', 'others', 'text'],
-                ].map(([label, field, type]) => (
-                  <div key={field} className="flex items-center justify-between py-1.5 border-b border-gray-100">
-                    <span className="text-xs text-gray-700">{label}</span>
-                    <div className="flex gap-8">
-                      {activeYears.map((yr, idx) => (
-                        <div key={idx} className="w-16 flex justify-center">
-                          {type === 'check' ? (
-                            <input type="checkbox" checked={idx === selectedYear ? !!(med as any)[field] : false}
-                              onChange={e => idx === selectedYear && updateMedField(field as string, e.target.checked)}
-                              className="w-4 h-4 rounded accent-blue-600" />
-                          ) : (
-                            <input type="text" value={idx === selectedYear ? ((med as any)[field] || '') : ''}
-                              onChange={e => idx === selectedYear && updateMedField(field as string, e.target.value)}
-                              placeholder="—" className="w-16 text-xs border border-gray-200 rounded px-1 py-0.5 text-center focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                ] as [string,string,string][]).map(([label, field, type]) => (
+                  <tr key={field} className="hover:bg-gray-50/50">
+                    <td className="sticky left-0 z-10 bg-white px-4 py-2 text-gray-700 border border-gray-200">{label}</td>
+                    {activeYears.map((yr, idx) => (
+                      <td key={yr} className={`px-2 py-2 text-center border border-gray-200 ${idx === selectedYear ? 'bg-blue-50/40' : ''}`}>
+                        {type === 'check'
+                          ? <input type="checkbox" checked={idx === selectedYear ? !!(med as any)[field] : false} onChange={e => idx === selectedYear && updateMedField(field, e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
+                          : <input type="text" value={idx === selectedYear ? ((med as any)[field] || '') : ''} onChange={e => idx === selectedYear && updateMedField(field, e.target.value)} placeholder="—" className="w-full text-xs border border-gray-200 rounded px-1.5 py-0.5 text-center focus:outline-none focus:ring-1 focus:ring-blue-500 bg-transparent" />
+                        }
+                      </td>
+                    ))}
+                    <td className="border border-gray-200" />
+                  </tr>
                 ))}
-              </div>
-            </div>
 
-            {/* Dietary / Social History */}
-            <div>
-              <div className="text-xs font-bold text-gray-800 uppercase tracking-wide mb-2 pb-1 border-b-2 border-gray-200">Dietary Habits and Social History</div>
-              {[
-                ['Sugar Sweetened Beverages/Food', 'sugarSweetened'],
-                ['Alcohol Drinker', 'alcoholDrinker'],
-                ['Tobacco User', 'tobaccoUser'],
-                ['Betel Nut Chewer', 'betelNut'],
-                ['Body Piercing', 'bodyPiercing'],
-                ['Nail Biting', 'nailBiting'],
-                ['Thumbsucking', 'thumbsucking'],
-              ].map(([label, field]) => (
-                <div key={field} className="flex items-center justify-between py-1.5 border-b border-gray-100">
-                  <span className="text-xs text-gray-700">{label}</span>
-                  <div className="flex gap-8">
+                {/* ── Dietary header ── */}
+                <tr><td colSpan={activeYears.length + 2} className="px-4 py-2 font-bold text-gray-800 uppercase tracking-wide text-[10px] bg-gray-100 border border-gray-200">Dietary Habits and Social History</td></tr>
+
+                {([
+                  ['Sugar Sweetened Beverages/Food', 'sugarSweetened'],
+                  ['Alcohol Drinker', 'alcoholDrinker'],
+                  ['Tobacco User', 'tobaccoUser'],
+                  ['Betel Nut Chewer', 'betelNut'],
+                  ['Body Piercing', 'bodyPiercing'],
+                  ['Nail Biting', 'nailBiting'],
+                  ['Thumbsucking', 'thumbsucking'],
+                ] as [string,string][]).map(([label, field]) => (
+                  <tr key={field} className="hover:bg-gray-50/50">
+                    <td className="sticky left-0 z-10 bg-white px-4 py-2 text-gray-700 border border-gray-200">{label}</td>
                     {activeYears.map((yr, idx) => (
-                      <div key={idx} className="w-16 flex justify-center">
-                        <input type="checkbox" checked={idx === selectedYear ? !!(diet as any)[field] : false}
-                          onChange={e => idx === selectedYear && updateDietField(field as string, e.target.checked)}
-                          className="w-4 h-4 rounded accent-blue-600" />
-                      </div>
+                      <td key={yr} className={`px-2 py-2 text-center border border-gray-200 ${idx === selectedYear ? 'bg-blue-50/40' : ''}`}>
+                        <input type="checkbox" checked={idx === selectedYear ? !!(diet as any)[field] : false} onChange={e => idx === selectedYear && updateDietField(field, e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
+                      </td>
                     ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+                    <td className="border border-gray-200" />
+                  </tr>
+                ))}
+                </fieldset>
 
-            </fieldset>
+                {/* ── Oral Health — dentist only ── */}
+                <fieldset disabled={!canEdit} className={!canEdit ? 'opacity-60' : ''} style={{ display: 'contents' }}>
+                <tr><td colSpan={activeYears.length + 2} className="px-4 py-2 font-bold text-gray-800 uppercase tracking-wide text-[10px] bg-gray-100 border border-gray-200">
+                  Oral Health Condition{!canEdit && <span className="ml-2 normal-case font-normal text-gray-400">(dentist only)</span>}
+                </td></tr>
 
-            {/* Oral Health Condition — dentist only */}
-            <fieldset disabled={!canEdit} className={!canEdit ? 'opacity-60' : ''}>
-            <div>
-              <div className="text-xs font-bold text-gray-800 uppercase tracking-wide mb-2 pb-1 border-b-2 border-gray-200">Oral Health Condition</div>
-              {[
-                ['Orally Fit', 'orallyFit', 'check'],
-                ['Dental Caries', 'dentalCaries', 'check'],
-                ['Gingivitis', 'gingivitis', 'check'],
-                ['Periodontal Disease', 'periodontal', 'check'],
-                ['Debris', 'debris', 'check'],
-                ['Calculus', 'calculus', 'check'],
-                ['Abnormal Growth', 'abnormalGrowth', 'check'],
-                ['Cleft Lip / Palate', 'cleftLipPalate', 'check'],
-                ['Completely Edentulous', 'edentulous', 'check'],
-                ['Others', 'others', 'text'],
-              ].map(([label, field, type]) => (
-                <div key={field} className="flex items-center justify-between py-1.5 border-b border-gray-100">
-                  <span className="text-xs text-gray-700">{label}</span>
-                  <div className="flex gap-8">
+                {([
+                  ['Orally Fit', 'orallyFit', 'check'],
+                  ['Dental Caries', 'dentalCaries', 'check'],
+                  ['Gingivitis', 'gingivitis', 'check'],
+                  ['Periodontal Disease', 'periodontal', 'check'],
+                  ['Debris', 'debris', 'check'],
+                  ['Calculus', 'calculus', 'check'],
+                  ['Abnormal Growth', 'abnormalGrowth', 'check'],
+                  ['Cleft Lip / Palate', 'cleftLipPalate', 'check'],
+                  ['Completely Edentulous', 'edentulous', 'check'],
+                  ['Others', 'others', 'text'],
+                ] as [string,string,string][]).map(([label, field, type]) => (
+                  <tr key={field} className="hover:bg-gray-50/50">
+                    <td className="sticky left-0 z-10 bg-white px-4 py-2 text-gray-700 border border-gray-200">{label}</td>
                     {activeYears.map((yr, idx) => (
-                      <div key={idx} className="w-16 flex justify-center">
-                        {type === 'check' ? (
-                          <input type="checkbox" checked={idx === selectedYear ? !!(oral as any)[field] : false}
-                            onChange={e => idx === selectedYear && updateOralField(field as string, e.target.checked)}
-                            className="w-4 h-4 rounded accent-blue-600" />
-                        ) : (
-                          <input type="text" value={idx === selectedYear ? ((oral as any)[field] || '') : ''}
-                            onChange={e => idx === selectedYear && updateOralField(field as string, e.target.value)}
-                            placeholder="—" className="w-16 text-xs border border-gray-200 rounded px-1 py-0.5 text-center focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                        )}
-                      </div>
+                      <td key={yr} className={`px-2 py-2 text-center border border-gray-200 ${idx === selectedYear ? 'bg-blue-50/40' : ''}`}>
+                        {type === 'check'
+                          ? <input type="checkbox" checked={idx === selectedYear ? !!(oral as any)[field] : false} onChange={e => idx === selectedYear && updateOralField(field, e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
+                          : <input type="text" value={idx === selectedYear ? ((oral as any)[field] || '') : ''} onChange={e => idx === selectedYear && updateOralField(field, e.target.value)} placeholder="—" className="w-full text-xs border border-gray-200 rounded px-1.5 py-0.5 text-center focus:outline-none focus:ring-1 focus:ring-blue-500 bg-transparent" />
+                        }
+                      </td>
                     ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-            </fieldset>
+                    <td className="border border-gray-200" />
+                  </tr>
+                ))}
+                </fieldset>
+              </tbody>
+            </table>
           </div>
         )}
 
