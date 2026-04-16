@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-type Role = 'dentist' | 'dental_aide' | 'school_admin' | 'barangay_health' | 'system_admin';
+type Role = 'dentist' | 'dental_aide' | 'clinic_staff' | 'school_admin' | 'system_admin';
 
 const ALL_SCHOOLS = [
   'Bagong Tanyag Integrated School',
@@ -41,12 +41,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role: 'dental_aide', schools: ALL_SCHOOLS,
       },
       'school@floral.ph': {
-        id: '3', name: 'Principal Jose Cruz', email: 'school@floral.ph',
-        role: 'school_admin', schools: ALL_SCHOOLS,
+        id: '3', name: 'Nurse Rosa Cruz', email: 'school@floral.ph',
+        role: 'clinic_staff', schools: ALL_SCHOOLS,
       },
       'barangay@floral.ph': {
-        id: '4', name: 'Dr. Elena Martinez', email: 'barangay@floral.ph',
-        role: 'barangay_health', schools: ALL_SCHOOLS,
+        id: '4', name: 'Mr. Jose Santos', email: 'barangay@floral.ph',
+        role: 'school_admin', schools: ALL_SCHOOLS,
       },
       'admin@floral.ph': {
         id: '5', name: 'System Administrator', email: 'admin@floral.ph',

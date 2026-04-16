@@ -25,31 +25,31 @@ export const Root = () => {
   const allTabs = [
     {
       id: 1, path: '/', label: 'Dashboard', icon: LayoutDashboard,
-      roles: ['dentist','dental_aide','school_admin','barangay_health','system_admin']
+      roles: ['dentist','dental_aide','clinic_staff','school_admin','system_admin']
     },
     {
       id: 2, path: '/appointments', label: 'Appointments', icon: Calendar,
-      roles: ['dentist','dental_aide','school_admin']
+      roles: ['dentist','dental_aide','clinic_staff']
     },
     {
       id: 3, path: '/patients', label: 'Students', icon: Users,
-      roles: ['dentist','dental_aide','school_admin','barangay_health']
+      roles: ['dentist','dental_aide','clinic_staff']
     },
     {
       id: 4, path: '/dental-charts', label: 'Dental Charts', icon: Stethoscope,
-      roles: ['dentist','dental_aide']
+      roles: ['dentist','dental_aide','clinic_staff']
     },
     {
       id: 5, path: '/treatment-records', label: 'Treatment', icon: Clipboard,
-      roles: ['dentist','dental_aide']
+      roles: ['dentist','dental_aide','clinic_staff']
     },
     {
       id: 6, path: '/rpc', label: 'RPC Tracking', icon: Shield,
-      roles: ['dentist','dental_aide']
+      roles: ['dentist','dental_aide','clinic_staff']
     },
     {
       id: 7, path: '/reports', label: 'Reports', icon: FileBarChart,
-      roles: ['dentist','school_admin','barangay_health']
+      roles: ['dentist','dental_aide','school_admin']
     },
     {
       id: 8, path: '/ai-analytics', label: 'AI Analytics', icon: Brain,
