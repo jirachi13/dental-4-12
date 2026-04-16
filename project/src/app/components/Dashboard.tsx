@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
-import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 import { 
   BarChart, 
   Bar, 
@@ -465,7 +464,7 @@ export const Dashboard = () => {
         <SchoolBanner />
         <div>
           <h1 className="text-3xl font-bold text-gray-900">School Admin Dashboard</h1>
-          <p className="text-gray-600 mt-1">{user.school}</p>
+          <p className="text-gray-600 mt-1">{user.schools?.[0]}</p>
         </div>
 
         {/* KPI Cards */}

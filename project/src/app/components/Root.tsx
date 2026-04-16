@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, Users, Calendar, Brain,
   ClipboardList, LogOut, Stethoscope, Shield,
-  Clipboard, FileBarChart, UserCog, Tooth
+  Clipboard, FileBarChart, UserCog
 } from 'lucide-react';
 import { useEffect } from 'react';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';

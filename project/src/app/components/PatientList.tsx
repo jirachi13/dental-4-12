@@ -1,9 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
-import { Search, Plus, Eye, FileText, X, School as SchoolIcon, List, ChevronRight, Users } from 'lucide-react';
+import { Search, Plus, Eye, FileText, X, School as SchoolIcon, List, ChevronRight, Users, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
-import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 
 const SCHOOLS = [
@@ -334,7 +333,7 @@ export const PatientList = () => {
           </div>
           <ChevronRight style={{ color: sc.solid }} className="w-5 h-5 transition-colors" />
         </div>
-        <div style={{ backgroundColor: sc.light }} className="mt-3 rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ color: sc.text, backgroundColor: sc.light }}>
+        <div style={{ backgroundColor: sc.light, color: sc.text }} className="mt-3 rounded-lg px-3 py-1.5 text-xs font-semibold">
           {getSchoolShortName(school)}
         </div>
       </button>
@@ -345,7 +344,7 @@ export const PatientList = () => {
     if (!selectedGrade && !selectedSection) return null;
     return (
       <div className="flex items-center gap-1 text-sm text-gray-500 mb-4">
-        <button onClick={() => { setDrillSchool(null); setSelectedGrade(null); setSelectedSection(null); }} className="hover:text-[#1E40AF]">All Schools</button>
+        <button onClick={() => { setSelectedGrade(null); setSelectedSection(null); }} className="hover:text-[#1E40AF]">All Schools</button>
         {selectedGrade && <><ChevronRight className="w-4 h-4" /><button onClick={() => { setSelectedGrade(null); setSelectedSection(null); }} style={{ color: selectedSchool ? getSchoolColor(selectedSchool).solid : undefined }} className="truncate max-w-[160px] font-medium">{selectedSchool ? getSchoolShortName(selectedSchool) : ''}</button></>}
         {selectedGrade && <><ChevronRight className="w-4 h-4" /><button onClick={() => setSelectedSection(null)} className="hover:text-[#1E40AF]">{selectedGrade}</button></>}
         {selectedSection && <><ChevronRight className="w-4 h-4" /><span className="text-gray-900 font-medium">{selectedSection}</span></>}
@@ -373,10 +372,10 @@ export const PatientList = () => {
           <Breadcrumb />
 
           {/* Level 1 — Grades (school already selected from context) */}
-          {!drillSchool && !selectedGrade && false && (
+          {false && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {schoolData.map(s => (
-                <SchoolCard key={s.name} school={s.name} count={s.count} onClick={() => setDrillSchool(s.name)} />
+                <SchoolCard key={s.name} school={s.name} count={s.count} onClick={() => {}} />
               ))}
             </div>
           )}

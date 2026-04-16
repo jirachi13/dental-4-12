@@ -278,7 +278,7 @@ export const AIAnalytics = () => {
               const sc = getSchoolColor(s.name);
               return (
                 <div key={s.name} style={{ borderColor: sc.border }} className="bg-white rounded-xl border-2 p-5 hover:shadow-md transition-all cursor-pointer"
-                  onClick={() => { setSchoolFilter(s.name); setViewMode('list'); }}>
+                  onClick={() => { setSchoolFilter(s.name); }}>
                   <div className="flex items-center gap-3 mb-4">
                     <div style={{ backgroundColor: sc.light }} className="w-10 h-10 rounded-lg flex items-center justify-center">
                       <Brain style={{ color: sc.solid }} className="w-5 h-5" />
