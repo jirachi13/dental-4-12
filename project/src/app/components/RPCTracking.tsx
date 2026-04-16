@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
-import { Search, Plus, X, CheckCircle, AlertCircle, Clock, Shield, School as SchoolIcon, List, ChevronRight, Users, FileText } from 'lucide-react';
+import { Search, Plus, X, CheckCircle, AlertCircle, Clock, Shield, School as SchoolIcon, List, ChevronRight, Users } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getGradeColor } from '../utils/gradeColors';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
@@ -56,9 +56,6 @@ export const RPCTracking = () => {
   const [genderFilter, setGenderFilter] = useState('all');
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [showRecordModal, setShowRecordModal] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<any>(null);
-  const [visitNumber, setVisitNumber] = useState<1|2>(1);
 
   const calculateAge = (birthdate: string) => {
     const today = new Date();
@@ -221,19 +218,19 @@ export const RPCTracking = () => {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                {['Student','School','Grade / Section','Visit 1','Visit 2','Status','Days Until Due','Actions'].map(h => (
+                {['Student','School','Grade / Section','Visit 1','Visit 2','Status','Days Until Due'].map(h => (
                   <th key={h} className="text-left px-4 py-3 font-semibold text-gray-700">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-12 text-gray-400">No records match the selected filters.</td></tr>
+                <tr><td colSpan={7} className="text-center py-12 text-gray-400">No records match the selected filters.</td></tr>
               ) : filtered.map(r => {
                 const sc = statusConfig[r.status] || statusConfig['not-started'];
                 const gc = getGradeColor(r.grade);
                 return (
-                  <tr key={r.id} className={`hover:bg-gray-50 transition-colors ${r.status==='overdue'?'bg-red-50':''}`}>
+                  <tr key={r.id} onClick={() => navigate(`/dental-chart/${r.id}?tab=treatments`)} className={`hover:bg-gray-50 transition-colors cursor-pointer ${r.status==='overdue'?'bg-red-50':''}`}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-semibold">{r.studentName.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
@@ -249,12 +246,6 @@ export const RPCTracking = () => {
                     <td className="px-4 py-3">{r.visit2Date ? <span className="text-green-700 text-xs flex items-center gap-1"><CheckCircle className="w-3 h-3"/>{r.visit2Date}</span> : <span className="text-gray-400 text-xs">Not done</span>}</td>
                     <td className="px-4 py-3"><span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${sc.bg} ${sc.color}`}>{sc.label}</span></td>
                     <td className="px-4 py-3 text-sm">{r.status==='overdue'?<span className="text-red-600 font-semibold">{Math.abs(r.daysUntilDue)}d overdue</span>:r.daysUntilDue>0?<span className="text-blue-600">{r.daysUntilDue}d</span>:<span className="text-gray-400">—</span>}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        <button onClick={()=>{setSelectedStudent(r);setVisitNumber(r.visit1Status==='Completed'?2:1);setShowRecordModal(true);}} className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">Record Visit</button>
-                        <button onClick={() => navigate(`/dental-chart/${r.id}?tab=treatments`)} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg" title="View in IPTR"><FileText className="w-4 h-4" /></button>
-                      </div>
-                    </td>
                   </tr>
                 );
               })}
@@ -264,46 +255,6 @@ export const RPCTracking = () => {
         <div className="px-4 py-3 border-t border-gray-100 text-sm text-gray-500">Showing {filtered.length} of {rpcRecords.length} records</div>
       </div>
 
-      {showRecordModal && selectedStudent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between p-6 border-b">
-              <h2 className="text-lg font-bold text-gray-900">Record RPC Visit</h2>
-              <button onClick={()=>setShowRecordModal(false)}><X className="w-5 h-5 text-gray-400"/></button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="bg-blue-50 rounded-lg p-3">
-                <p className="font-semibold text-blue-900">{selectedStudent.studentName}</p>
-                <p className="text-sm text-blue-700">{selectedStudent.grade} — {selectedStudent.section}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Visit Number</label>
-                <div className="flex gap-3">
-                  {([1,2] as (1|2)[]).map(n => (
-                    <button key={n} onClick={()=>setVisitNumber(n)}
-                      disabled={n===2 && selectedStudent.visit1Status!=='Completed'}
-                      className={`flex-1 py-2 rounded-lg border text-sm font-medium ${visitNumber===n?'bg-blue-600 text-white border-blue-600':n===2&&selectedStudent.visit1Status!=='Completed'?'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200':'border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
-                      Visit {n}
-                    </button>
-                  ))}
-                </div>
-                {visitNumber===2 && <p className="text-xs text-gray-500 mt-1">Must be 4–6 months after Visit 1</p>}
-              </div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Visit Date *</label><input type="date" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Treatment Type</label>
-                <select className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option>Fluoride Varnish Application</option><option>Oral Prophylaxis</option><option>Oral Health Instructions</option><option>Oral Screening</option>
-                </select>
-              </div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Notes</label><textarea rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
-            </div>
-            <div className="flex gap-3 p-6 border-t">
-              <button onClick={()=>setShowRecordModal(false)} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium">Cancel</button>
-              <button onClick={()=>{alert(`Visit ${visitNumber} recorded for ${selectedStudent.studentName}`);setShowRecordModal(false);}} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Save Visit</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>}
     </div>
   );

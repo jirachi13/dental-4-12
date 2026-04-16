@@ -901,10 +901,17 @@ export const DentalChart = () => {
             {showAddTreatment && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div><label className="block text-xs font-medium text-gray-700 mb-1">Visit Type</label>
+                    <select className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                      <option value="regular">Regular</option>
+                      <option value="rpc1">RPC Visit 1</option>
+                      <option value="rpc2">RPC Visit 2</option>
+                    </select>
+                  </div>
                   <div><label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
                     <input type="date" className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
                   <div><label className="block text-xs font-medium text-gray-700 mb-1">Dentist</label>
-                    <input type="text" placeholder="Dr. Maria Santos" className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                    <input type="text" value={user?.name ?? ''} readOnly className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-gray-50 cursor-default text-gray-700" /></div>
                   <div className="md:col-span-2"><label className="block text-xs font-medium text-gray-700 mb-1">Chief Complaint</label>
                     <input type="text" className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
                   <div><label className="block text-xs font-medium text-gray-700 mb-1">Diagnosis</label>
