@@ -473,8 +473,8 @@ export const DentalChart = () => {
             { key: 'history',      label: 'History & Oral'    },
             { key: 'chart',        label: 'Dental Chart'     },
             { key: 'appointments', label: 'Consent'          },
-            { key: 'records',      label: 'Dental Records'   },
             { key: 'treatments',   label: 'Treatment History' },
+            { key: 'records',      label: 'DMFT History'     },
             { key: 'ai',           label: 'AI Risk'          },
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key as TabKey)}
