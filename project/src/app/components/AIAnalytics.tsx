@@ -23,7 +23,7 @@ const ViewToggle = ({ mode, onChange }: { mode: 'school' | 'list'; onChange: (m:
 
 export const AIAnalytics = () => {
   const { selectedSchool } = useAuth();
-  const [viewMode, setViewMode] = useState<'school' | 'list'>('school');
+
   const [schoolFilter, setSchoolFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('all');
@@ -268,11 +268,9 @@ export const AIAnalytics = () => {
           <h1 className="text-3xl font-bold text-gray-900">AI-Powered Risk Analytics</h1>
           <p className="text-gray-600 mt-1">Machine learning-based oral health risk assessment with dentist validation workflow</p>
         </div>
-        <ViewToggle mode={viewMode} onChange={setViewMode} />
       </div>
 
-      {/* School View */}
-      {viewMode === 'school' && (
+      {false && (
         <div className="space-y-4">
           <p className="text-sm text-gray-500">Select a school to view detailed risk analytics, or switch to List View to see all students.</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -316,8 +314,7 @@ export const AIAnalytics = () => {
         </div>
       )}
 
-      {/* List View — existing analytics content */}
-      {viewMode === 'list' && <div className="space-y-6">
+      {true && <div className="space-y-6">
 
       {/* AI Model Info Banner */}
       <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">

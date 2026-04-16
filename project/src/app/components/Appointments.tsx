@@ -49,7 +49,7 @@ export const Appointments = () => {
     { id: '7', name: 'Miguel Torres', gender: 'Male', age: 9 },
   ] : [];
 
-  const allAppointments = [
+  const allAppointmentsRaw = [
     { id:'1', date:'2026-04-15', time:'09:00', school:'Bagong Tanyag Integrated School', grade:'Grade 4', section:'Sampaguita', studentCount:32, type:'Regular Checkup', status:'Scheduled', dentist:'Dr. Maria Santos', students:[
       { id:'s1', name:'Juan Dela Cruz', gender:'Male', age:10, riskLevel:'High' },
       { id:'s2', name:'Maria Garcia', gender:'Female', age:9, riskLevel:'Low' },
@@ -66,6 +66,11 @@ export const Appointments = () => {
     { id:'5', date:'2026-04-22', time:'09:00', school:'Bagong Tanyag Elementary School Annex A', grade:'Grade 4', section:'Opal', studentCount:30, type:'Fluoride Application', status:'Scheduled', dentist:'Dr. Maria Santos', students:[] },
     { id:'6', date:'2026-04-28', time:'08:00', school:'South Daang Hari Elementary School Main', grade:'Grade 6', section:'Guijo', studentCount:40, type:'Bayanihan Mission', status:'Scheduled', dentist:'Dr. Maria Santos', students:[] },
   ];
+
+  const allAppointments = allAppointmentsRaw;
+  const appointments = selectedSchool
+    ? allAppointments.filter(a => a.school === selectedSchool)
+    : allAppointments;
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();

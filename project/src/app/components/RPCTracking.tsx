@@ -44,7 +44,7 @@ const ViewToggle = ({ mode, onChange }: { mode: 'school' | 'list'; onChange: (m:
 
 export const RPCTracking = () => {
   const { selectedSchool } = useAuth();
-  const [viewMode, setViewMode] = useState<'school' | 'list'>('school');
+
   const [drillSchool, setDrillSchool] = useState<string | null>(null);
   const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
@@ -133,11 +133,9 @@ export const RPCTracking = () => {
           <h1 className="text-2xl font-bold text-gray-900">RPC Records</h1>
           <p className="text-sm text-gray-500">Routine Preventive Care — Fluoride application tracking (4–6 month interval)</p>
         </div>
-        <ViewToggle mode={viewMode} onChange={setViewMode} />
       </div>
 
-      {/* School View */}
-      {viewMode === 'school' && (
+      {false && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {schoolSummary.map(s => {
             const sc = getSchoolColor(s.name);
@@ -169,8 +167,7 @@ export const RPCTracking = () => {
         </div>
       )}
 
-      {/* List View — existing content wrapped */}
-      {viewMode === 'list' && <div>
+      {true && <div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[

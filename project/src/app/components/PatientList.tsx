@@ -27,10 +27,9 @@ const ViewToggle = ({ mode, onChange }: { mode: 'school' | 'list'; onChange: (m:
 export const PatientList = () => {
   const navigate = useNavigate();
   const { selectedSchool } = useAuth();
-  const [viewMode, setViewMode] = useState<'school' | 'list'>('school');
 
-  // Drill-down state
-  const [drillSchool, setDrillSchool] = useState<string | null>(null);
+
+
   const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
 
@@ -359,15 +358,13 @@ export const PatientList = () => {
           <p className="text-sm text-gray-500 mt-0.5">{schoolStudents.length} students{selectedSchool ? '' : ' across 3 schools'}</p>
         </div>
         <div className="flex items-center gap-3">
-          <ViewToggle mode={viewMode} onChange={setViewMode} />
-          <button onClick={() => setShowAddForm(true)} className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+<button onClick={() => setShowAddForm(true)} className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
             <Plus className="w-4 h-4" /> Add Student
           </button>
         </div>
       </div>
 
-      {/* SCHOOL VIEW */}
-      {viewMode === 'school' && (
+      {false && (
         <div className="space-y-4">
           <Breadcrumb />
 
@@ -477,7 +474,7 @@ export const PatientList = () => {
       )}
 
       {/* LIST VIEW */}
-      {viewMode === 'list' && (
+      {true && (
         <div className="space-y-4">
           {/* Filters */}
           <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
