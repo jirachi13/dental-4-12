@@ -6,12 +6,13 @@ import {
   Clipboard, FileBarChart, UserCog, Tooth
 } from 'lucide-react';
 import { useEffect } from 'react';
+import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 
 // Fallback logo — replace with actual Barangay Tanyag logo file
 const logoImage = null;
 
 export const Root = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, selectedSchool, setSelectedSchool } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -66,6 +67,11 @@ export const Root = () => {
   ];
 
   const visibleTabs = allTabs.filter(tab => tab.roles.includes(user.role));
+
+  const handleSwitchSchool = () => {
+    setSelectedSchool(null);
+    navigate('/select-school');
+  };
 
   const handleLogout = () => { logout(); navigate('/login'); };
 

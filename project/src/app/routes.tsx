@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router";
 import { RootLayout } from "./components/RootLayout";
 import { Login } from "./components/Login";
+import { SchoolSelect } from "./components/SchoolSelect";
 import { Dashboard } from "./components/Dashboard";
 import { PatientList } from "./components/PatientList";
 import { PatientProfile } from "./components/PatientProfile";
@@ -16,10 +17,8 @@ import { AccountManagement } from "./components/AccountManagement";
 import { AuditTrail } from "./components/AuditTrail";
 
 export const router = createBrowserRouter([
-  {
-    path: "/login",
-    Component: Login,
-  },
+  { path: "/login", Component: Login },
+  { path: "/select-school", Component: SchoolSelect },
   {
     path: "/",
     Component: RootLayout,

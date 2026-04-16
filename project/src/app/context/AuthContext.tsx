@@ -2,16 +2,24 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 type Role = 'dentist' | 'dental_aide' | 'school_admin' | 'barangay_health' | 'system_admin';
 
+const ALL_SCHOOLS = [
+  'Bagong Tanyag Integrated School',
+  'Bagong Tanyag Elementary School Annex A',
+  'South Daang Hari Elementary School Main',
+];
+
 interface User {
   id: string;
   name: string;
   email: string;
   role: Role;
-  school?: string;
+  schools: string[]; // assigned schools
 }
 
 interface AuthContextType {
   user: User | null;
+  selectedSchool: string | null;
+  setSelectedSchool: (school: string | null) => void;
   login: (email: string, password: string) => boolean;
   logout: () => void;
 }
@@ -20,42 +28,29 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
 
   const login = (email: string, password: string) => {
-    // Mock login - in real app, this would call an API
     const mockUsers: Record<string, User> = {
       'dentist@floral.ph': {
-        id: '1',
-        name: 'Dr. Maria Santos',
-        email: 'dentist@floral.ph',
-        role: 'dentist',
-        school: 'Bagong Tanyag Integrated School',
+        id: '1', name: 'Dr. Maria Santos', email: 'dentist@floral.ph',
+        role: 'dentist', schools: ALL_SCHOOLS,
       },
       'aide@floral.ph': {
-        id: '2',
-        name: 'Ana Reyes',
-        email: 'aide@floral.ph',
-        role: 'dental_aide',
-        school: 'Bagong Tanyag Integrated School',
+        id: '2', name: 'Ana Reyes', email: 'aide@floral.ph',
+        role: 'dental_aide', schools: ALL_SCHOOLS,
       },
       'school@floral.ph': {
-        id: '3',
-        name: 'Principal Jose Cruz',
-        email: 'school@floral.ph',
-        role: 'school_admin',
-        school: 'Bagong Tanyag Integrated School',
+        id: '3', name: 'Principal Jose Cruz', email: 'school@floral.ph',
+        role: 'school_admin', schools: ALL_SCHOOLS,
       },
       'barangay@floral.ph': {
-        id: '4',
-        name: 'Dr. Elena Martinez',
-        email: 'barangay@floral.ph',
-        role: 'barangay_health',
+        id: '4', name: 'Dr. Elena Martinez', email: 'barangay@floral.ph',
+        role: 'barangay_health', schools: ALL_SCHOOLS,
       },
       'admin@floral.ph': {
-        id: '5',
-        name: 'System Administrator',
-        email: 'admin@floral.ph',
-        role: 'system_admin',
+        id: '5', name: 'System Administrator', email: 'admin@floral.ph',
+        role: 'system_admin', schools: ALL_SCHOOLS,
       },
     };
 
@@ -69,6 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (mockUsers[email] && credentials[email] === password) {
       setUser(mockUsers[email]);
+      setSelectedSchool(null); // reset school on login
       return true;
     }
     return false;
@@ -76,10 +72,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     setUser(null);
+    setSelectedSchool(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, selectedSchool, setSelectedSchool, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -87,8 +84,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (context === undefined) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };

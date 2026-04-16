@@ -1,7 +1,9 @@
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router';
 import {
   Users,
   AlertCircle,
+  School as SchoolIcon,
   Calendar,
   Shield,
   Plus,
@@ -15,6 +17,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
+import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 import { 
   BarChart, 
@@ -38,7 +41,13 @@ import {
 import { Link } from 'react-router';
 
 export const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, selectedSchool, setSelectedSchool } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSwitchSchool = () => {
+    setSelectedSchool(null);
+    navigate('/select-school');
+  };
 
   const COLORS = {
     red: '#E31E24',
