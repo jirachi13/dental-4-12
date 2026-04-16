@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
-import { Search, Plus, X, CheckCircle, AlertCircle, Clock, Shield, School as SchoolIcon, List, ChevronRight, Users } from 'lucide-react';
+import { Search, Plus, X, CheckCircle, AlertCircle, Clock, Shield, School as SchoolIcon, List, ChevronRight, Users, FileText } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getGradeColor } from '../utils/gradeColors';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
@@ -44,6 +45,7 @@ const ViewToggle = ({ mode, onChange }: { mode: 'school' | 'list'; onChange: (m:
 
 export const RPCTracking = () => {
   const { selectedSchool } = useAuth();
+  const navigate = useNavigate();
 
   const [drillSchool, setDrillSchool] = useState<string | null>(null);
   const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
@@ -247,7 +249,12 @@ export const RPCTracking = () => {
                     <td className="px-4 py-3">{r.visit2Date ? <span className="text-green-700 text-xs flex items-center gap-1"><CheckCircle className="w-3 h-3"/>{r.visit2Date}</span> : <span className="text-gray-400 text-xs">Not done</span>}</td>
                     <td className="px-4 py-3"><span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${sc.bg} ${sc.color}`}>{sc.label}</span></td>
                     <td className="px-4 py-3 text-sm">{r.status==='overdue'?<span className="text-red-600 font-semibold">{Math.abs(r.daysUntilDue)}d overdue</span>:r.daysUntilDue>0?<span className="text-blue-600">{r.daysUntilDue}d</span>:<span className="text-gray-400">—</span>}</td>
-                    <td className="px-4 py-3"><button onClick={()=>{setSelectedStudent(r);setVisitNumber(r.visit1Status==='Completed'?2:1);setShowRecordModal(true);}} className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">Record Visit</button></td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        <button onClick={()=>{setSelectedStudent(r);setVisitNumber(r.visit1Status==='Completed'?2:1);setShowRecordModal(true);}} className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">Record Visit</button>
+                        <button onClick={() => navigate(`/dental-chart/${r.id}?tab=treatments`)} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg" title="View in IPTR"><FileText className="w-4 h-4" /></button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}

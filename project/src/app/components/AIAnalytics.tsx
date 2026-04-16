@@ -162,13 +162,13 @@ export const AIAnalytics = () => {
     },
   ]);
 
-  const filteredStudents = students
+  const filteredStudents = contextStudents
     .filter(student => {
       const age = calculateAge(student.birthdate);
       const ageGroup = getAgeGroup(age);
 
-      const matchesSchool = true;
       const matchesGrade = gradeFilter === 'all' || student.grade === gradeFilter;
+      const matchesSection = sectionFilter === 'all' || student.section === sectionFilter;
       const matchesAgeGroup = ageGroupFilter === 'all' || ageGroup === ageGroupFilter;
       const matchesGender = genderFilter === 'all' || student.gender === genderFilter;
       const matchesRisk = riskFilter === 'all' || student.riskLevel === riskFilter;
@@ -176,7 +176,7 @@ export const AIAnalytics = () => {
         (validationFilter === 'validated' && student.validated) ||
         (validationFilter === 'pending' && !student.validated);
 
-      return matchesSchool && matchesGrade && matchesAgeGroup && matchesGender && matchesRisk && matchesValidation;
+      return matchesGrade && matchesSection && matchesAgeGroup && matchesGender && matchesRisk && matchesValidation;
     })
     .sort((a, b) => {
       // Sort by risk level: High first, then Medium, then Low
@@ -393,65 +393,13 @@ export const AIAnalytics = () => {
         </div>
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Model Performance */}
-        <div key="chart-container-1" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Model Performance Metrics</h2>
-          <ResponsiveContainer width="100%" height={250} key="bar-chart-container">
-            <BarChart data={modelPerformanceData} id="model-performance-chart">
-              <CartesianGrid strokeDasharray="3 3" key="bar-grid" />
-              <XAxis dataKey="metric" key="bar-xaxis" />
-              <YAxis domain={[0, 100]} key="bar-yaxis" />
-              <Tooltip key="bar-tooltip" />
-              <Bar dataKey="value" fill="#1E40AF" key="bar-element" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Validation Statistics */}
-        <div key="chart-container-2" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Validation Status Distribution</h2>
-          <ResponsiveContainer width="100%" height={250} key="pie-chart-container">
-            <PieChart id="validation-stats-chart">
-              <Pie
-                data={validationStatsData}
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                dataKey="value"
-                nameKey="name"
-                label
-                key="pie-element"
-              >
-                {validationStatsData.map((entry) => (
-                  <Cell key={entry.id} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip key="pie-tooltip" />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="flex justify-center gap-4 mt-4">
-            {validationStatsData.map((item) => (
-              <div key={item.id} className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-sm text-gray-600">{item.name}: {item.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center gap-2 mb-4">
           <Filter className="w-5 h-5 text-gray-600" />
           <h2 className="text-lg font-bold text-gray-900">Filter AI Predictions</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-          <div>
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
             <label className="block text-xs text-gray-600 mb-1">Grade Level</label>
             <select
@@ -622,6 +570,43 @@ export const AIAnalytics = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Model Performance + Validation Stats — technical detail, placed last */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div key="chart-container-1" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Model Performance Metrics</h2>
+          <ResponsiveContainer width="100%" height={250} key="bar-chart-container">
+            <BarChart data={modelPerformanceData} id="model-performance-chart">
+              <CartesianGrid strokeDasharray="3 3" key="bar-grid" />
+              <XAxis dataKey="metric" key="bar-xaxis" />
+              <YAxis domain={[0, 100]} key="bar-yaxis" />
+              <Tooltip key="bar-tooltip" />
+              <Bar dataKey="value" fill="#1E40AF" key="bar-element" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div key="chart-container-2" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Validation Status Distribution</h2>
+          <ResponsiveContainer width="100%" height={250} key="pie-chart-container">
+            <PieChart id="validation-stats-chart">
+              <Pie data={validationStatsData} cx="50%" cy="50%" outerRadius={80} dataKey="value" nameKey="name" label key="pie-element">
+                {validationStatsData.map((entry) => (
+                  <Cell key={entry.id} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip key="pie-tooltip" />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="flex justify-center gap-4 mt-4">
+            {validationStatsData.map((item) => (
+              <div key={item.id} className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                <span className="text-sm text-gray-600">{item.name}: {item.value}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

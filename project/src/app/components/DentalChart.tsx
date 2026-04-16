@@ -361,11 +361,11 @@ export const DentalChart = () => {
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="flex border-b border-gray-200 overflow-x-auto">
           {[
-            { key: 'history',      label: 'Page 1 — History'        },
-            { key: 'chart',        label: 'Page 2 — Dental Chart'   },
-            { key: 'appointments', label: 'Page 3 — Consent'        },
-            { key: 'records',      label: 'Dental Records'          },
-            { key: 'treatments',   label: 'Treatment History'       },
+            { key: 'history',      label: 'History & Oral'   },
+            { key: 'chart',        label: 'Dental Chart'    },
+            { key: 'appointments', label: 'Consent'         },
+            { key: 'records',      label: 'Dental Records'  },
+            { key: 'treatments',   label: 'Treatment History'},
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key as TabKey)}
               className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors ${activeTab === tab.key ? 'border-b-2 border-blue-700 text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
