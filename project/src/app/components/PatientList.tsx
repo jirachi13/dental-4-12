@@ -459,10 +459,7 @@ export const PatientList = () => {
                       <td className="px-4 py-3">{statusBadge(student.oralStatus)}</td>
                       <td className="px-4 py-3 text-gray-500">{student.lastVisit}</td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => navigate(`/dental-chart/${student.id}`)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" title="View Profile"><Eye className="w-4 h-4" /></button>
-                          <button onClick={() => navigate(`/dental-chart/${student.id}`)} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg" title="View Dental Chart"><FileText className="w-4 h-4" /></button>
-                        </div>
+                        <button onClick={() => navigate(`/dental-chart/${student.id}?tab=history`)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" title="Open IPTR"><Eye className="w-4 h-4" /></button>
                       </td>
                     </tr>
                   ))}
@@ -553,10 +550,7 @@ export const PatientList = () => {
                         <td className="px-4 py-3">{statusBadge(student.oralStatus)}</td>
                         <td className="px-4 py-3 text-gray-500">{student.lastVisit}</td>
                         <td className="px-4 py-3">
-                          <div className="flex items-center gap-1">
-                            <button onClick={() => navigate(`/dental-chart/${student.id}`)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" title="View Profile"><Eye className="w-4 h-4" /></button>
-                            <button onClick={() => navigate(`/dental-chart/${student.id}`)} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg" title="Dental Chart"><FileText className="w-4 h-4" /></button>
-                          </div>
+                          <button onClick={() => navigate(`/dental-chart/${student.id}?tab=history`)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" title="Open IPTR"><Eye className="w-4 h-4" /></button>
                         </td>
                       </tr>
                     );
