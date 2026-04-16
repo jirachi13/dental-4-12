@@ -188,17 +188,11 @@ export const Reports = () => {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-          <p className="text-gray-500 text-sm mt-0.5">
-            {reportSchool ? getSchoolShortName(reportSchool) : 'All Schools'} · DOH-compliant dental health reports
-          </p>
-        </div>
-        <button onClick={() => window.print()}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
-          <Printer className="w-4 h-4" /> Print Report
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
+        <p className="text-gray-500 text-sm mt-0.5">
+          {reportSchool ? getSchoolShortName(reportSchool) : 'All Schools'} · DOH-compliant dental health reports
+        </p>
       </div>
 
       {/* Tabs */}
@@ -240,7 +234,13 @@ export const Reports = () => {
                 {[2023,2024,2025,2026].map(y => <option key={y} value={y}>{y}</option>)}
               </select>
             </div>
-            <div className="ml-auto text-xs text-gray-400 italic">Mock data · connect backend for live values</div>
+            <div className="ml-auto flex items-center gap-3">
+              <span className="text-xs text-gray-400 italic hidden sm:block">Mock data · connect backend for live values</span>
+              <button onClick={() => window.print()}
+                className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium whitespace-nowrap">
+                <Printer className="w-4 h-4" /> Print Report
+              </button>
+            </div>
           </div>
 
           {/* Table */}
@@ -347,7 +347,6 @@ export const Reports = () => {
                       <tr key={idx} className="group border-b border-gray-100 hover:bg-yellow-50 transition-colors">
                         {/* Label */}
                         <td className={`sticky left-0 bg-white group-hover:bg-yellow-50 border-r border-gray-200 px-2 py-0.5 text-[10px] transition-colors ${labelPadding} min-w-[240px]`}>
-                          {isSub && <span className="mr-1 text-gray-300">↳</span>}
                           {row.label}
                         </td>
 
