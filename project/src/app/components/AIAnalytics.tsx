@@ -484,7 +484,7 @@ export const AIAnalytics = () => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredStudents.map((student) => (
-                <tr key={student.id} onClick={() => navigate(`/dental-chart/${student.id}?tab=records`)}
+                <tr key={student.id} onClick={() => navigate(`/dental-chart/${student.id}?tab=ai`)}
                   className="hover:bg-gray-50 cursor-pointer transition-colors">
                   <td className="px-4 py-3">
                     <div className="font-medium text-gray-900">{student.name}</div>
