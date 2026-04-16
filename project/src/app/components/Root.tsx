@@ -161,7 +161,7 @@ export const Root = () => {
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 ml-[60px] md:ml-[220px]">
+      <main className="flex-1 ml-[60px] md:ml-[220px] overflow-x-hidden">
         <div className="p-4 md:p-8">
           <Outlet />
         </div>
