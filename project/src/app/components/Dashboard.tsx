@@ -14,7 +14,8 @@ import {
   CheckCircle,
   Clock,
   BarChart3,
-  ArrowRight
+  ArrowRight,
+  ArrowLeft
 } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
@@ -100,6 +101,28 @@ export const Dashboard = () => {
     );
   };
 
+
+  // School context banner
+  const SchoolBanner = () => {
+    if (!selectedSchool) return null;
+    const sc = getSchoolColor(selectedSchool);
+    return (
+      <div style={{ backgroundColor: sc.light, borderColor: sc.border }} className="flex items-center justify-between px-4 py-3 rounded-xl border-2 mb-2">
+        <div className="flex items-center gap-3">
+          <SchoolIcon style={{ color: sc.solid }} className="w-5 h-5" />
+          <div>
+            <div style={{ color: sc.text }} className="font-bold text-sm">{getSchoolShortName(selectedSchool)}</div>
+            <div className="text-xs text-gray-500">Current workspace</div>
+          </div>
+        </div>
+        <button onClick={handleSwitchSchool} className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 bg-white px-3 py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+          <ArrowLeft className="w-3 h-3" />
+          Switch School
+        </button>
+      </div>
+    );
+  };
+
   // ===== DENTIST DASHBOARD =====
   if (user?.role === 'dentist') {
     const riskDistributionData = [
@@ -126,9 +149,10 @@ export const Dashboard = () => {
 
     return (
       <div className="space-y-6">
+        <SchoolBanner />
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dentist Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome back, {user?.name}</p>
+          <p className="text-gray-600 mt-1">Welcome back, {user?.name} — {selectedSchool ? getSchoolShortName(selectedSchool) : 'All Schools'}</p>
         </div>
 
         {/* KPI Cards */}
@@ -306,6 +330,7 @@ export const Dashboard = () => {
 
     return (
       <div className="space-y-6">
+        <SchoolBanner />
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dental Aide Dashboard</h1>
           <p className="text-gray-600 mt-1">Welcome back, {user?.name}</p>
@@ -437,6 +462,7 @@ export const Dashboard = () => {
 
     return (
       <div className="space-y-6">
+        <SchoolBanner />
         <div>
           <h1 className="text-3xl font-bold text-gray-900">School Admin Dashboard</h1>
           <p className="text-gray-600 mt-1">{user.school}</p>

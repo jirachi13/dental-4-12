@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
+import { useAuth } from '../context/AuthContext';
 import { Search, Plus, Eye, FileText, X, School as SchoolIcon, List, ChevronRight, Users } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
@@ -25,10 +26,11 @@ const ViewToggle = ({ mode, onChange }: { mode: 'school' | 'list'; onChange: (m:
 
 export const PatientList = () => {
   const navigate = useNavigate();
+  const { selectedSchool } = useAuth();
   const [viewMode, setViewMode] = useState<'school' | 'list'>('school');
 
   // Drill-down state
-  const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
+  const [drillSchool, setDrillSchool] = useState<string | null>(null);
   const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
 
@@ -242,9 +244,14 @@ export const PatientList = () => {
     { id: '180', name: 'Maria Reyes', birthdate: '2015-11-17', gender: 'Female', grade: 'Grade 6', section: 'Guijo', school: 'South Daang Hari Elementary School Main', lastVisit: '2026-02-06', oralStatus: 'Orally Fit', riskLevel: 'High' },
   ];
 
+  // Filter by selected school context
+  const schoolStudents = selectedSchool
+    ? allStudents.filter(s => s.school === selectedSchool)
+    : allStudents;
+
   // School view computed data
-  const schoolData = SCHOOLS.map(school => {
-    const students = allStudents.filter(s => s.school === school);
+  const schoolData = [selectedSchool].filter(Boolean).map(school => {
+    const students = schoolStudents.filter(s => s.school === school);
     const grades = [...new Set(students.map(s => s.grade))].sort();
     return { name: school, count: students.length, grades };
   });
@@ -253,22 +260,22 @@ export const PatientList = () => {
     ? [...new Set(allStudents.filter(s => s.school === selectedSchool).map(s => s.grade))].sort()
     : [];
 
-  const sectionsForGrade = (selectedSchool && selectedGrade)
-    ? [...new Set(allStudents.filter(s => s.school === selectedSchool && s.grade === selectedGrade).map(s => s.section))].sort()
+  const sectionsForGrade = (selectedGrade)
+    ? [...new Set(schoolStudents.filter(s => s.grade === selectedGrade).map(s => s.section))].sort()
     : [];
 
-  const studentsForSection = (selectedSchool && selectedGrade && selectedSection)
-    ? allStudents.filter(s => s.school === selectedSchool && s.grade === selectedGrade && s.section === selectedSection)
+  const studentsForSection = (selectedGrade && selectedSection)
+    ? schoolStudents.filter(s => s.grade === selectedGrade && s.section === selectedSection)
     : [];
 
   // List view filtered
   const allSections = useMemo(() => {
-    let base = schoolFilter !== 'all' ? allStudents.filter(s => s.school === schoolFilter) : allStudents;
+    let base = schoolFilter !== 'all' ? schoolStudents.filter(s => s.school === schoolFilter) : schoolStudents;
     if (gradeFilter !== 'all') base = base.filter(s => s.grade === gradeFilter);
     return [...new Set(base.map(s => s.section))].sort();
   }, [schoolFilter, gradeFilter]);
 
-  const filtered = useMemo(() => allStudents.filter(s => {
+  const filtered = useMemo(() => schoolStudents.filter(s => {
     const age = calculateAge(s.birthdate);
     const ag = getAgeGroup(age);
     if (schoolFilter !== 'all' && s.school !== schoolFilter) return false;
@@ -332,11 +339,11 @@ export const PatientList = () => {
   };
 
   const Breadcrumb = () => {
-    if (!selectedSchool) return null;
+    if (!selectedGrade && !selectedSection) return null;
     return (
       <div className="flex items-center gap-1 text-sm text-gray-500 mb-4">
-        <button onClick={() => { setSelectedSchool(null); setSelectedGrade(null); setSelectedSection(null); }} className="hover:text-[#1E40AF]">All Schools</button>
-        {selectedSchool && <><ChevronRight className="w-4 h-4" /><button onClick={() => { setSelectedGrade(null); setSelectedSection(null); }} style={{ color: selectedSchool ? getSchoolColor(selectedSchool).solid : undefined }} className="truncate max-w-[160px] font-medium">{selectedSchool ? getSchoolShortName(selectedSchool) : ''}</button></>}
+        <button onClick={() => { setDrillSchool(null); setSelectedGrade(null); setSelectedSection(null); }} className="hover:text-[#1E40AF]">All Schools</button>
+        {selectedGrade && <><ChevronRight className="w-4 h-4" /><button onClick={() => { setSelectedGrade(null); setSelectedSection(null); }} style={{ color: selectedSchool ? getSchoolColor(selectedSchool).solid : undefined }} className="truncate max-w-[160px] font-medium">{selectedSchool ? getSchoolShortName(selectedSchool) : ''}</button></>}
         {selectedGrade && <><ChevronRight className="w-4 h-4" /><button onClick={() => setSelectedSection(null)} className="hover:text-[#1E40AF]">{selectedGrade}</button></>}
         {selectedSection && <><ChevronRight className="w-4 h-4" /><span className="text-gray-900 font-medium">{selectedSection}</span></>}
       </div>
@@ -349,7 +356,7 @@ export const PatientList = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Student Records</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{allStudents.length} students across 3 schools</p>
+          <p className="text-sm text-gray-500 mt-0.5">{schoolStudents.length} students{selectedSchool ? '' : ' across 3 schools'}</p>
         </div>
         <div className="flex items-center gap-3">
           <ViewToggle mode={viewMode} onChange={setViewMode} />
@@ -364,17 +371,17 @@ export const PatientList = () => {
         <div className="space-y-4">
           <Breadcrumb />
 
-          {/* Level 1 — Schools */}
-          {!selectedSchool && (
+          {/* Level 1 — Grades (school already selected from context) */}
+          {!drillSchool && !selectedGrade && false && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {schoolData.map(s => (
-                <SchoolCard key={s.name} school={s.name} count={s.count} onClick={() => setSelectedSchool(s.name)} />
+                <SchoolCard key={s.name} school={s.name} count={s.count} onClick={() => setDrillSchool(s.name)} />
               ))}
             </div>
           )}
 
           {/* Level 2 — Grades */}
-          {selectedSchool && !selectedGrade && (
+          {!selectedGrade && (
             <div className="space-y-3">
               <p className="text-sm font-medium text-gray-700">Select Grade — {selectedSchool}</p>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -398,7 +405,7 @@ export const PatientList = () => {
           )}
 
           {/* Level 3 — Sections */}
-          {selectedSchool && selectedGrade && !selectedSection && (
+          {selectedGrade && !selectedSection && (
             <div className="space-y-3">
               <p className="text-sm font-medium text-gray-700">{selectedGrade} — Select Section</p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -421,7 +428,7 @@ export const PatientList = () => {
           )}
 
           {/* Level 4 — Students in section */}
-          {selectedSchool && selectedGrade && selectedSection && (
+          {selectedGrade && selectedSection && (
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                 <span className="text-sm font-semibold text-gray-700">{selectedSection} — {studentsForSection.length} students</span>

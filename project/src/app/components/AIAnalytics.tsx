@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { AlertCircle, TrendingUp, CheckCircle, Filter, Eye, ThumbsUp, ThumbsDown, Brain, Activity, BarChart3, Info, School as SchoolIcon, List } from 'lucide-react';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -21,6 +22,7 @@ const ViewToggle = ({ mode, onChange }: { mode: 'school' | 'list'; onChange: (m:
 );
 
 export const AIAnalytics = () => {
+  const { selectedSchool } = useAuth();
   const [viewMode, setViewMode] = useState<'school' | 'list'>('school');
   const [schoolFilter, setSchoolFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState('all');
@@ -243,9 +245,13 @@ export const AIAnalytics = () => {
     { name: 'Pending', value: students.filter(s => !s.validated).length, color: '#E31E24', id: 'pending' },
   ];
 
+  const contextStudents = selectedSchool
+    ? students.filter(s => s.school === selectedSchool)
+    : students;
+
   // School view data
-  const schoolRiskSummary = SCHOOLS.map(school => {
-    const schoolStudents = students.filter(s => s.school === school);
+  const schoolRiskSummary = (selectedSchool ? [selectedSchool] : SCHOOLS).map(school => {
+    const schoolStudents = contextStudents.filter(s => s.school === school);
     const high = schoolStudents.filter(s => s.riskLevel === 'High').length;
     const medium = schoolStudents.filter(s => s.riskLevel === 'Medium').length;
     const low = schoolStudents.filter(s => s.riskLevel === 'Low').length;

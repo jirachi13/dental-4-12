@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Check } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 
@@ -9,6 +10,7 @@ const SCHOOLS = [
 ];
 
 export const Appointments = () => {
+  const { selectedSchool } = useAuth();
   const [schoolFilter, setSchoolFilter] = useState('all');
   const [currentDate, setCurrentDate] = useState(new Date(2026, 3, 1));
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -43,7 +45,7 @@ export const Appointments = () => {
     { id: '7', name: 'Miguel Torres', gender: 'Male', age: 9 },
   ] : [];
 
-  const appointments = [
+  const allAppointments = [
     { id:'1', date:'2026-04-15', time:'09:00', school:'Bagong Tanyag Integrated School', grade:'Grade 4', section:'Sampaguita', studentCount:32, type:'Regular Checkup', status:'Scheduled', dentist:'Dr. Maria Santos', students:[
       { id:'s1', name:'Juan Dela Cruz', gender:'Male', age:10, riskLevel:'High' },
       { id:'s2', name:'Maria Garcia', gender:'Female', age:9, riskLevel:'Low' },

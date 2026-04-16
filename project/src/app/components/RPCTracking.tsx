@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { Search, Plus, X, CheckCircle, AlertCircle, Clock, Shield, School as SchoolIcon, List, ChevronRight, Users } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getGradeColor } from '../utils/gradeColors';
@@ -42,8 +43,9 @@ const ViewToggle = ({ mode, onChange }: { mode: 'school' | 'list'; onChange: (m:
 );
 
 export const RPCTracking = () => {
+  const { selectedSchool } = useAuth();
   const [viewMode, setViewMode] = useState<'school' | 'list'>('school');
-  const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
+  const [drillSchool, setDrillSchool] = useState<string | null>(null);
   const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,7 +74,11 @@ export const RPCTracking = () => {
     return '15-19';
   };
 
-  const filtered = useMemo(() => rpcRecords.filter(r => {
+  const schoolRecords = selectedSchool
+    ? rpcRecords.filter(r => r.school === selectedSchool)
+    : rpcRecords;
+
+  const filtered = useMemo(() => schoolRecords.filter(r => {
     const age = calculateAge(r.birthdate);
     if (schoolFilter !== 'all' && r.school !== schoolFilter) return false;
     if (gradeFilter !== 'all' && r.grade !== gradeFilter) return false;
@@ -86,9 +92,9 @@ export const RPCTracking = () => {
   const hasActiveFilters = [schoolFilter, gradeFilter, genderFilter, ageGroupFilter, statusFilter].some(f => f !== 'all') || searchTerm !== '';
   const clearFilters = () => { setSchoolFilter('all'); setGradeFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); setStatusFilter('all'); setSearchTerm(''); };
 
-  const visit1Completed = rpcRecords.filter(r => r.visit1Status === 'Completed').length;
-  const visit2Completed = rpcRecords.filter(r => r.visit2Status === 'Completed').length;
-  const overdue = rpcRecords.filter(r => r.status === 'overdue').length;
+  const visit1Completed = schoolRecords.filter(r => r.visit1Status === 'Completed').length;
+  const visit2Completed = schoolRecords.filter(r => r.visit2Status === 'Completed').length;
+  const overdue = schoolRecords.filter(r => r.status === 'overdue').length;
 
   const chartData = SCHOOLS.map(s => {
     const recs = rpcRecords.filter(r => r.school === s);
@@ -111,8 +117,8 @@ export const RPCTracking = () => {
   );
 
   // School view computed data
-  const schoolSummary = SCHOOLS.map(school => {
-    const records = rpcRecords.filter(r => r.school === school);
+  const schoolSummary = (selectedSchool ? [selectedSchool] : SCHOOLS).map(school => {
+    const records = schoolRecords.filter(r => r.school === school);
     const complete = records.filter(r => r.status === 'complete').length;
     const overdueCount = records.filter(r => r.status === 'overdue').length;
     return { name: school, total: records.length, complete, overdue: overdueCount };
@@ -166,7 +172,7 @@ export const RPCTracking = () => {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label:'Total Enrolled',         value: rpcRecords.length,    color:'text-blue-600',  bg:'bg-blue-50',  border:'border-blue-200'  },
+          { label:'Total Enrolled',         value: schoolRecords.length,    color:'text-blue-600',  bg:'bg-blue-50',  border:'border-blue-200'  },
           { label:'Visit 1 Completed',      value: `${visit1Completed} (${Math.round(visit1Completed/rpcRecords.length*100)}%)`, color:'text-cyan-600', bg:'bg-cyan-50', border:'border-cyan-200' },
           { label:'Both Visits Complete',   value: `${visit2Completed} (${Math.round(visit2Completed/rpcRecords.length*100)}%)`, color:'text-green-600', bg:'bg-green-50', border:'border-green-200' },
           { label:'Overdue',                value: overdue,               color:'text-red-600',   bg:'bg-red-50',   border:'border-red-200'   },
