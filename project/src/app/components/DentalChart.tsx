@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router';
-import { ArrowLeft, Save, ChevronLeft, ChevronRight, Shield, Users, TrendingUp, FileText, Plus } from 'lucide-react';
+import { ArrowLeft, Save, ChevronLeft, ChevronRight, Shield, Users, TrendingUp, FileText, Plus, Pencil } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 import { useAuth } from '../context/AuthContext';
 
@@ -135,6 +135,9 @@ export const DentalChart = () => {
   const [consentGiven, setConsentGiven] = useState(mockPatient.consentStatus === 'complete');
   const [dataPrivacyAck, setDataPrivacyAck] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [patientInfo, setPatientInfo] = useState({ ...mockPatient });
+  const [draftInfo, setDraftInfo] = useState({ ...mockPatient });
+  const [editingInfo, setEditingInfo] = useState(false);
 
   // Per-year dental chart data
   const [chartData, setChartData] = useState<Record<number, Record<number, { condition: string; treatment: string }>>>({
@@ -160,7 +163,16 @@ export const DentalChart = () => {
 
   const currentChart = chartData[selectedYear] || {};
   const dmft = computeDMFT(currentChart);
-  const gc = getGradeColor(mockPatient.grade);
+  const gc = getGradeColor(patientInfo.grade);
+  const canEditInfo = user?.role === 'dentist' || user?.role === 'school_admin';
+  const computeAge = (birthday: string) => {
+    const today = new Date();
+    const birth = new Date(birthday);
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    return age;
+  };
 
   const handleToothClick = (toothNumber: number) => {
     const isTemp = temporaryTeeth.has(toothNumber);
@@ -282,7 +294,7 @@ export const DentalChart = () => {
           </Link>
           <div className="min-w-0">
             <h1 className="text-lg font-bold text-gray-900">Individual Patient Treatment Record</h1>
-            <p className="text-xs text-gray-500">{mockPatient.lastName}, {mockPatient.firstName} · {mockPatient.school} · {mockPatient.grade}-{mockPatient.section}</p>
+            <p className="text-xs text-gray-500">{patientInfo.lastName}, {patientInfo.firstName} · {patientInfo.school} · {patientInfo.grade}-{patientInfo.section}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -330,40 +342,127 @@ export const DentalChart = () => {
 
       {/* Patient Info Card */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div style={{ backgroundColor: gc.light, color: gc.solid }} className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg">
-              {mockPatient.firstName[0]}{mockPatient.lastName[0]}
+        {editingInfo ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-700">Edit Student Info</span>
+              <div className="flex gap-2">
+                <button onClick={() => { setPatientInfo({ ...draftInfo }); setEditingInfo(false); }}
+                  className="px-3 py-1.5 text-sm bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700">Save</button>
+                <button onClick={() => { setDraftInfo({ ...patientInfo }); setEditingInfo(false); }}
+                  className="px-3 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
+              </div>
             </div>
-            <div>
-              <div className="font-bold text-gray-900">{mockPatient.lastName}, {mockPatient.firstName} {mockPatient.middleName}</div>
-              <div className="text-xs text-gray-500">{mockPatient.school}</div>
-              <div className="flex items-center gap-2 mt-1">
-                <span style={{ backgroundColor: gc.light, color: gc.solid }} className="text-xs font-semibold px-2 py-0.5 rounded-full">{mockPatient.grade} — {mockPatient.section}</span>
-                {mockPatient.riskLevel === 'high' && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">High Risk</span>}
-                {mockPatient.consentStatus === 'complete' && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Consent Complete</span>}
-                {mockPatient.is4Ps && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">4Ps</span>}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+              {[
+                { label: 'Last Name',   field: 'lastName'   },
+                { label: 'First Name',  field: 'firstName'  },
+                { label: 'Middle Name', field: 'middleName' },
+                { label: 'Contact',     field: 'contactNumber' },
+                { label: 'Guardian',    field: 'guardianName' },
+                { label: 'Guardian Contact', field: 'guardianContact' },
+                { label: 'PhilHealth No.', field: 'philhealthNumber' },
+              ].map(({ label, field }) => (
+                <div key={field}>
+                  <label className="block text-gray-500 font-medium mb-0.5">{label}</label>
+                  <input type="text" value={(draftInfo as any)[field]} onChange={e => setDraftInfo(p => ({ ...p, [field]: e.target.value }))}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" />
+                </div>
+              ))}
+              <div>
+                <label className="block text-gray-500 font-medium mb-0.5">Birthday</label>
+                <input type="date" value={draftInfo.birthday} onChange={e => setDraftInfo(p => ({ ...p, birthday: e.target.value }))}
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" />
+              </div>
+              <div>
+                <label className="block text-gray-500 font-medium mb-0.5">Sex</label>
+                <select value={draftInfo.sex} onChange={e => setDraftInfo(p => ({ ...p, sex: e.target.value }))}
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white">
+                  <option>Male</option><option>Female</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-gray-500 font-medium mb-0.5">Grade</label>
+                <select value={draftInfo.grade} onChange={e => setDraftInfo(p => ({ ...p, grade: e.target.value }))}
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white">
+                  {['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'].map(g => <option key={g}>{g}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-gray-500 font-medium mb-0.5">Section</label>
+                <input type="text" value={draftInfo.section} onChange={e => setDraftInfo(p => ({ ...p, section: e.target.value }))}
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" />
+              </div>
+              <div>
+                <label className="block text-gray-500 font-medium mb-0.5">PhilHealth Status</label>
+                <select value={draftInfo.philhealthStatus} onChange={e => setDraftInfo(p => ({ ...p, philhealthStatus: e.target.value }))}
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white">
+                  <option>Dependent</option><option>Member</option><option>None</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-gray-500 font-medium mb-0.5">School</label>
+                <select value={draftInfo.school} onChange={e => setDraftInfo(p => ({ ...p, school: e.target.value }))}
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white">
+                  {['Bagong Tanyag Integrated School','Bagong Tanyag Elementary School Annex A','South Daang Hari Elementary School Main'].map(s => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="md:col-span-3">
+                <label className="block text-gray-500 font-medium mb-0.5">Address</label>
+                <input type="text" value={draftInfo.address} onChange={e => setDraftInfo(p => ({ ...p, address: e.target.value }))}
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" />
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="4ps" checked={draftInfo.is4Ps} onChange={e => setDraftInfo(p => ({ ...p, is4Ps: e.target.checked }))}
+                  className="w-4 h-4 rounded accent-blue-600" />
+                <label htmlFor="4ps" className="text-gray-700 font-medium">4Ps Member</label>
               </div>
             </div>
           </div>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-          {[
-            ['Birthday', mockPatient.birthday],
-            ['Age', `${mockPatient.age} years`],
-            ['Sex', mockPatient.sex],
-            ['Contact', mockPatient.contactNumber],
-            ['Address', mockPatient.address],
-            ['PhilHealth', `${mockPatient.philhealthNumber} (${mockPatient.philhealthStatus})`],
-            ['Guardian', mockPatient.guardianName],
-            ['Guardian Contact', mockPatient.guardianContact],
-          ].map(([label, val]) => (
-            <div key={label}>
-              <div className="text-gray-400 font-medium">{label}</div>
-              <div className="text-gray-900">{val}</div>
+        ) : (
+          <>
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div style={{ backgroundColor: gc.light, color: gc.solid }} className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg">
+                  {patientInfo.firstName[0]}{patientInfo.lastName[0]}
+                </div>
+                <div>
+                  <div className="font-bold text-gray-900">{patientInfo.lastName}, {patientInfo.firstName} {patientInfo.middleName}</div>
+                  <div className="text-xs text-gray-500">{patientInfo.school}</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span style={{ backgroundColor: gc.light, color: gc.solid }} className="text-xs font-semibold px-2 py-0.5 rounded-full">{patientInfo.grade} — {patientInfo.section}</span>
+                    {patientInfo.riskLevel === 'high' && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">High Risk</span>}
+                    {patientInfo.consentStatus === 'complete' && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Consent Complete</span>}
+                    {patientInfo.is4Ps && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">4Ps</span>}
+                  </div>
+                </div>
+              </div>
+              {canEditInfo && (
+                <button onClick={() => { setDraftInfo({ ...patientInfo }); setEditingInfo(true); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">
+                  <Pencil className="w-3 h-3" /> Edit
+                </button>
+              )}
             </div>
-          ))}
-        </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              {[
+                ['Birthday', patientInfo.birthday],
+                ['Age', `${computeAge(patientInfo.birthday)} years`],
+                ['Sex', patientInfo.sex],
+                ['Contact', patientInfo.contactNumber],
+                ['Address', patientInfo.address],
+                ['PhilHealth', `${patientInfo.philhealthNumber} (${patientInfo.philhealthStatus})`],
+                ['Guardian', patientInfo.guardianName],
+                ['Guardian Contact', patientInfo.guardianContact],
+              ].map(([label, val]) => (
+                <div key={label}>
+                  <div className="text-gray-400 font-medium">{label}</div>
+                  <div className="text-gray-900">{val}</div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
       </div>{/* end sticky wrapper */}
 
