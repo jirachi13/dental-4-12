@@ -18,7 +18,7 @@ export const Appointments = () => {
   const navigate = useNavigate();
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'past'>('today');
+  const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'past' | 'rotation'>('today');
 
   // Filters
   const [gradeFilter, setGradeFilter] = useState('all');
@@ -281,6 +281,7 @@ export const Appointments = () => {
           { key: 'today',    label: `Today (${todayAppts.length})`        },
           { key: 'upcoming', label: `Upcoming (${upcomingAppts.length})`  },
           { key: 'past',     label: `Past (${pastAppts.length})`          },
+          { key: 'rotation', label: 'Rotation'                            },
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key as any)}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.key ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
@@ -350,6 +351,48 @@ export const Appointments = () => {
           ) : (
             pastAppts.map(a => <AppointmentCard key={a.id} a={a} showActions />)
           )}
+        </>
+      )}
+
+      {/* ROTATION */}
+      {activeTab === 'rotation' && (
+        <>
+          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+            <span className="text-sm font-semibold text-gray-900">Dentist Rotation by School</span>
+            <button onClick={() => setShowRotationModal(true)}
+              className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
+              <Plus className="w-3.5 h-3.5" /> Add Rotation
+            </button>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {SCHOOLS.filter(s => !selectedSchool || s === selectedSchool).map(school => {
+              const sc = getSchoolColor(school);
+              const schoolRots = rotations.filter(r => r.school === school);
+              return (
+                <div key={school} className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Stethoscope style={{ color: sc.solid }} className="w-4 h-4" />
+                    <span style={{ color: sc.text }} className="font-bold text-sm">{getSchoolShortName(school)}</span>
+                  </div>
+                  {schoolRots.length === 0 ? (
+                    <p className="text-xs text-gray-400 pl-6">No rotation schedule set</p>
+                  ) : (
+                    <div className="pl-6 space-y-1.5">
+                      {schoolRots.map(r => (
+                        <div key={r.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{r.dentist}</div>
+                            <div className="text-xs text-gray-500">{r.weekStart} → {r.weekEnd}{r.notes && ` · ${r.notes}`}</div>
+                          </div>
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Active</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </>
       )}
 
@@ -499,7 +542,7 @@ export const Appointments = () => {
                     setRotations(prev => [...prev, { id: `r${Date.now()}`, school: rotSchool, dentist: rotDentist, weekStart: rotWeekStart, weekEnd: rotWeekEnd, notes: rotNotes }]);
                     setRotSchool(''); setRotDentist(''); setRotWeekStart(''); setRotWeekEnd(''); setRotNotes('');
                     setShowRotationModal(false);
-                    setActiveTab('today');
+                    setActiveTab('rotation');
                   }
                 }}
                   className="flex-1 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
