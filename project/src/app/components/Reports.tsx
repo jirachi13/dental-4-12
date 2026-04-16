@@ -145,11 +145,19 @@ const treatmentChartData = [
   { name:'Counseling', value:95 }, { name:'Other',     value:33  },
 ];
 
+const REPORT_SCHOOLS = [
+  'Bagong Tanyag Integrated School',
+  'Bagong Tanyag Elementary School Annex A',
+  'South Daang Hari Elementary School Main',
+];
+
 export const Reports = () => {
   const { selectedSchool } = useAuth();
   const [activeReportTab, setActiveReportTab] = useState<'doh'|'internal'>('doh');
   const [reportMonth, setReportMonth] = useState(4);
   const [reportYear,  setReportYear]  = useState(2026);
+  // Local school override — defaults to All Schools regardless of global context
+  const [reportSchool, setReportSchool] = useState<string|null>(null);
 
   const outcomeBadge = (o: string) => ({
     completed:'bg-green-100 text-green-700',
@@ -184,7 +192,7 @@ export const Reports = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
           <p className="text-gray-500 text-sm mt-0.5">
-            {selectedSchool ? getSchoolShortName(selectedSchool) : 'All Schools'} · DOH-compliant dental health reports
+            {reportSchool ? getSchoolShortName(reportSchool) : 'All Schools'} · DOH-compliant dental health reports
           </p>
         </div>
         <button onClick={() => window.print()}
@@ -210,6 +218,14 @@ export const Reports = () => {
         <div className="space-y-4">
           {/* Controls */}
           <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-4 flex-wrap">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">School</label>
+              <select value={reportSchool ?? ''} onChange={e => setReportSchool(e.target.value || null)}
+                className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">All Schools</option>
+                {REPORT_SCHOOLS.map(s => <option key={s} value={s}>{getSchoolShortName(s)}</option>)}
+              </select>
+            </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">Month</label>
               <select value={reportMonth} onChange={e => setReportMonth(Number(e.target.value))}
@@ -242,7 +258,7 @@ export const Reports = () => {
                   <tr>
                     <th colSpan={1 + cols.length*2 + sumCols.length*2 + 2}
                       className="text-center py-1 px-3 bg-gray-50 border-b border-gray-200 text-[10px] text-gray-500">
-                      SCHOOL: {selectedSchool ? getSchoolShortName(selectedSchool) : 'All Schools'} &nbsp;·&nbsp;
+                      SCHOOL: {reportSchool ? getSchoolShortName(reportSchool) : 'All Schools'} &nbsp;·&nbsp;
                       MONTH: {MONTHS[reportMonth-1]} {reportYear}
                     </th>
                   </tr>
