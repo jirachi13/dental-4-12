@@ -47,7 +47,7 @@ const conditionColors: Record<string, string> = {
   'Un': 'bg-purple-100 border-purple-400',
 };
 
-const SCHOOL_YEARS = ['2024-2025', '2025-2026'];
+const ALL_SCHOOL_YEARS = ['2023-2024', '2024-2025', '2025-2026', '2026-2027', '2027-2028', '2028-2029', '2029-2030'];
 
 // ─── DMFT calculation ─────────────────────────────────────────────────────────
 const computeDMFT = (chart: Record<number, { condition: string; treatment: string }>) => {
@@ -72,7 +72,8 @@ const computeDMFT = (chart: Record<number, { condition: string; treatment: strin
 export const DentalChart = () => {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState<'history' | 'chart' | 'appointments'>('history');
-  const [selectedYear, setSelectedYear] = useState(0); // index into SCHOOL_YEARS
+  const [activeYears, setActiveYears] = useState<string[]>(['2024-2025', '2025-2026']);
+  const [selectedYear, setSelectedYear] = useState(0); // index into activeYears
   const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
   const [selectedTreatment, setSelectedTreatment] = useState<string | null>(null);
   const [consentGiven, setConsentGiven] = useState(mockPatient.consentStatus === 'complete');
@@ -161,7 +162,7 @@ export const DentalChart = () => {
     return (
       <button
         onClick={() => handleToothClick(num)}
-        className={`relative w-9 h-10 border-2 rounded-sm text-center transition-all ${colorClass} ${isSelected ? 'hover:border-[#1E40AF] hover:ring-2 hover:ring-blue-300 cursor-pointer' : 'cursor-default'}`}
+        className={`relative w-9 h-10 border-2 rounded-sm text-center transition-all ${colorClass} ${isSelected ? 'hover:border-blue-700 hover:ring-2 hover:ring-blue-300 cursor-pointer' : 'cursor-default'}`}
       >
         <div className="text-[7px] text-slate-400 leading-none mt-0.5">{num}</div>
         {cond && <div className="text-[9px] font-bold text-slate-700 leading-none">{cond}</div>}
@@ -174,7 +175,7 @@ export const DentalChart = () => {
     <div className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
       <span className="text-xs text-gray-700">{label}</span>
       <div className="flex gap-3">
-        {SCHOOL_YEARS.map((yr, idx) => (
+        {activeYears.map((yr, idx) => (
           <input key={idx} type="checkbox" checked={idx === selectedYear ? value : false}
             onChange={e => idx === selectedYear && onChange(field, e.target.checked)}
             className="w-4 h-4 rounded accent-blue-600" />
@@ -225,11 +226,11 @@ export const DentalChart = () => {
           <button onClick={() => setSelectedYear(Math.max(0, selectedYear - 1))} disabled={selectedYear === 0} className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30">
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-sm font-medium px-3 py-1.5 bg-blue-50 text-blue-800 rounded-lg">{SCHOOL_YEARS[selectedYear]}</span>
-          <button onClick={() => setSelectedYear(Math.min(SCHOOL_YEARS.length - 1, selectedYear + 1))} disabled={selectedYear === SCHOOL_YEARS.length - 1} className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30">
+          <span className="text-sm font-medium px-3 py-1.5 bg-blue-50 text-blue-800 rounded-lg">{activeYears[selectedYear]}</span>
+          <button onClick={() => setSelectedYear(Math.min(activeYears.length - 1, selectedYear + 1))} disabled={selectedYear === activeYears.length - 1} className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30">
             <ChevronRight className="w-4 h-4" />
           </button>
-          <button onClick={handleSave} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${saved ? 'bg-green-600 text-white' : 'bg-[#1E40AF] text-white hover:bg-blue-700'}`}>
+          <button onClick={handleSave} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${saved ? 'bg-green-600 text-white' : 'bg-blue-700 text-white hover:bg-blue-700'}`}>
             <Save className="w-4 h-4" />
             {saved ? 'Saved!' : 'Save'}
           </button>
@@ -283,7 +284,7 @@ export const DentalChart = () => {
             { key: 'appointments', label: 'Page 3 — Consent & Appointments' },
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key as any)}
-              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${activeTab === tab.key ? 'border-b-2 border-[#1E40AF] text-[#1E40AF] bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${activeTab === tab.key ? 'border-b-2 border-blue-700 text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
               {tab.label}
             </button>
           ))}
@@ -294,14 +295,14 @@ export const DentalChart = () => {
           <div className="p-4 space-y-5">
             {/* Year columns header */}
             <div className="flex items-center justify-end gap-8 text-xs font-semibold text-gray-500 mb-1">
-              {SCHOOL_YEARS.map(yr => <span key={yr} className={`w-16 text-center ${SCHOOL_YEARS.indexOf(yr) === selectedYear ? 'text-[#1E40AF]' : ''}`}>{yr}</span>)}
+              {activeYears.map(yr => <span key={yr} className={`w-16 text-center ${activeYears.indexOf(yr) === selectedYear ? 'text-blue-700' : ''}`}>{yr}</span>)}
             </div>
 
             {/* Date Examined */}
             <div className="flex items-center justify-between py-2 border-b border-gray-100">
               <span className="text-xs font-semibold text-gray-700">Date Examined</span>
               <div className="flex gap-8">
-                {SCHOOL_YEARS.map((yr, idx) => (
+                {activeYears.map((yr, idx) => (
                   <input key={idx} type="date" value={idx === selectedYear ? (med.dateExamined || '') : ''}
                     onChange={e => idx === selectedYear && updateMedField('dateExamined', e.target.value)}
                     className="w-36 text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500" />
@@ -330,7 +331,7 @@ export const DentalChart = () => {
                   <div key={field} className="flex items-center justify-between py-1.5 border-b border-gray-100">
                     <span className="text-xs text-gray-700">{label}</span>
                     <div className="flex gap-8">
-                      {SCHOOL_YEARS.map((yr, idx) => (
+                      {activeYears.map((yr, idx) => (
                         <div key={idx} className="w-16 flex justify-center">
                           {type === 'check' ? (
                             <input type="checkbox" checked={idx === selectedYear ? !!(med as any)[field] : false}
@@ -364,7 +365,7 @@ export const DentalChart = () => {
                 <div key={field} className="flex items-center justify-between py-1.5 border-b border-gray-100">
                   <span className="text-xs text-gray-700">{label}</span>
                   <div className="flex gap-8">
-                    {SCHOOL_YEARS.map((yr, idx) => (
+                    {activeYears.map((yr, idx) => (
                       <div key={idx} className="w-16 flex justify-center">
                         <input type="checkbox" checked={idx === selectedYear ? !!(diet as any)[field] : false}
                           onChange={e => idx === selectedYear && updateDietField(field as string, e.target.checked)}
@@ -394,7 +395,7 @@ export const DentalChart = () => {
                 <div key={field} className="flex items-center justify-between py-1.5 border-b border-gray-100">
                   <span className="text-xs text-gray-700">{label}</span>
                   <div className="flex gap-8">
-                    {SCHOOL_YEARS.map((yr, idx) => (
+                    {activeYears.map((yr, idx) => (
                       <div key={idx} className="w-16 flex justify-center">
                         {type === 'check' ? (
                           <input type="checkbox" checked={idx === selectedYear ? !!(oral as any)[field] : false}
@@ -416,7 +417,37 @@ export const DentalChart = () => {
 
         {/* ── TAB 2: Dental Chart ── */}
         {activeTab === 'chart' && (
-          <div className="p-4 space-y-4">
+          <div className="p-0 space-y-0">
+            {/* Year tabs */}
+            <div className="flex items-center gap-0 border-b border-gray-200 px-4 pt-3 overflow-x-auto">
+              {activeYears.map((yr, idx) => {
+                const yrDmft = computeDMFT(chartData[idx] || {});
+                return (
+                  <button key={yr} onClick={() => setSelectedYear(idx)}
+                    className={`flex-shrink-0 px-4 py-2.5 text-xs font-medium transition-all border-b-2 mr-1 ${selectedYear === idx ? 'border-blue-700 text-blue-700 bg-blue-50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
+                    <div>{yr}</div>
+                    <div style={{ fontSize: '10px', marginTop: '2px' }} className={selectedYear === idx ? 'text-blue-600' : 'text-gray-400'}>
+                      DMFT: {yrDmft.T + yrDmft.t}
+                    </div>
+                  </button>
+                );
+              })}
+              {/* Add year button */}
+              {activeYears.length < ALL_SCHOOL_YEARS.length && (
+                <button
+                  onClick={() => {
+                    const next = ALL_SCHOOL_YEARS.find(y => !activeYears.includes(y));
+                    if (next) {
+                      setActiveYears(prev => [...prev, next]);
+                      setSelectedYear(activeYears.length);
+                    }
+                  }}
+                  className="flex-shrink-0 px-3 py-2 text-xs text-gray-400 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-300 transition-all">
+                  + Add Year
+                </button>
+              )}
+            </div>
+            <div className="p-4 space-y-4">
             {/* Code selector */}
             <div className="bg-blue-50 rounded-xl p-4">
               <div className="grid grid-cols-2 gap-4">
@@ -425,7 +456,7 @@ export const DentalChart = () => {
                   <div className="grid grid-cols-3 gap-1.5">
                     {conditionCodes.map(c => (
                       <button key={c.code} onClick={() => { setSelectedCondition(selectedCondition === c.code ? null : c.code); setSelectedTreatment(null); }}
-                        className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedCondition === c.code ? 'bg-[#1E40AF] text-white ring-2 ring-blue-300' : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-400'}`}>
+                        className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedCondition === c.code ? 'bg-blue-700 text-white ring-2 ring-blue-300' : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-400'}`}>
                         {c.code}
                         <div className="text-[9px] font-normal truncate">{c.label}</div>
                       </button>
@@ -514,6 +545,50 @@ export const DentalChart = () => {
               </div>
             </div>
 
+            {/* DMFT Progression Across Years */}
+            {activeYears.length > 1 && (
+              <div className="bg-white rounded-xl border border-gray-200 p-4">
+                <div className="text-xs font-semibold text-gray-600 mb-3 uppercase tracking-wide">DMFT Progression — All Years</div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-2 pr-4 text-gray-500 font-medium">School Year</th>
+                        <th className="text-center py-2 px-2 text-gray-500 font-medium">d</th>
+                        <th className="text-center py-2 px-2 text-gray-500 font-medium">m</th>
+                        <th className="text-center py-2 px-2 text-gray-500 font-medium">f</th>
+                        <th className="text-center py-2 px-2 text-blue-600 font-bold">dmft</th>
+                        <th className="text-center py-2 px-2 text-gray-500 font-medium">D</th>
+                        <th className="text-center py-2 px-2 text-gray-500 font-medium">M</th>
+                        <th className="text-center py-2 px-2 text-gray-500 font-medium">F</th>
+                        <th className="text-center py-2 px-2 text-red-600 font-bold">DMFT</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeYears.map((yr, idx) => {
+                        const sc = computeDMFT(chartData[idx] || {});
+                        const isActive = idx === selectedYear;
+                        return (
+                          <tr key={yr} onClick={() => setSelectedYear(idx)} className={`cursor-pointer border-b border-gray-100 last:border-0 transition-colors ${isActive ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+                            <td className={`py-2 pr-4 font-medium ${isActive ? 'text-blue-700' : 'text-gray-700'}`}>{yr}</td>
+                            <td className="text-center py-2 px-2 font-mono">{sc.d}</td>
+                            <td className="text-center py-2 px-2 font-mono">{sc.m}</td>
+                            <td className="text-center py-2 px-2 font-mono">{sc.f}</td>
+                            <td className="text-center py-2 px-2 font-mono font-bold text-blue-700">{sc.t}</td>
+                            <td className="text-center py-2 px-2 font-mono">{sc.D}</td>
+                            <td className="text-center py-2 px-2 font-mono">{sc.M}</td>
+                            <td className="text-center py-2 px-2 font-mono">{sc.F}</td>
+                            <td className="text-center py-2 px-2 font-mono font-bold text-red-700">{sc.T}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-2 text-[10px] text-gray-400">Click any row to switch to that year's chart</div>
+              </div>
+            )}
+
             {/* Legend */}
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div className="bg-gray-50 rounded-xl p-3">
@@ -533,6 +608,7 @@ export const DentalChart = () => {
                 </div>
               </div>
             </div>
+            </div>
           </div>
         )}
 
@@ -543,7 +619,7 @@ export const DentalChart = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-gray-50 rounded-xl p-4">
                 <div className="text-xs text-gray-500 mb-1">Risk Level</div>
-                <div className={`text-sm font-bold uppercase ${mockPatient.riskLevel === 'high' ? 'text-red-600' : mockPatient.riskLevel === 'medium' ? 'text-yellow-600' : 'text-green-600'}`}>
+                <div className={mockPatient.riskLevel === 'high' ? 'text-sm font-bold uppercase text-red-600' : mockPatient.riskLevel === 'medium' ? 'text-sm font-bold uppercase text-yellow-600' : 'text-sm font-bold uppercase text-green-600'}>
                   {mockPatient.riskLevel}
                 </div>
               </div>
