@@ -319,13 +319,13 @@ export const Reports = () => {
                 <tbody>
                   {DOH_ROWS.map((row, idx) => {
                     if (row.type === 'header') {
-                      const totalCols = 1 + cols.length*2 + GRADES.length*2 + sumCols.length;
+                      const restCols = cols.length*2 + GRADES.length*2 + sumCols.length;
                       return (
                         <tr key={idx} className="bg-blue-50 border-t border-b border-blue-200">
-                          <td colSpan={totalCols + 10}
-                            className="px-3 py-1 font-bold text-blue-900 text-[10px] uppercase tracking-wide sticky left-0 bg-blue-50">
+                          <td className="sticky left-0 z-10 px-3 py-1 font-bold text-blue-900 text-[10px] uppercase tracking-wide bg-blue-50 min-w-[240px]">
                             {row.label}
                           </td>
+                          <td colSpan={restCols} className="bg-blue-50" />
                         </tr>
                       );
                     }
