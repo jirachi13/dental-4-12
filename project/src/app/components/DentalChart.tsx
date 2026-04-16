@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router';
-import { ArrowLeft, Save, ChevronLeft, ChevronRight, Shield, Users } from 'lucide-react';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router';
+import { ArrowLeft, Save, ChevronLeft, ChevronRight, Shield, Users, TrendingUp, FileText, Plus } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 
 // ─── Ordered patient nav list (matches DentalChartNav mockCharts order) ────────
@@ -96,11 +96,32 @@ const computeDMFT = (chart: Record<number, { condition: string; treatment: strin
 export const DentalChart = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const navIndex = patientNavList.findIndex(p => p.id === id);
   const prevPatient = navIndex > 0 ? patientNavList[navIndex - 1] : null;
   const nextPatient = navIndex < patientNavList.length - 1 ? patientNavList[navIndex + 1] : null;
-  const [activeTab, setActiveTab] = useState<'history' | 'chart' | 'appointments'>('history');
+
+  type TabKey = 'history' | 'chart' | 'appointments' | 'records' | 'treatments';
+  const initialTab = (searchParams.get('tab') as TabKey) || 'history';
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
+
+  // ── Dental Records (DMFT by year) ────────────────────────────────────────
+  const dmftByYear = [
+    { year: '2023-2024', d:2, m:0, f:1, x:0, t:3, D:1, M:0, F:0, X:0, T:1, oralStatus:'Needs Treatment' },
+    { year: '2024-2025', d:1, m:1, f:2, x:0, t:4, D:2, M:0, F:1, X:0, T:3, oralStatus:'Under Treatment' },
+    { year: '2025-2026', d:1, m:0, f:2, x:1, t:4, D:3, M:0, F:1, X:1, T:5, oralStatus:'Needs Treatment' },
+  ];
+
+  // ── Treatment History ────────────────────────────────────────────────────
+  const [showAddTreatment, setShowAddTreatment] = useState(false);
+  const treatmentHistory = [
+    { date:'2026-03-10', complaint:'Toothache on lower right molar', diagnosis:'Deep caries on tooth #36', treatment:'Temporary filling; scheduled for extraction', dentist:'Dr. Maria Santos', remarks:'Avoid hard foods. Follow-up in 1 week.' },
+    { date:'2026-02-15', complaint:'Routine checkup', diagnosis:'Gingivitis, multiple caries', treatment:'Oral prophylaxis, fluoride varnish application', dentist:'Dr. Maria Santos', remarks:'Oral hygiene instruction given.' },
+    { date:'2025-11-20', complaint:'Bleeding gums', diagnosis:'Moderate gingivitis', treatment:'Scaling, oral hygiene instruction', dentist:'Dr. Ana Cruz', remarks:'Recommended twice-daily brushing.' },
+    { date:'2025-08-05', complaint:'Routine screening', diagnosis:'Dental caries (primary) — teeth 84, 85', treatment:'Fluoride varnish, SDF application', dentist:'Dr. Maria Santos', remarks:'Consent obtained. No adverse reactions.' },
+    { date:'2025-03-12', complaint:'Toothache', diagnosis:'Irreversible pulpitis — tooth #75', treatment:'Extraction of primary tooth #75', dentist:'Dr. Ana Cruz', remarks:'Post-extraction instruction given.' },
+  ];
   const [activeYears, setActiveYears] = useState<string[]>(['2024-2025', '2025-2026']);
   const [selectedYear, setSelectedYear] = useState(0); // index into activeYears
   const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
@@ -336,14 +357,16 @@ export const DentalChart = () => {
 
       {/* Tabs */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="flex border-b border-gray-200">
+        <div className="flex border-b border-gray-200 overflow-x-auto">
           {[
-            { key: 'history', label: 'Page 1 — History & Oral Condition' },
-            { key: 'chart', label: 'Page 2 — Dental Charting' },
-            { key: 'appointments', label: 'Page 3 — Consent & Appointments' },
+            { key: 'history',      label: 'Page 1 — History'        },
+            { key: 'chart',        label: 'Page 2 — Dental Chart'   },
+            { key: 'appointments', label: 'Page 3 — Consent'        },
+            { key: 'records',      label: 'Dental Records'          },
+            { key: 'treatments',   label: 'Treatment History'       },
           ].map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key as any)}
-              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${activeTab === tab.key ? 'border-b-2 border-blue-700 text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
+            <button key={tab.key} onClick={() => setActiveTab(tab.key as TabKey)}
+              className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors ${activeTab === tab.key ? 'border-b-2 border-blue-700 text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
               {tab.label}
             </button>
           ))}
@@ -781,6 +804,132 @@ export const DentalChart = () => {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB 4: Dental Records ── */}
+        {activeTab === 'records' && (
+          <div className="p-4 space-y-6">
+            <h3 className="text-sm font-bold text-gray-900">DMFT Progression by School Year</h3>
+            <div className="overflow-x-auto rounded-lg border border-gray-200">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">School Year</th>
+                    {['d','m','f','x','dmft','D','M','F','X','DMFT'].map(h => (
+                      <th key={h} className={`px-2 py-2 text-center text-xs font-medium ${h==='dmft'||h==='DMFT' ? 'bg-gray-100 font-bold text-gray-800' : h===h.toLowerCase() ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>{h}</th>
+                    ))}
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Oral Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {dmftByYear.map((row, idx) => (
+                    <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                      <td className="px-4 py-2 font-medium text-gray-900 text-xs">{row.year}</td>
+                      <td className="px-2 py-2 text-center text-xs text-red-700">{row.d || ''}</td>
+                      <td className="px-2 py-2 text-center text-xs text-slate-600">{row.m || ''}</td>
+                      <td className="px-2 py-2 text-center text-xs text-blue-700">{row.f || ''}</td>
+                      <td className="px-2 py-2 text-center text-xs text-orange-700">{row.x || ''}</td>
+                      <td className="px-2 py-2 text-center text-xs font-bold text-gray-900 bg-gray-100">{row.t}</td>
+                      <td className="px-2 py-2 text-center text-xs text-red-700">{row.D || ''}</td>
+                      <td className="px-2 py-2 text-center text-xs text-slate-600">{row.M || ''}</td>
+                      <td className="px-2 py-2 text-center text-xs text-blue-700">{row.F || ''}</td>
+                      <td className="px-2 py-2 text-center text-xs text-orange-700">{row.X || ''}</td>
+                      <td className="px-2 py-2 text-center text-xs font-bold text-gray-900 bg-gray-100">{row.T}</td>
+                      <td className="px-4 py-2">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${row.oralStatus==='Orally Fit'?'bg-green-100 text-green-800':row.oralStatus==='Under Treatment'?'bg-blue-100 text-blue-800':'bg-yellow-100 text-yellow-800'}`}>{row.oralStatus}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label:'Latest dmft (primary)',    value: dmftByYear[dmftByYear.length-1].t, color:'text-red-700 bg-red-50' },
+                { label:'Latest DMFT (permanent)',  value: dmftByYear[dmftByYear.length-1].T, color:'text-blue-700 bg-blue-50' },
+                { label:'Years tracked',            value: dmftByYear.length,                color:'text-gray-700 bg-gray-100' },
+                { label:'Trend', value: dmftByYear[dmftByYear.length-1].T > dmftByYear[0].T ? '↑ Worsening' : '↓ Improving',
+                  color: dmftByYear[dmftByYear.length-1].T > dmftByYear[0].T ? 'text-red-700 bg-red-50' : 'text-green-700 bg-green-50' },
+              ].map((kpi,i) => (
+                <div key={i} className={`rounded-lg p-3 ${kpi.color}`}>
+                  <div className="text-xl font-bold">{kpi.value}</div>
+                  <div className="text-xs mt-0.5 opacity-80">{kpi.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB 5: Treatment History ── */}
+        {activeTab === 'treatments' && (
+          <div className="p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-gray-900">Treatment History</h3>
+              <button onClick={() => setShowAddTreatment(v => !v)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700">
+                <Plus className="w-3.5 h-3.5" /> Add Entry
+              </button>
+            </div>
+            {showAddTreatment && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div><label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
+                    <input type="date" className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                  <div><label className="block text-xs font-medium text-gray-700 mb-1">Dentist</label>
+                    <input type="text" placeholder="Dr. Maria Santos" className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                  <div className="md:col-span-2"><label className="block text-xs font-medium text-gray-700 mb-1">Chief Complaint</label>
+                    <input type="text" className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                  <div><label className="block text-xs font-medium text-gray-700 mb-1">Diagnosis</label>
+                    <textarea rows={2} className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" /></div>
+                  <div><label className="block text-xs font-medium text-gray-700 mb-1">Treatment Done</label>
+                    <textarea rows={2} className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" /></div>
+                  <div className="md:col-span-2"><label className="block text-xs font-medium text-gray-700 mb-1">Remarks</label>
+                    <input type="text" className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setShowAddTreatment(false)} className="px-4 py-1.5 text-sm bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700">Save</button>
+                  <button onClick={() => setShowAddTreatment(false)} className="px-4 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
+                </div>
+              </div>
+            )}
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>{['Date','Chief Complaint','Diagnosis','Treatment Done','Dentist','Remarks'].map(h=>(
+                    <th key={h} className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
+                  ))}</tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 bg-white">
+                  {treatmentHistory.map((t,i)=>(
+                    <tr key={i} className="hover:bg-gray-50">
+                      <td className="px-4 py-2 whitespace-nowrap font-medium text-gray-900 text-xs">{new Date(t.date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})}</td>
+                      <td className="px-4 py-2 text-xs text-gray-900">{t.complaint}</td>
+                      <td className="px-4 py-2 text-xs text-gray-900">{t.diagnosis}</td>
+                      <td className="px-4 py-2 text-xs text-gray-900">{t.treatment}</td>
+                      <td className="px-4 py-2 whitespace-nowrap text-xs text-gray-700">{t.dentist}</td>
+                      <td className="px-4 py-2 text-xs text-gray-500">{t.remarks}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-3">
+              {treatmentHistory.map((t,i)=>(
+                <div key={i} className="bg-white rounded-lg border border-gray-200 p-3 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-gray-900 text-xs">{new Date(t.date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})}</span>
+                    <span className="text-xs text-gray-500">{t.dentist}</span>
+                  </div>
+                  <p className="text-xs text-gray-600"><span className="font-medium">CC:</span> {t.complaint}</p>
+                  <p className="text-xs text-gray-600"><span className="font-medium">Dx:</span> {t.diagnosis}</p>
+                  <p className="text-xs text-gray-600"><span className="font-medium">Tx:</span> {t.treatment}</p>
+                  {t.remarks && <p className="text-xs text-gray-400 italic">{t.remarks}</p>}
+                </div>
+              ))}
             </div>
           </div>
         )}

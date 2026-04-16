@@ -147,8 +147,8 @@ export const TreatmentRecords = () => {
                     <td className="px-4 py-3 text-gray-600 text-xs max-w-[160px] truncate">{t.treatmentDone}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <button onClick={() => navigate(`/patients/${t.studentId}`)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" title="View Patient"><Eye className="w-4 h-4" /></button>
-                        <button onClick={() => navigate(`/treatment-log/${t.studentId}`)} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg" title="View Treatment Log"><FileText className="w-4 h-4" /></button>
+                        <button onClick={() => navigate(`/dental-chart/${t.studentId}`)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" title="View Patient"><Eye className="w-4 h-4" /></button>
+                        <button onClick={() => navigate(`/dental-chart/${t.studentId}?tab=treatments`)} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg" title="View Treatment Log"><FileText className="w-4 h-4" /></button>
                       </div>
                     </td>
                   </tr>

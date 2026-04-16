@@ -135,7 +135,7 @@ export const DentalChartNav = () => {
                     </td>
                     <td className="px-4 py-3">{statusBadge(c.status)}</td>
                     <td className="px-4 py-3">
-                      <button onClick={() => navigate(`/dental-chart/${c.studentId}`)}
+                      <button onClick={() => navigate(`/dental-chart/${c.studentId}?tab=chart`)}
                         className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" title="Open Chart">
                         <Eye className="w-4 h-4" />
                       </button>
