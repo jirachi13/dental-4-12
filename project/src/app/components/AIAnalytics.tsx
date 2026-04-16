@@ -162,6 +162,10 @@ export const AIAnalytics = () => {
     },
   ]);
 
+  const contextStudents = selectedSchool
+    ? students.filter(s => s.school === selectedSchool)
+    : students;
+
   const filteredStudents = contextStudents
     .filter(student => {
       const age = calculateAge(student.birthdate);
@@ -238,10 +242,6 @@ export const AIAnalytics = () => {
     { name: 'Modified', value: students.filter(s => s.validationStatus === 'modified').length, color: '#FBBF24', id: 'modified' },
     { name: 'Pending', value: students.filter(s => !s.validated).length, color: '#E31E24', id: 'pending' },
   ];
-
-  const contextStudents = selectedSchool
-    ? students.filter(s => s.school === selectedSchool)
-    : students;
 
   // Apply computed risk to each student
   const studentsWithRisk = contextStudents.map(s => {

@@ -32,27 +32,27 @@ export const Root = () => {
       roles: ['dentist','dental_aide','school_admin']
     },
     {
-      id: 3, path: '/patients', label: 'Student Records', icon: Users,
+      id: 3, path: '/patients', label: 'Students', icon: Users,
       roles: ['dentist','dental_aide','school_admin','barangay_health']
     },
     {
-      id: 4, path: '/dental-charts', label: 'Dental Chart / Health Records', icon: Stethoscope,
+      id: 4, path: '/dental-charts', label: 'Dental Charts', icon: Stethoscope,
       roles: ['dentist','dental_aide']
     },
     {
-      id: 5, path: '/treatment-records', label: 'Treatment Records', icon: Clipboard,
+      id: 5, path: '/treatment-records', label: 'Treatment', icon: Clipboard,
       roles: ['dentist','dental_aide']
     },
     {
-      id: 6, path: '/rpc', label: 'RPC Records', icon: Shield,
+      id: 6, path: '/rpc', label: 'RPC Tracking', icon: Shield,
       roles: ['dentist','dental_aide']
     },
     {
-      id: 7, path: '/reports', label: 'Consolidated Reports', icon: FileBarChart,
+      id: 7, path: '/reports', label: 'Reports', icon: FileBarChart,
       roles: ['dentist','school_admin','barangay_health']
     },
     {
-      id: 8, path: '/ai-analytics', label: 'Predictive Module', icon: Brain,
+      id: 8, path: '/ai-analytics', label: 'AI Analytics', icon: Brain,
       roles: ['dentist']
     },
     {
