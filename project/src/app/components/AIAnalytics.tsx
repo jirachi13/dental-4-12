@@ -24,7 +24,6 @@ const ViewToggle = ({ mode, onChange }: { mode: 'school' | 'list'; onChange: (m:
 export const AIAnalytics = () => {
   const { selectedSchool } = useAuth();
 
-  const [schoolFilter, setSchoolFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('all');
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
@@ -168,7 +167,7 @@ export const AIAnalytics = () => {
       const age = calculateAge(student.birthdate);
       const ageGroup = getAgeGroup(age);
 
-      const matchesSchool = schoolFilter === 'all' || student.school === schoolFilter;
+      const matchesSchool = true;
       const matchesGrade = gradeFilter === 'all' || student.grade === gradeFilter;
       const matchesAgeGroup = ageGroupFilter === 'all' || ageGroup === ageGroupFilter;
       const matchesGender = genderFilter === 'all' || student.gender === genderFilter;
@@ -278,7 +277,7 @@ export const AIAnalytics = () => {
               const sc = getSchoolColor(s.name);
               return (
                 <div key={s.name} style={{ borderColor: sc.border }} className="bg-white rounded-xl border-2 p-5 hover:shadow-md transition-all cursor-pointer"
-                  onClick={() => { setSchoolFilter(s.name); }}>
+                  onClick={() => { }}>
                   <div className="flex items-center gap-3 mb-4">
                     <div style={{ backgroundColor: sc.light }} className="w-10 h-10 rounded-lg flex items-center justify-center">
                       <Brain style={{ color: sc.solid }} className="w-5 h-5" />
@@ -451,17 +450,6 @@ export const AIAnalytics = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           <div>
-            <label className="block text-xs text-gray-600 mb-1">School</label>
-            <select
-              value={schoolFilter}
-              onChange={(e) => setSchoolFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF] appearance-none bg-white text-sm"
-            >
-              <option value="all">All Schools</option>
-              <option value="Bagong Tanyag Integrated School">Bagong Tanyag Integrated</option>
-              <option value="Bagong Tanyag Elementary School Annex A">Bagong Tanyag Annex A</option>
-              <option value="South Daang Hari Elementary School Main">South Daang Hari Main</option>
-            </select>
           </div>
 
           <div>

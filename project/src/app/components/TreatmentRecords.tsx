@@ -31,7 +31,6 @@ export const TreatmentRecords = () => {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<'school' | 'list'>('school');
   const [searchTerm, setSearchTerm] = useState('');
-  const [schoolFilter, setSchoolFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
@@ -48,7 +47,6 @@ export const TreatmentRecords = () => {
   };
 
   const filtered = useMemo(() => mockTreatments.filter(t => {
-    if (schoolFilter !== 'all' && t.school !== schoolFilter) return false;
     if (gradeFilter !== 'all' && t.grade !== gradeFilter) return false;
     if (genderFilter !== 'all' && t.gender !== genderFilter) return false;
     if (ageGroupFilter !== 'all' && getAgeGroup(t.age) !== ageGroupFilter) return false;
@@ -57,10 +55,10 @@ export const TreatmentRecords = () => {
     if (dateTo && t.visitDate > dateTo) return false;
     if (searchTerm && !t.studentName.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
-  }), [schoolFilter, gradeFilter, genderFilter, ageGroupFilter, treatmentFilter, dateFrom, dateTo, searchTerm]);
+  }), [gradeFilter, genderFilter, ageGroupFilter, treatmentFilter, dateFrom, dateTo, searchTerm]);
 
-  const hasActiveFilters = [schoolFilter, gradeFilter, genderFilter, ageGroupFilter, treatmentFilter].some(f => f !== 'all') || searchTerm !== '' || dateFrom !== '' || dateTo !== '';
-  const clearFilters = () => { setSchoolFilter('all'); setGradeFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); setTreatmentFilter('all'); setDateFrom(''); setDateTo(''); setSearchTerm(''); };
+  const hasActiveFilters = [gradeFilter, genderFilter, ageGroupFilter, treatmentFilter].some(f => f !== 'all') || searchTerm !== '' || dateFrom !== '' || dateTo !== '';
+  const clearFilters = () => { setGradeFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); setTreatmentFilter('all'); setDateFrom(''); setDateTo(''); setSearchTerm(''); };
 
   const FS = ({ value, onChange, opts, label }: { value: string; onChange: (v: string) => void; opts: {v:string;l:string}[]; label: string }) => (
     <select value={value} onChange={e => onChange(e.target.value)} className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -84,8 +82,6 @@ export const TreatmentRecords = () => {
             className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div className="flex flex-wrap gap-2">
-          <FS value={schoolFilter} onChange={setSchoolFilter} label="All Schools"
-            opts={SCHOOLS.map(s => ({ v: s, l: s.replace(' Elementary School', '').replace(' Integrated School', ' Integrated').replace(' Main', '') }))} />
           <FS value={gradeFilter} onChange={g => { setGradeFilter(g); setSectionFilter('all'); }} label="All Grades" opts={GRADES.map(g => ({ v: g, l: g }))} />
           <FS value={sectionFilter} onChange={setSectionFilter} label="All Sections" opts={[...new Set((gradeFilter !== 'all' ? mockTreatments.filter((r:any) => r.grade === gradeFilter) : mockTreatments).map((r:any) => r.section))].sort().map((s:any) => ({ v: s, l: s }))} />
           <FS value={genderFilter} onChange={setGenderFilter} label="All Genders" opts={[{ v:'Male', l:'Male' }, { v:'Female', l:'Female' }]} />

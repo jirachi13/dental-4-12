@@ -49,7 +49,6 @@ export const RPCTracking = () => {
   const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [schoolFilter, setSchoolFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
@@ -81,7 +80,6 @@ export const RPCTracking = () => {
 
   const filtered = useMemo(() => schoolRecords.filter(r => {
     const age = calculateAge(r.birthdate);
-    if (schoolFilter !== 'all' && r.school !== schoolFilter) return false;
     if (gradeFilter !== 'all' && r.grade !== gradeFilter) return false;
     if (sectionFilter !== 'all' && r.section !== sectionFilter) return false;
     if (genderFilter !== 'all' && r.gender !== genderFilter) return false;
@@ -89,10 +87,10 @@ export const RPCTracking = () => {
     if (statusFilter !== 'all' && r.status !== statusFilter) return false;
     if (searchTerm && !r.studentName.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
-  }), [schoolFilter, gradeFilter, genderFilter, ageGroupFilter, statusFilter, searchTerm]);
+  }), [gradeFilter, genderFilter, ageGroupFilter, statusFilter, searchTerm]);
 
-  const hasActiveFilters = [schoolFilter, gradeFilter, genderFilter, ageGroupFilter, statusFilter].some(f => f !== 'all') || searchTerm !== '';
-  const clearFilters = () => { setSchoolFilter('all'); setGradeFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); setStatusFilter('all'); setSearchTerm(''); };
+  const hasActiveFilters = [gradeFilter, genderFilter, ageGroupFilter, statusFilter].some(f => f !== 'all') || searchTerm !== '';
+  const clearFilters = () => { setGradeFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); setStatusFilter('all'); setSearchTerm(''); };
 
   const visit1Completed = schoolRecords.filter(r => r.visit1Status === 'Completed').length;
   const visit2Completed = schoolRecords.filter(r => r.visit2Status === 'Completed').length;
@@ -207,7 +205,6 @@ export const RPCTracking = () => {
             className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div className="flex flex-wrap gap-2">
-          <FS value={schoolFilter} onChange={setSchoolFilter} label="All Schools" opts={SCHOOLS.map(s=>({v:s,l:s.replace(' Elementary School','').replace(' Integrated School',' Integrated').replace(' Main','')}))} />
           <FS value={gradeFilter} onChange={g => { setGradeFilter(g); setSectionFilter('all'); }} label="All Grades" opts={GRADES.map(g=>({v:g,l:g}))} />
           <FS value={sectionFilter} onChange={setSectionFilter} label="All Sections" opts={[...new Set((gradeFilter !== 'all' ? schoolRecords.filter(r => r.grade === gradeFilter) : schoolRecords).map(r => r.section))].sort().map(s => ({v:s,l:s}))} />
           <FS value={genderFilter} onChange={setGenderFilter} label="All Genders" opts={[{v:'Male',l:'Male'},{v:'Female',l:'Female'}]} />

@@ -28,7 +28,6 @@ export const DentalChartNav = () => {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<'school' | 'list'>('school');
   const [searchTerm, setSearchTerm] = useState('');
-  const [schoolFilter, setSchoolFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('all');
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
@@ -36,16 +35,15 @@ export const DentalChartNav = () => {
   const [statusFilter, setStatusFilter] = useState('all');
 
   const filtered = useMemo(() => mockCharts.filter(c => {
-    if (schoolFilter !== 'all' && c.school !== schoolFilter) return false;
     if (gradeFilter !== 'all' && c.grade !== gradeFilter) return false;
     if (genderFilter !== 'all' && c.gender !== genderFilter) return false;
     if (statusFilter !== 'all' && c.status !== statusFilter) return false;
     if (searchTerm && !c.studentName.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
-  }), [schoolFilter, gradeFilter, genderFilter, statusFilter, searchTerm]);
+  }), [gradeFilter, genderFilter, statusFilter, searchTerm]);
 
-  const hasActiveFilters = [schoolFilter, gradeFilter, genderFilter, statusFilter].some(f => f !== 'all') || searchTerm !== '';
-  const clearFilters = () => { setSchoolFilter('all'); setGradeFilter('all'); setGenderFilter('all'); setStatusFilter('all'); setSearchTerm(''); };
+  const hasActiveFilters = [gradeFilter, genderFilter, statusFilter].some(f => f !== 'all') || searchTerm !== '';
+  const clearFilters = () => { setGradeFilter('all'); setGenderFilter('all'); setStatusFilter('all'); setSearchTerm(''); };
 
   const statusBadge = (status: string) => {
     const colors: Record<string, string> = {
@@ -78,8 +76,6 @@ export const DentalChartNav = () => {
             className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
         <div className="flex flex-wrap gap-2">
-          <FS value={schoolFilter} onChange={setSchoolFilter} label="All Schools"
-            opts={SCHOOLS.map(s => ({ v: s, l: s.replace(' Elementary School', '').replace(' Integrated School', ' Integrated').replace(' Main', '') }))} />
           <FS value={gradeFilter} onChange={g => { setGradeFilter(g); setSectionFilter('all'); }} label="All Grades" opts={GRADES.map(g => ({ v: g, l: g }))} />
           <FS value={sectionFilter} onChange={setSectionFilter} label="All Sections" opts={[...new Set((gradeFilter !== 'all' ? mockCharts.filter((r:any) => r.grade === gradeFilter) : mockCharts).map((r:any) => r.section))].sort().map((s:any) => ({ v: s, l: s }))} />
           <FS value={genderFilter} onChange={setGenderFilter} label="All Genders" opts={[{ v:'Male', l:'Male' }, { v:'Female', l:'Female' }]} />

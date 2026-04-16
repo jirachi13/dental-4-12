@@ -34,7 +34,6 @@ export const PatientList = () => {
 
   // List view filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [schoolFilter, setSchoolFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
@@ -272,15 +271,13 @@ export const PatientList = () => {
 
   // List view filtered
   const allSections = useMemo(() => {
-    let base = schoolFilter !== 'all' ? schoolStudents.filter(s => s.school === schoolFilter) : schoolStudents;
-    if (gradeFilter !== 'all') base = base.filter(s => s.grade === gradeFilter);
+    let base = gradeFilter !== 'all' ? schoolStudents.filter(s => s.grade === gradeFilter) : schoolStudents;
     return [...new Set(base.map(s => s.section))].sort();
-  }, [schoolFilter, gradeFilter]);
+  }, [gradeFilter]);
 
   const filtered = useMemo(() => schoolStudents.filter(s => {
     const age = calculateAge(s.birthdate);
     const ag = getAgeGroup(age);
-    if (schoolFilter !== 'all' && s.school !== schoolFilter) return false;
     if (gradeFilter !== 'all' && s.grade !== gradeFilter) return false;
     if (sectionFilter !== 'all' && s.section !== sectionFilter) return false;
     if (genderFilter !== 'all' && s.gender !== genderFilter) return false;
@@ -289,13 +286,13 @@ export const PatientList = () => {
     if (ageGroupFilter !== 'all' && ag !== ageGroupFilter) return false;
     if (searchTerm && !s.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
-  }), [schoolFilter, gradeFilter, sectionFilter, genderFilter, riskFilter, statusFilter, ageGroupFilter, searchTerm]);
+  }), [gradeFilter, sectionFilter, genderFilter, riskFilter, statusFilter, ageGroupFilter, searchTerm]);
 
-  const hasActiveFilters = schoolFilter !== 'all' || gradeFilter !== 'all' || sectionFilter !== 'all' ||
+  const hasActiveFilters = gradeFilter !== 'all' || sectionFilter !== 'all' ||
     genderFilter !== 'all' || ageGroupFilter !== 'all' || riskFilter !== 'all' || statusFilter !== 'all' || searchTerm !== '';
 
   const clearFilters = () => {
-    setSchoolFilter('all'); setGradeFilter('all'); setSectionFilter('all');
+    setGradeFilter('all'); setSectionFilter('all');
     setGenderFilter('all'); setAgeGroupFilter('all'); setRiskFilter('all');
     setStatusFilter('all'); setSearchTerm('');
   };
@@ -487,8 +484,6 @@ export const PatientList = () => {
                 className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
             <div className="flex flex-wrap gap-2">
-              <FilterSelect value={schoolFilter} onChange={v => { setSchoolFilter(v); setSectionFilter('all'); }} label="All Schools"
-                options={SCHOOLS.map(s => ({ value: s, label: s.replace(' Elementary School','').replace(' Integrated School',' Integrated').replace(' Main','') }))} />
               <FilterSelect value={gradeFilter} onChange={v => { setGradeFilter(v); setSectionFilter('all'); }} label="All Grades"
                 options={GRADES.map(g => ({ value: g, label: g }))} />
               <FilterSelect value={sectionFilter} onChange={setSectionFilter} label="All Sections"
