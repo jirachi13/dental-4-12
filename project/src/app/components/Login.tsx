@@ -20,8 +20,8 @@ export const Login = () => {
   const quickLogins = [
     { email: 'dentist@floral.ph', role: 'Dentist' },
     { email: 'aide@floral.ph', role: 'Dental Aide' },
-    { email: 'school@floral.ph', role: 'School Admin' },
-    { email: 'barangay@floral.ph', role: 'Barangay Health' },
+    { email: 'school@floral.ph', role: 'Clinic Staff' },
+    { email: 'barangay@floral.ph', role: 'School Admin' },
     { email: 'admin@floral.ph', role: 'System Admin' },
   ];
 
