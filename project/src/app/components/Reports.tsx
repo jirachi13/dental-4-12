@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileSpreadsheet, FileText, Printer, AlertTriangle, AlertCircle, CheckCircle, Users, Calendar } from 'lucide-react';
+import { FileSpreadsheet, FileText, Printer, AlertTriangle, AlertCircle, CheckCircle, Users, Calendar, X } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { getSchoolShortName } from '../utils/schoolColors';
@@ -474,6 +474,12 @@ export const Reports = () => {
                   <option value="M">Male</option>
                   <option value="F">Female</option>
                 </select>
+                {(intGradeFilter !== 'all' || intGenderFilter !== 'all') && (
+                  <button onClick={() => { setIntGradeFilter('all'); setIntGenderFilter('all'); }}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
+                    <X className="w-3 h-3" /> Clear
+                  </button>
+                )}
                 <span className="text-xs text-gray-400 ml-auto">{MONTHS[reportMonth-1]} {reportYear}{periodType==='biannual'?' (6-month period)':periodType==='annual'?' (full year)':''}</span>
               </div>
 
@@ -573,6 +579,12 @@ export const Reports = () => {
                   <option value="M">Male</option>
                   <option value="F">Female</option>
                 </select>
+                {(intGradeFilter !== 'all' || intGenderFilter !== 'all') && (
+                  <button onClick={() => { setIntGradeFilter('all'); setIntGenderFilter('all'); }}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
+                    <X className="w-3 h-3" /> Clear
+                  </button>
+                )}
               </div>
 
               {/* Summary cards */}
