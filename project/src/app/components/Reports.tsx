@@ -130,6 +130,14 @@ const DOH_ROWS: RowDef[] = [
   { type:'data', label:'OFC Upon Complete Oral Rehabilitation', field:'ofc_rehab',  indent:true },
 ];
 
+// Mock referral data (created from IPTR Treatment tab)
+const mockReferrals = [
+  { student:'Juan Dela Cruz',  school:'Bagong Tanyag Integrated School',         grade:'Grade 4', date:'2026-03-15', facility:'Taguig City Health Office',  reason:'Severe caries, abscess on tooth #36',      followUp:'2026-04-15', status:'pending'   },
+  { student:'Maria Santos',    school:'Bagong Tanyag Integrated School',         grade:'Grade 3', date:'2026-03-02', facility:'Taguig City Health Office',  reason:'Deep caries requiring emergency extraction', followUp:'2026-04-02', status:'completed' },
+  { student:'Pedro Reyes',     school:'South Daang Hari Elementary School Main', grade:'Grade 5', date:'2026-02-20', facility:'Taguig District Hospital',   reason:'Multiple extractions, bleeding disorder',   followUp:'2026-03-20', status:'completed' },
+  { student:'Ana Garcia',      school:'Bagong Tanyag Integrated School',         grade:'Grade 2', date:'2026-03-10', facility:'Taguig City Health Office',  reason:'Recurring gingivitis, unresponsive to care', followUp:'2026-04-10', status:'no-show'   },
+];
+
 // Mock treatment sessions (bulk school visits)
 const mockSessions = [
   { date:'2026-04-08', school:'Bagong Tanyag Integrated School',         grade:'Grade 4', section:'Sampaguita', students:30, procedures:['Fluoride Varnish','Oral Prophylaxis'], treated:28 },
@@ -490,6 +498,45 @@ export const Reports = () => {
                       </tr>
                     );
                   })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Referral Tracking */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-gray-900">Referral Tracking</h3>
+              <span className="text-xs text-gray-400">{mockReferrals.length} referrals issued</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    {['Student','School','Grade','Date Issued','Facility','Reason','Follow-up','Status'].map(h => (
+                      <th key={h} className="text-left px-4 py-2.5 font-semibold text-gray-500 uppercase tracking-wide text-[10px]">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {mockReferrals.map((r, i) => (
+                    <tr key={i} className="hover:bg-gray-50">
+                      <td className="px-4 py-2.5 font-medium text-gray-900 whitespace-nowrap">{r.student}</td>
+                      <td className="px-4 py-2.5 text-gray-500 max-w-[130px] truncate">{getSchoolShortName(r.school)}</td>
+                      <td className="px-4 py-2.5 text-gray-600">{r.grade}</td>
+                      <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{r.date}</td>
+                      <td className="px-4 py-2.5 text-gray-600">{r.facility}</td>
+                      <td className="px-4 py-2.5 text-gray-600 max-w-[180px] truncate">{r.reason}</td>
+                      <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{r.followUp}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={`px-2 py-0.5 rounded-full font-semibold capitalize text-[10px] ${
+                          r.status === 'completed' ? 'bg-green-100 text-green-700' :
+                          r.status === 'no-show'   ? 'bg-red-100 text-red-700' :
+                          'bg-yellow-100 text-yellow-700'
+                        }`}>{r.status}</span>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
