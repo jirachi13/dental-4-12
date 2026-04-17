@@ -218,6 +218,26 @@ export const Reports = () => {
   const [periodType, setPeriodType] = useState<'monthly'|'biannual'|'annual'>('monthly');
   const [intGradeFilter, setIntGradeFilter] = useState('all');
   const [intGenderFilter, setIntGenderFilter] = useState('all');
+  const [intAgeFilter, setIntAgeFilter] = useState('all');
+  const [expandedReferral, setExpandedReferral] = useState<number|null>(null);
+
+  const AGE_TO_GRADES: Record<string,string[]> = {
+    '5-9 yrs':   ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4'],
+    '10-14 yrs': ['Grade 5','Grade 6','Grade 7','Grade 8','Grade 9'],
+    '15+ yrs':   ['Grade 10'],
+  };
+  const activeGrades = intAgeFilter !== 'all'
+    ? AGE_TO_GRADES[intAgeFilter]
+    : intGradeFilter !== 'all'
+    ? [intGradeFilter]
+    : null;
+  const cnt = (matrix: Record<string,GX>, key: string, gender: string): number =>
+    activeGrades
+      ? activeGrades.reduce((s, g) => s + getCount(matrix, key, g, gender), 0)
+      : getCount(matrix, key, 'all', gender);
+  const displayGrades = intAgeFilter !== 'all' ? AGE_TO_GRADES[intAgeFilter] : ALL_GRADES_INT;
+  const clearIntFilters = () => { setIntGradeFilter('all'); setIntGenderFilter('all'); setIntAgeFilter('all'); };
+  const hasIntFilters = intGradeFilter !== 'all' || intGenderFilter !== 'all' || intAgeFilter !== 'all';
 
 // Build column definitions: for each grade, each age bracket, M and F
   const cols: { grade:string; age:string; sex:'M'|'F' }[] = [];
@@ -442,7 +462,7 @@ export const Reports = () => {
         <div className="space-y-4">
           {/* Section sub-tabs */}
           <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
-            {([['treatment','Treatment Summary'],['conditions','Condition Summary'],['admin','Admin']] as const).map(([k,l]) => (
+            {([['treatment','Treatment Summary'],['conditions','Condition Summary'],['admin','Overview']] as const).map(([k,l]) => (
               <button key={k} onClick={() => setInternalSection(k)}
                 className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${internalSection===k ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                 {l}
@@ -463,7 +483,14 @@ export const Reports = () => {
                     </button>
                   ))}
                 </div>
-                <select value={intGradeFilter} onChange={e => setIntGradeFilter(e.target.value)}
+                <select value={intAgeFilter} onChange={e => { setIntAgeFilter(e.target.value); setIntGradeFilter('all'); }}
+                  className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="all">All Ages</option>
+                  <option value="5-9 yrs">5–9 yrs</option>
+                  <option value="10-14 yrs">10–14 yrs</option>
+                  <option value="15+ yrs">15+ yrs</option>
+                </select>
+                <select value={intGradeFilter} onChange={e => { setIntGradeFilter(e.target.value); setIntAgeFilter('all'); }}
                   className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="all">All Grades</option>
                   {ALL_GRADES_INT.map(g => <option key={g} value={g}>{g}</option>)}
@@ -474,8 +501,8 @@ export const Reports = () => {
                   <option value="M">Male</option>
                   <option value="F">Female</option>
                 </select>
-                {(intGradeFilter !== 'all' || intGenderFilter !== 'all') && (
-                  <button onClick={() => { setIntGradeFilter('all'); setIntGenderFilter('all'); }}
+                {hasIntFilters && (
+                  <button onClick={clearIntFilters}
                     className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
                     <X className="w-3 h-3" /> Clear
                   </button>
@@ -485,7 +512,7 @@ export const Reports = () => {
 
               {/* Summary cards */}
               {(() => {
-                const totals = PROCEDURES.map(p => getCount(treatmentMatrix, p, intGradeFilter, intGenderFilter));
+                const totals = PROCEDURES.map(p => cnt(treatmentMatrix, p, intGenderFilter));
                 const grandTotal = totals.reduce((a,b) => a+b, 0);
                 const topIdx = totals.indexOf(Math.max(...totals));
                 return (
@@ -509,7 +536,7 @@ export const Reports = () => {
               <div className="bg-white rounded-xl border border-gray-200 p-4">
                 <h3 className="text-sm font-bold text-gray-900 mb-3">Procedures Performed</h3>
                 <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={PROCEDURES.map(p => ({ name: p, count: getCount(treatmentMatrix, p, intGradeFilter, intGenderFilter) }))}
+                  <BarChart data={PROCEDURES.map(p => ({ name: p, count: cnt(treatmentMatrix, p, intGenderFilter) }))}
                     margin={{top:4,right:8,bottom:40,left:0}}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="name" tick={{fontSize:10}} angle={-25} textAnchor="end" interval={0} />
@@ -539,8 +566,8 @@ export const Reports = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {PROCEDURES.map(p => {
-                      const m = getCount(treatmentMatrix, p, intGradeFilter, 'M');
-                      const f = getCount(treatmentMatrix, p, intGradeFilter, 'F');
+                      const m = cnt(treatmentMatrix, p, 'M');
+                      const f = cnt(treatmentMatrix, p, 'F');
                       const t = m + f;
                       return (
                         <tr key={p} className="hover:bg-gray-50">
@@ -553,9 +580,9 @@ export const Reports = () => {
                     })}
                     <tr className="bg-gray-50 border-t-2 border-gray-300">
                       <td className="px-4 py-2.5 font-bold text-gray-900">TOTAL</td>
-                      <td className="px-4 py-2.5 text-center font-bold text-blue-700">{PROCEDURES.reduce((s,p)=>s+getCount(treatmentMatrix,p,intGradeFilter,'M'),0)}</td>
-                      <td className="px-4 py-2.5 text-center font-bold text-pink-700">{PROCEDURES.reduce((s,p)=>s+getCount(treatmentMatrix,p,intGradeFilter,'F'),0)}</td>
-                      <td className="px-4 py-2.5 text-center font-bold text-gray-900">{PROCEDURES.reduce((s,p)=>s+getCount(treatmentMatrix,p,intGradeFilter,'all'),0)}</td>
+                      <td className="px-4 py-2.5 text-center font-bold text-blue-700">{PROCEDURES.reduce((s,p)=>s+cnt(treatmentMatrix,p,'M'),0)}</td>
+                      <td className="px-4 py-2.5 text-center font-bold text-pink-700">{PROCEDURES.reduce((s,p)=>s+cnt(treatmentMatrix,p,'F'),0)}</td>
+                      <td className="px-4 py-2.5 text-center font-bold text-gray-900">{PROCEDURES.reduce((s,p)=>s+cnt(treatmentMatrix,p,'all'),0)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -568,7 +595,14 @@ export const Reports = () => {
             <div className="space-y-4">
               {/* Filters */}
               <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-wrap items-center gap-3">
-                <select value={intGradeFilter} onChange={e => setIntGradeFilter(e.target.value)}
+                <select value={intAgeFilter} onChange={e => { setIntAgeFilter(e.target.value); setIntGradeFilter('all'); }}
+                  className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="all">All Ages</option>
+                  <option value="5-9 yrs">5–9 yrs</option>
+                  <option value="10-14 yrs">10–14 yrs</option>
+                  <option value="15+ yrs">15+ yrs</option>
+                </select>
+                <select value={intGradeFilter} onChange={e => { setIntGradeFilter(e.target.value); setIntAgeFilter('all'); }}
                   className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="all">All Grades</option>
                   {ALL_GRADES_INT.map(g => <option key={g} value={g}>{g}</option>)}
@@ -579,8 +613,8 @@ export const Reports = () => {
                   <option value="M">Male</option>
                   <option value="F">Female</option>
                 </select>
-                {(intGradeFilter !== 'all' || intGenderFilter !== 'all') && (
-                  <button onClick={() => { setIntGradeFilter('all'); setIntGenderFilter('all'); }}
+                {hasIntFilters && (
+                  <button onClick={clearIntFilters}
                     className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
                     <X className="w-3 h-3" /> Clear
                   </button>
@@ -589,10 +623,10 @@ export const Reports = () => {
 
               {/* Summary cards */}
               {(() => {
-                const orallyFit = getCount(conditionMatrix,'Orally Fit',intGradeFilter,intGenderFilter);
-                const cariesP   = getCount(conditionMatrix,'Caries (Primary)',intGradeFilter,intGenderFilter);
-                const cariesPerm= getCount(conditionMatrix,'Caries (Permanent)',intGradeFilter,intGenderFilter);
-                const gingivitis= getCount(conditionMatrix,'Gingivitis',intGradeFilter,intGenderFilter);
+                const orallyFit = cnt(conditionMatrix,'Orally Fit',intGenderFilter);
+                const cariesP   = cnt(conditionMatrix,'Caries (Primary)',intGenderFilter);
+                const cariesPerm= cnt(conditionMatrix,'Caries (Permanent)',intGenderFilter);
+                const gingivitis= cnt(conditionMatrix,'Gingivitis',intGenderFilter);
                 return (
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {[
@@ -614,7 +648,7 @@ export const Reports = () => {
               <div className="bg-white rounded-xl border border-gray-200 p-4">
                 <h3 className="text-sm font-bold text-gray-900 mb-3">Condition Distribution</h3>
                 <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={CONDITIONS.map(c => ({ name: c, count: getCount(conditionMatrix, c, intGradeFilter, intGenderFilter) }))}
+                  <BarChart data={CONDITIONS.map(c => ({ name: c, count: cnt(conditionMatrix, c, intGenderFilter) }))}
                     margin={{top:4,right:8,bottom:36,left:0}}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="name" tick={{fontSize:10}} angle={-20} textAnchor="end" interval={0} />
@@ -638,7 +672,7 @@ export const Reports = () => {
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
                         <th className="text-left px-4 py-2.5 font-semibold text-gray-500 uppercase tracking-wide text-[10px] sticky left-0 bg-gray-50">Condition</th>
-                        {ALL_GRADES_INT.map(g => <th key={g} className="text-center px-3 py-2.5 font-semibold text-gray-500 uppercase tracking-wide text-[10px] whitespace-nowrap">{g}</th>)}
+                        {displayGrades.map(g => <th key={g} className="text-center px-3 py-2.5 font-semibold text-gray-500 uppercase tracking-wide text-[10px] whitespace-nowrap">{g}</th>)}
                         <th className="text-center px-4 py-2.5 font-semibold text-gray-700 uppercase tracking-wide text-[10px]">Total</th>
                       </tr>
                     </thead>
@@ -646,10 +680,10 @@ export const Reports = () => {
                       {CONDITIONS.map(cond => (
                         <tr key={cond} className="hover:bg-gray-50">
                           <td className="px-4 py-2.5 font-medium text-gray-800 sticky left-0 bg-white">{cond}</td>
-                          {ALL_GRADES_INT.map(g => (
+                          {displayGrades.map(g => (
                             <td key={g} className="px-3 py-2.5 text-center text-gray-700">{getCount(conditionMatrix, cond, g, intGenderFilter)}</td>
                           ))}
-                          <td className="px-4 py-2.5 text-center font-bold text-gray-900">{getCount(conditionMatrix, cond, 'all', intGenderFilter)}</td>
+                          <td className="px-4 py-2.5 text-center font-bold text-gray-900">{cnt(conditionMatrix, cond, intGenderFilter)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -765,7 +799,9 @@ export const Reports = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {mockReferrals.map((r, i) => (
-                        <tr key={i} className="hover:bg-gray-50">
+                        <>
+                        <tr key={i} onClick={() => setExpandedReferral(expandedReferral === i ? null : i)}
+                          className="hover:bg-orange-50/40 cursor-pointer select-none">
                           <td className="px-4 py-2.5 font-medium text-gray-900 whitespace-nowrap">{r.student}</td>
                           <td className="px-4 py-2.5 text-gray-500 max-w-[120px] truncate">{getSchoolShortName(r.school)}</td>
                           <td className="px-4 py-2.5 text-gray-600">{r.grade}</td>
@@ -777,6 +813,23 @@ export const Reports = () => {
                             <span className={`px-2 py-0.5 rounded-full font-semibold capitalize text-[10px] ${r.status==='completed'?'bg-green-100 text-green-700':r.status==='no-show'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}`}>{r.status}</span>
                           </td>
                         </tr>
+                        {expandedReferral === i && (
+                          <tr key={`${i}-detail`} className="bg-orange-50/60">
+                            <td colSpan={8} className="px-6 py-3">
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                <div><span className="font-semibold text-gray-600 block mb-0.5">Full Reason</span><span className="text-gray-800">{r.reason}</span></div>
+                                <div><span className="font-semibold text-gray-600 block mb-0.5">Referred To</span><span className="text-gray-800">{r.facility}</span></div>
+                                <div><span className="font-semibold text-gray-600 block mb-0.5">School</span><span className="text-gray-800">{r.school}</span></div>
+                                <div><span className="font-semibold text-gray-600 block mb-0.5">Date Issued</span><span className="text-gray-800">{r.date}</span></div>
+                                <div><span className="font-semibold text-gray-600 block mb-0.5">Expected Follow-up</span><span className="text-gray-800">{r.followUp || '—'}</span></div>
+                                <div><span className="font-semibold text-gray-600 block mb-0.5">Status</span>
+                                  <span className={`px-2 py-0.5 rounded-full font-semibold capitalize ${r.status==='completed'?'bg-green-100 text-green-700':r.status==='no-show'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}`}>{r.status}</span>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                        </>
                       ))}
                     </tbody>
                   </table>
