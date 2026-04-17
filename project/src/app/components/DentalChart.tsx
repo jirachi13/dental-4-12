@@ -118,7 +118,7 @@ export const DentalChart = () => {
     section: navEntry?.section ?? mockPatient.section,
   };
 
-  type TabKey = 'history' | 'chart' | 'appointments' | 'records' | 'treatments' | 'ai';
+  type TabKey = 'history' | 'chart' | 'appointments' | 'records' | 'treatments' | 'referrals' | 'ai';
   const initialTab = (searchParams.get('tab') as TabKey) || 'history';
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
 
@@ -493,11 +493,19 @@ export const DentalChart = () => {
             { key: 'appointments', label: 'Consent'          },
             { key: 'treatments',   label: 'Treatment History' },
             { key: 'records',      label: 'DMFT History'     },
+            { key: 'referrals',    label: 'Referrals'        },
             { key: 'ai',           label: 'AI Risk'          },
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key as TabKey)}
               className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors ${activeTab === tab.key ? 'border-b-2 border-blue-700 text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
-              {tab.label}
+              {tab.key === 'referrals' && referrals.length > 0 ? (
+                <span className="flex items-center gap-1.5">
+                  {tab.label}
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold leading-none">
+                    {referrals.length}
+                  </span>
+                </span>
+              ) : tab.label}
             </button>
           ))}
         </div>
@@ -1002,16 +1010,10 @@ export const DentalChart = () => {
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-gray-900">Treatment History</h3>
               {canEdit && (
-                <div className="flex items-center gap-2">
-                  <button onClick={() => { setShowAddReferral(false); setShowAddTreatment(v => !v); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700">
-                    <Plus className="w-3.5 h-3.5" /> Add Entry
-                  </button>
-                  <button onClick={() => { setShowAddTreatment(false); setShowAddReferral(v => !v); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-orange-300 text-orange-700 bg-orange-50 rounded-lg hover:bg-orange-100">
-                    <ExternalLink className="w-3.5 h-3.5" /> Refer Patient
-                  </button>
-                </div>
+                <button onClick={() => setShowAddTreatment(v => !v)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700">
+                  <Plus className="w-3.5 h-3.5" /> Add Entry
+                </button>
               )}
             </div>
             {showAddTreatment && (
@@ -1043,45 +1045,6 @@ export const DentalChart = () => {
                 </div>
               </div>
             )}
-            {/* Referral Form */}
-            {showAddReferral && (
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-3">
-                <h4 className="text-xs font-semibold text-orange-800">Issue Referral</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div><label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
-                    <input type="date" value={referralForm.date} onChange={e => setReferralForm(f => ({...f, date: e.target.value}))}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-                  <div><label className="block text-xs font-medium text-gray-700 mb-1">Refer To</label>
-                    <select value={referralForm.facility} onChange={e => setReferralForm(f => ({...f, facility: e.target.value}))}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
-                      <option value="">Select facility...</option>
-                      <option>Taguig City Health Office</option>
-                      <option>Taguig District Hospital</option>
-                      <option>San Juan De Dios Hospital</option>
-                      <option>Specialist Clinic</option>
-                      <option>Other</option>
-                    </select></div>
-                  <div className="md:col-span-2"><label className="block text-xs font-medium text-gray-700 mb-1">Reason for Referral</label>
-                    <input type="text" value={referralForm.reason} onChange={e => setReferralForm(f => ({...f, reason: e.target.value}))}
-                      placeholder="e.g. Severe caries requiring extraction beyond clinic capacity"
-                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-                  <div><label className="block text-xs font-medium text-gray-700 mb-1">Expected Follow-up Date</label>
-                    <input type="date" value={referralForm.followUpDate} onChange={e => setReferralForm(f => ({...f, followUpDate: e.target.value}))}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => {
-                    if (referralForm.date && referralForm.facility && referralForm.reason) {
-                      setReferrals(prev => [...prev, { ...referralForm, status: 'pending' }]);
-                      setReferralForm({ date: '', facility: '', reason: '', followUpDate: '' });
-                      setShowAddReferral(false);
-                    }
-                  }} className="px-4 py-1.5 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700">Save Referral</button>
-                  <button onClick={() => setShowAddReferral(false)} className="px-4 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
-                </div>
-              </div>
-            )}
-
             {/* Desktop table */}
             <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200">
               <table className="w-full text-sm">
@@ -1133,58 +1096,114 @@ export const DentalChart = () => {
               ))}
             </div>
 
-            {/* Referrals list */}
-            {referrals.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
-                  <ExternalLink className="w-3.5 h-3.5 text-orange-500" /> Referrals
-                </h4>
-                <div className="rounded-lg border border-orange-200 overflow-hidden">
-                  <table className="w-full text-xs">
-                    <thead className="bg-orange-50 border-b border-orange-200">
-                      <tr>
-                        {['Date','Facility','Reason','Follow-up','Status'].map(h => (
-                          <th key={h} className="text-left px-3 py-2 font-semibold text-orange-800">{h}</th>
-                        ))}
-                        {canEdit && <th className="px-3 py-2" />}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-orange-100 bg-white">
-                      {referrals.map((r, i) => (
-                        <tr key={i} className="hover:bg-orange-50/50">
-                          <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{r.date}</td>
-                          <td className="px-3 py-2 text-gray-700 font-medium">{r.facility}</td>
-                          <td className="px-3 py-2 text-gray-600 max-w-[200px] truncate">{r.reason}</td>
-                          <td className="px-3 py-2 text-gray-500">{r.followUpDate || '—'}</td>
-                          <td className="px-3 py-2">
-                            <span className={`px-2 py-0.5 rounded-full font-semibold capitalize ${
-                              r.status === 'completed' ? 'bg-green-100 text-green-700' :
-                              r.status === 'no-show'   ? 'bg-red-100 text-red-700' :
-                              'bg-yellow-100 text-yellow-700'
-                            }`}>{r.status}</span>
-                          </td>
-                          {canEdit && (
-                            <td className="px-3 py-2">
-                              <select value={r.status}
-                                onChange={e => setReferrals(prev => prev.map((x, j) => j === i ? {...x, status: e.target.value as Referral['status']} : x))}
-                                className="text-xs border border-gray-300 rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-orange-400">
-                                <option value="pending">Pending</option>
-                                <option value="completed">Completed</option>
-                                <option value="no-show">No-show</option>
-                              </select>
-                            </td>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+          </div>
+        )}
+
+        {/* ── TAB 6: Referrals ── */}
+        {activeTab === 'referrals' && (
+          <div className="p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-gray-900">Referrals</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Patients referred to outside facilities for care beyond clinic capacity</p>
+              </div>
+              {canEdit && (
+                <button onClick={() => setShowAddReferral(v => !v)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-orange-300 text-orange-700 bg-orange-50 rounded-lg hover:bg-orange-100">
+                  <ExternalLink className="w-3.5 h-3.5" /> Issue Referral
+                </button>
+              )}
+            </div>
+
+            {showAddReferral && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-3">
+                <h4 className="text-xs font-semibold text-orange-800">New Referral</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div><label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
+                    <input type="date" value={referralForm.date} onChange={e => setReferralForm(f => ({...f, date: e.target.value}))}
+                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+                  <div><label className="block text-xs font-medium text-gray-700 mb-1">Refer To</label>
+                    <select value={referralForm.facility} onChange={e => setReferralForm(f => ({...f, facility: e.target.value}))}
+                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
+                      <option value="">Select facility...</option>
+                      <option>Taguig City Health Office</option>
+                      <option>Taguig District Hospital</option>
+                      <option>San Juan De Dios Hospital</option>
+                      <option>Specialist Clinic</option>
+                      <option>Other</option>
+                    </select></div>
+                  <div className="md:col-span-2"><label className="block text-xs font-medium text-gray-700 mb-1">Reason for Referral</label>
+                    <input type="text" value={referralForm.reason} onChange={e => setReferralForm(f => ({...f, reason: e.target.value}))}
+                      placeholder="e.g. Severe caries requiring extraction beyond clinic capacity"
+                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+                  <div><label className="block text-xs font-medium text-gray-700 mb-1">Expected Follow-up Date</label>
+                    <input type="date" value={referralForm.followUpDate} onChange={e => setReferralForm(f => ({...f, followUpDate: e.target.value}))}
+                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
                 </div>
+                <div className="flex gap-2">
+                  <button onClick={() => {
+                    if (referralForm.date && referralForm.facility && referralForm.reason) {
+                      setReferrals(prev => [...prev, { ...referralForm, status: 'pending' }]);
+                      setReferralForm({ date: '', facility: '', reason: '', followUpDate: '' });
+                      setShowAddReferral(false);
+                    }
+                  }} className="px-4 py-1.5 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700">Save Referral</button>
+                  <button onClick={() => setShowAddReferral(false)} className="px-4 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
+                </div>
+              </div>
+            )}
+
+            {referrals.length === 0 && !showAddReferral ? (
+              <div className="text-center py-12 text-gray-400">
+                <ExternalLink className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">No referrals on record for this patient.</p>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-orange-200 overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead className="bg-orange-50 border-b border-orange-200">
+                    <tr>
+                      {['Date','Facility','Reason','Follow-up','Status'].map(h => (
+                        <th key={h} className="text-left px-3 py-2 font-semibold text-orange-800">{h}</th>
+                      ))}
+                      {canEdit && <th className="px-3 py-2" />}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-orange-100 bg-white">
+                    {referrals.map((r, i) => (
+                      <tr key={i} className="hover:bg-orange-50/50">
+                        <td className="px-3 py-2.5 text-gray-600 whitespace-nowrap">{r.date}</td>
+                        <td className="px-3 py-2.5 text-gray-700 font-medium">{r.facility}</td>
+                        <td className="px-3 py-2.5 text-gray-600 max-w-[220px]">{r.reason}</td>
+                        <td className="px-3 py-2.5 text-gray-500 whitespace-nowrap">{r.followUpDate || '—'}</td>
+                        <td className="px-3 py-2.5">
+                          <span className={`px-2 py-0.5 rounded-full font-semibold capitalize ${
+                            r.status === 'completed' ? 'bg-green-100 text-green-700' :
+                            r.status === 'no-show'   ? 'bg-red-100 text-red-700' :
+                            'bg-yellow-100 text-yellow-700'
+                          }`}>{r.status}</span>
+                        </td>
+                        {canEdit && (
+                          <td className="px-3 py-2.5">
+                            <select value={r.status}
+                              onChange={e => setReferrals(prev => prev.map((x, j) => j === i ? {...x, status: e.target.value as Referral['status']} : x))}
+                              className="text-xs border border-gray-300 rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-orange-400">
+                              <option value="pending">Pending</option>
+                              <option value="completed">Completed</option>
+                              <option value="no-show">No-show</option>
+                            </select>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
         )}
 
-        {/* ── TAB 6: AI Risk ── */}
+        {/* ── TAB 7: AI Risk ── */}
         {activeTab === 'ai' && (
           <div className="p-4 space-y-4">
             {/* Disclaimer */}
