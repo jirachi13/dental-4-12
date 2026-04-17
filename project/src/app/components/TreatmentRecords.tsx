@@ -9,7 +9,7 @@ const SCHOOLS = [
   'Bagong Tanyag Elementary School Annex A',
   'South Daang Hari Elementary School Main',
 ];
-const GRADES = ['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
+const GRADES = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'];
 const TREATMENT_TYPES = ['Oral Prophylaxis','Fluoride Varnish','Tooth Extraction','Permanent Filling','Temporary Filling','Pit & Fissure Sealant','Silver Diamine Fluoride','Oral Health Instruction','Screening'];
 
 const mockTreatments = [

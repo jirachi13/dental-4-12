@@ -11,7 +11,7 @@ const SCHOOLS = [
   'Bagong Tanyag Elementary School Annex A',
   'South Daang Hari Elementary School Main',
 ];
-const GRADES = ['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
+const GRADES = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'];
 
 const rpcRecords = [
   { id:'1', studentName:'Juan Morales', birthdate:'2016-03-15', gender:'Male', school:'Bagong Tanyag Integrated School', grade:'Grade 4', section:'Sampaguita', visit1Date:'2026-01-15', visit1Status:'Completed', visit2Date:'2026-03-20', visit2Status:'Completed', daysUntilDue:0, status:'complete' },
