@@ -25,7 +25,8 @@ const ViewToggle = ({ mode, onChange }: { mode: 'school' | 'list'; onChange: (m:
 
 export const PatientList = () => {
   const navigate = useNavigate();
-  const { selectedSchool } = useAuth();
+  const { user, selectedSchool } = useAuth();
+  const canAddStudent = user?.role === 'dentist' || user?.role === 'dental_aide';
 
 
 
@@ -358,9 +359,11 @@ export const PatientList = () => {
           <p className="text-sm text-gray-500 mt-0.5">{schoolStudents.length} students{selectedSchool ? '' : ' across 3 schools'}</p>
         </div>
         <div className="flex items-center gap-3">
-<button onClick={() => setShowAddForm(true)} className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
-            <Plus className="w-4 h-4" /> Add Student
-          </button>
+{canAddStudent && (
+            <button onClick={() => setShowAddForm(true)} className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+              <Plus className="w-4 h-4" /> Add Student
+            </button>
+          )}
         </div>
       </div>
 
