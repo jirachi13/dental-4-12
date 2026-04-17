@@ -64,7 +64,7 @@ export const Dashboard = () => {
           <span className="text-sm text-gray-600">{label}</span>
           <Icon className={`w-5 h-5 ${color}`} />
         </div>
-        <p className="text-3xl font-bold text-gray-900">{value}</p>
+        <p className="text-xl font-bold text-gray-900">{value}</p>
         {trend && (
           <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
             <TrendingUp className="w-3 h-3" />
@@ -87,14 +87,14 @@ export const Dashboard = () => {
 
     if (linkTo) {
       return (
-        <Link to={linkTo} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer block">
+        <Link to={linkTo} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer block">
           {content}
         </Link>
       );
     }
 
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         {content}
       </div>
     );
@@ -147,15 +147,14 @@ export const Dashboard = () => {
     ];
 
     return (
-      <div className="space-y-6">
-        <SchoolBanner />
+      <div className="space-y-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dentist Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome back, {user?.name} — {selectedSchool ? getSchoolShortName(selectedSchool) : 'All Schools'}</p>
+          <h1 className="text-xl font-bold text-gray-900">Dentist Dashboard</h1>
+          <p className="text-sm text-gray-600 mt-0.5">Welcome back, {user?.name} — {selectedSchool ? getSchoolShortName(selectedSchool) : 'All Schools'}</p>
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             icon={Users}
             label="Total Patients"
@@ -190,76 +189,18 @@ export const Dashboard = () => {
           />
         </div>
 
-        {/* Second Row: Today's Appointments (LEFT) + Risk Chart (RIGHT) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Today's Appointments - LEFT COLUMN */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">Today's Appointments</h2>
-              <Link
-                to="/appointments"
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
-              >
-                View All
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-            <div className="space-y-3">
-              {todaysAppointments.map((apt) => {
-                const gradeColor = getGradeColor(apt.grade);
-                return (
-                  <div
-                    key={apt.id}
-                    className="p-4 rounded-lg border-l-4 transition-all hover:shadow-md cursor-pointer"
-                    style={{
-                      borderLeftColor: gradeColor.solid,
-                      backgroundColor: gradeColor.light + '20'
-                    }}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="font-semibold text-gray-900">{apt.school}</div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span
-                            className="px-2 py-1 rounded-full text-xs font-medium"
-                            style={{
-                              backgroundColor: gradeColor.light,
-                              color: gradeColor.solid
-                            }}
-                          >
-                            {apt.grade}
-                          </span>
-                          <span className="text-sm text-gray-700">Section {apt.section}</span>
-                        </div>
-                        <div className="text-sm text-gray-600 mt-2">
-                          <span className="font-medium">{apt.time}</span> · {apt.studentCount} students
-                        </div>
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        apt.status === 'Scheduled' ? 'bg-blue-100 text-blue-800' :
-                        apt.status === 'In Progress' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {apt.status}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Risk Distribution Chart - RIGHT COLUMN */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Risk Distribution</h2>
-            <ResponsiveContainer width="100%" height={300} key="risk-dist-container">
+        {/* Charts Row: Risk Distribution (LEFT) + Oral Health Trend (RIGHT) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-sm font-bold text-gray-900 mb-3">Risk Distribution</h2>
+            <ResponsiveContainer width="100%" height={220} key="risk-dist-container">
               <PieChart id="risk-distribution-chart">
                 <Pie
                   data={riskDistributionData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
+                  innerRadius={50}
+                  outerRadius={85}
                   paddingAngle={5}
                   dataKey="value"
                   key="risk-pie"
@@ -271,32 +212,31 @@ export const Dashboard = () => {
                 <Tooltip key="risk-tooltip" />
               </PieChart>
             </ResponsiveContainer>
-            <div className="flex justify-center gap-6 mt-4">
+            <div className="flex justify-center gap-4 mt-2">
               {riskDistributionData.map((item, idx) => (
-                <div key={`risk-legend-${idx}`} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="text-sm text-gray-600">{item.name}: {item.value}</span>
+                <div key={`risk-legend-${idx}`} className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="text-xs text-gray-600">{item.name}: {item.value}</span>
                 </div>
               ))}
             </div>
           </div>
-        </div>
 
-        {/* Third Row: Oral Health Trend */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Oral Health Trend (Last 6 Months)</h2>
-          <ResponsiveContainer width="100%" height={300} key="trend-container">
-            <LineChart data={oralHealthTrendData} id="oral-health-trend-chart">
-              <CartesianGrid strokeDasharray="3 3" key="trend-grid" />
-              <XAxis dataKey="month" key="trend-xaxis" />
-              <YAxis key="trend-yaxis" />
-              <Tooltip key="trend-tooltip" />
-              <Legend key="trend-legend" />
-              <Line type="monotone" dataKey="decayed" stroke={COLORS.red} strokeWidth={2} dot={{ r: 4 }} name="Decayed" key="trend-line-decayed" />
-              <Line type="monotone" dataKey="treated" stroke={COLORS.blue} strokeWidth={2} dot={{ r: 4 }} name="Treated" key="trend-line-treated" />
-              <Line type="monotone" dataKey="orallyFit" stroke={COLORS.green} strokeWidth={2} dot={{ r: 4 }} name="Orally Fit" key="trend-line-fit" />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-sm font-bold text-gray-900 mb-3">Oral Health Trend (Last 6 Months)</h2>
+            <ResponsiveContainer width="100%" height={220} key="trend-container">
+              <LineChart data={oralHealthTrendData} id="oral-health-trend-chart">
+                <CartesianGrid strokeDasharray="3 3" key="trend-grid" />
+                <XAxis dataKey="month" key="trend-xaxis" tick={{ fontSize: 11 }} />
+                <YAxis key="trend-yaxis" tick={{ fontSize: 11 }} />
+                <Tooltip key="trend-tooltip" />
+                <Legend key="trend-legend" wrapperStyle={{ fontSize: 11 }} />
+                <Line type="monotone" dataKey="decayed" stroke={COLORS.red} strokeWidth={2} dot={{ r: 3 }} name="Decayed" key="trend-line-decayed" />
+                <Line type="monotone" dataKey="treated" stroke={COLORS.blue} strokeWidth={2} dot={{ r: 3 }} name="Treated" key="trend-line-treated" />
+                <Line type="monotone" dataKey="orallyFit" stroke={COLORS.green} strokeWidth={2} dot={{ r: 3 }} name="Orally Fit" key="trend-line-fit" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     );
@@ -328,15 +268,14 @@ export const Dashboard = () => {
     ];
 
     return (
-      <div className="space-y-6">
-        <SchoolBanner />
+      <div className="space-y-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dental Aide Dashboard</h1>
+          <h1 className="text-xl font-bold text-gray-900">Dental Aide Dashboard</h1>
           <p className="text-gray-600 mt-1">Welcome back, {user?.name}</p>
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             icon={Calendar}
             label="Appointments Today"
@@ -370,11 +309,11 @@ export const Dashboard = () => {
         </div>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Appointments by Status - Stacked Bar Chart */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Appointments by Status (This Week)</h2>
-            <ResponsiveContainer width="100%" height={300} key="appt-status-container">
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-sm font-bold text-gray-900 mb-3">Appointments by Status (This Week)</h2>
+            <ResponsiveContainer width="100%" height={220} key="appt-status-container">
               <BarChart data={appointmentsByStatusData} id="appointments-status-chart">
                 <CartesianGrid strokeDasharray="3 3" key="appt-grid" />
                 <XAxis dataKey="day" key="appt-xaxis" />
@@ -389,9 +328,9 @@ export const Dashboard = () => {
           </div>
 
           {/* Pending Tasks by Priority - Horizontal Bar Chart */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Pending Tasks by Priority</h2>
-            <ResponsiveContainer width="100%" height={300} key="tasks-priority-container">
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-sm font-bold text-gray-900 mb-3">Pending Tasks by Priority</h2>
+            <ResponsiveContainer width="100%" height={220} key="tasks-priority-container">
               <BarChart data={tasksByPriorityData} layout="vertical" id="tasks-priority-chart">
                 <CartesianGrid strokeDasharray="3 3" key="tasks-grid" />
                 <XAxis type="number" key="tasks-xaxis" />
@@ -412,8 +351,8 @@ export const Dashboard = () => {
         </div>
 
         {/* Task List */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Pending Tasks</h2>
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-sm font-bold text-gray-900 mb-3">Pending Tasks</h2>
           <div className="space-y-3">
             {pendingTasks.map((task, idx) => (
               <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -460,15 +399,14 @@ export const Dashboard = () => {
     ];
 
     return (
-      <div className="space-y-6">
-        <SchoolBanner />
+      <div className="space-y-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">School Admin Dashboard</h1>
+          <h1 className="text-xl font-bold text-gray-900">School Admin Dashboard</h1>
           <p className="text-gray-600 mt-1">{user.schools?.[0]}</p>
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             icon={Users}
             label="Students Enrolled"
@@ -501,11 +439,11 @@ export const Dashboard = () => {
         </div>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Screening Coverage - Radial Chart */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Screening Coverage</h2>
-            <ResponsiveContainer width="100%" height={300} key="screening-coverage-container">
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-sm font-bold text-gray-900 mb-3">Screening Coverage</h2>
+            <ResponsiveContainer width="100%" height={220} key="screening-coverage-container">
               <RadialBarChart 
                 cx="50%" 
                 cy="50%" 
@@ -531,9 +469,9 @@ export const Dashboard = () => {
           </div>
 
           {/* Oral Health Status - Pie Chart */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Oral Health Status Breakdown</h2>
-            <ResponsiveContainer width="100%" height={300} key="oral-health-status-container">
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-sm font-bold text-gray-900 mb-3">Oral Health Status Breakdown</h2>
+            <ResponsiveContainer width="100%" height={220} key="oral-health-status-container">
               <PieChart id="oral-health-status-chart">
                 <Pie
                   data={oralHealthStatusData}
@@ -563,8 +501,8 @@ export const Dashboard = () => {
         </div>
 
         {/* Upcoming Bayanihan Events */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Upcoming Bayanihan Events</h2>
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-sm font-bold text-gray-900 mb-3">Upcoming Bayanihan Events</h2>
           <div className="space-y-3">
             {upcomingEvents.map((event, idx) => (
               <div key={idx} className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
@@ -608,14 +546,14 @@ export const Dashboard = () => {
     ];
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Barangay Health Office Dashboard</h1>
+          <h1 className="text-xl font-bold text-gray-900">Barangay Health Office Dashboard</h1>
           <p className="text-gray-600 mt-1">Aggregated data across all schools</p>
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             icon={Users}
             label="Total Students Served"
@@ -649,11 +587,11 @@ export const Dashboard = () => {
         </div>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* School Comparison - Grouped Bar Chart */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">School Comparison</h2>
-            <ResponsiveContainer width="100%" height={300} key="school-comparison-container">
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-sm font-bold text-gray-900 mb-3">School Comparison</h2>
+            <ResponsiveContainer width="100%" height={220} key="school-comparison-container">
               <BarChart data={schoolComparisonData} id="school-comparison-chart">
                 <CartesianGrid strokeDasharray="3 3" key="school-grid" />
                 <XAxis dataKey="school" angle={-15} textAnchor="end" height={80} key="school-xaxis" />
@@ -668,9 +606,9 @@ export const Dashboard = () => {
           </div>
 
           {/* Monthly Coverage Trend - Area Chart */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Monthly Program Coverage Trend</h2>
-            <ResponsiveContainer width="100%" height={300} key="coverage-trend-container">
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-sm font-bold text-gray-900 mb-3">Monthly Program Coverage Trend</h2>
+            <ResponsiveContainer width="100%" height={220} key="coverage-trend-container">
               <AreaChart data={coverageTrendData} id="coverage-trend-chart">
                 <CartesianGrid strokeDasharray="3 3" key="coverage-grid" />
                 <XAxis dataKey="month" key="coverage-xaxis" />
@@ -683,8 +621,8 @@ export const Dashboard = () => {
         </div>
 
         {/* Age Group Breakdown Table */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Age Group Breakdown</h2>
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-sm font-bold text-gray-900 mb-3">Age Group Breakdown</h2>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
@@ -745,14 +683,14 @@ export const Dashboard = () => {
     ];
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">System Admin Dashboard</h1>
+          <h1 className="text-xl font-bold text-gray-900">System Admin Dashboard</h1>
           <p className="text-gray-600 mt-1">System monitoring and management</p>
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             icon={Users}
             label="Active Users"
@@ -785,11 +723,11 @@ export const Dashboard = () => {
         </div>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Login Activity - Line Chart */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Login Activity (Last 7 Days)</h2>
-            <ResponsiveContainer width="100%" height={300} key="login-activity-container">
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-sm font-bold text-gray-900 mb-3">Login Activity (Last 7 Days)</h2>
+            <ResponsiveContainer width="100%" height={220} key="login-activity-container">
               <LineChart data={loginActivityData} id="login-activity-chart">
                 <CartesianGrid strokeDasharray="3 3" key="login-grid" />
                 <XAxis dataKey="day" key="login-xaxis" />
@@ -801,9 +739,9 @@ export const Dashboard = () => {
           </div>
 
           {/* Actions by Module - Horizontal Bar Chart */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Actions by Module</h2>
-            <ResponsiveContainer width="100%" height={300} key="actions-module-container">
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-sm font-bold text-gray-900 mb-3">Actions by Module</h2>
+            <ResponsiveContainer width="100%" height={220} key="actions-module-container">
               <BarChart data={actionsByModuleData} layout="vertical" id="actions-module-chart">
                 <CartesianGrid strokeDasharray="3 3" key="actions-grid" />
                 <XAxis type="number" key="actions-xaxis" />
@@ -816,8 +754,8 @@ export const Dashboard = () => {
         </div>
 
         {/* Recent Audit Activity */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Audit Activity</h2>
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-sm font-bold text-gray-900 mb-3">Recent Audit Activity</h2>
           <div className="space-y-3">
             {recentAudit.map((log, idx) => (
               <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -850,12 +788,12 @@ export const Dashboard = () => {
 
   // Default fallback
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600 mt-1">Welcome back, {user?.name}</p>
       </div>
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
         <p className="text-gray-600">No dashboard configured for your role.</p>
       </div>
     </div>
