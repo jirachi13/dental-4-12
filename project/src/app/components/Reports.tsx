@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileSpreadsheet, FileText, Printer, AlertTriangle, AlertCircle, CheckCircle, TrendingUp } from 'lucide-react';
+import { FileSpreadsheet, FileText, Printer, AlertTriangle, AlertCircle, CheckCircle, Users, Calendar } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { getSchoolShortName } from '../utils/schoolColors';
@@ -130,12 +130,16 @@ const DOH_ROWS: RowDef[] = [
   { type:'data', label:'OFC Upon Complete Oral Rehabilitation', field:'ofc_rehab',  indent:true },
 ];
 
-// Mock referral data
-const mockReferrals = [
-  { student:'Juan Dela Cruz',  date:'2026-03-15', facility:'Taguig City Health Office',  reason:'Severe caries, abscess',          outcome:'pending'   },
-  { student:'Maria Santos',    date:'2026-03-02', facility:'Taguig City Health Office',  reason:'Deep caries, emergency extraction',outcome:'completed' },
-  { student:'Pedro Reyes',     date:'2026-02-20', facility:'Taguig District Hospital',   reason:'Multiple extractions needed',      outcome:'completed' },
-  { student:'Ana Garcia',      date:'2026-03-10', facility:'Taguig City Health Office',  reason:'Recurring gingivitis',             outcome:'ongoing'   },
+// Mock treatment sessions (bulk school visits)
+const mockSessions = [
+  { date:'2026-04-08', school:'Bagong Tanyag Integrated School',         grade:'Grade 4', section:'Sampaguita', students:30, procedures:['Fluoride Varnish','Oral Prophylaxis'], treated:28 },
+  { date:'2026-04-07', school:'Bagong Tanyag Integrated School',         grade:'Grade 4', section:'Lily',       students:32, procedures:['Fluoride Varnish','Temporary Filling'], treated:30 },
+  { date:'2026-04-05', school:'Bagong Tanyag Elementary School Annex A', grade:'Grade 3', section:'Topaz',      students:28, procedures:['Fluoride Varnish','Oral Prophylaxis','Extraction'], treated:27 },
+  { date:'2026-04-03', school:'South Daang Hari Elementary School Main', grade:'Grade 5', section:'Yakal',      students:29, procedures:['Fluoride Varnish'], treated:29 },
+  { date:'2026-04-01', school:'Bagong Tanyag Integrated School',         grade:'Grade 2', section:'Rose',       students:31, procedures:['Oral Prophylaxis','Sealant'], treated:25 },
+  { date:'2026-03-28', school:'South Daang Hari Elementary School Main', grade:'Grade 6', section:'Apitong',    students:27, procedures:['Fluoride Varnish','Extraction'], treated:27 },
+  { date:'2026-03-25', school:'Bagong Tanyag Elementary School Annex A', grade:'Grade 5', section:'Pearl',      students:30, procedures:['Fluoride Varnish','Oral Prophylaxis'], treated:28 },
+  { date:'2026-03-20', school:'Bagong Tanyag Integrated School',         grade:'Grade 3', section:'Jasmine',    students:33, procedures:['Fluoride Varnish','Temporary Filling','Oral Prophylaxis'], treated:33 },
 ];
 
 const treatmentChartData = [
@@ -159,14 +163,7 @@ export const Reports = () => {
   // Local school override — defaults to All Schools regardless of global context
   const [reportSchool, setReportSchool] = useState<string|null>(null);
 
-  const outcomeBadge = (o: string) => ({
-    completed:'bg-green-100 text-green-700',
-    pending:  'bg-yellow-100 text-yellow-700',
-    ongoing:  'bg-blue-100 text-blue-700',
-    no_show:  'bg-red-100 text-red-700',
-  } as Record<string,string>)[o] || 'bg-gray-100 text-gray-500';
-
-  // Build column definitions: for each grade, each age bracket, M and F
+// Build column definitions: for each grade, each age bracket, M and F
   const cols: { grade:string; age:string; sex:'M'|'F' }[] = [];
   GRADES.forEach(g => {
     GRADE_BRACKETS[g].ages.forEach(a => {
@@ -438,10 +435,10 @@ export const Reports = () => {
               <h3 className="text-sm font-bold text-gray-900 mb-4">Quick Stats</h3>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label:'High Risk Students',    value:3, color:'red',   Icon:AlertTriangle },
-                  { label:'Medium Risk Students',  value:2, color:'amber', Icon:AlertCircle   },
-                  { label:'Pending Referrals',     value:1, color:'blue',  Icon:TrendingUp    },
-                  { label:'Completed Referrals',   value:2, color:'green', Icon:CheckCircle   },
+                  { label:'High Risk Students',   value:3,  color:'red',   Icon:AlertTriangle },
+                  { label:'Medium Risk Students', value:2,  color:'amber', Icon:AlertCircle   },
+                  { label:'Sessions This Month',  value:8,  color:'blue',  Icon:Calendar      },
+                  { label:'Students Treated',     value:227,color:'green', Icon:Users         },
                 ].map(s => (
                   <div key={s.label} className={`bg-${s.color}-50 rounded-xl p-4`}>
                     <s.Icon className={`w-5 h-5 text-${s.color}-600 mb-2`} />
@@ -453,40 +450,50 @@ export const Reports = () => {
             </div>
           </div>
 
-          {/* Referral Tracking */}
-          {mockReferrals.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-5 py-3 border-b border-gray-100">
-                <h3 className="text-sm font-bold text-gray-900">Referral Tracking</h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      {['Student','Date','Facility','Reason','Outcome'].map(h => (
-                        <th key={h} className="text-left px-4 py-2.5 font-semibold text-gray-500 uppercase tracking-wide text-[10px]">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {mockReferrals.map((r,i) => (
+          {/* Treatment Sessions */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-gray-900">Treatment Sessions</h3>
+              <span className="text-xs text-gray-400">{mockSessions.length} sessions recorded</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    {['Date','School','Grade / Section','Students','Treated','Procedures'].map(h => (
+                      <th key={h} className="text-left px-4 py-2.5 font-semibold text-gray-500 uppercase tracking-wide text-[10px]">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {mockSessions.map((s, i) => {
+                    const pct = Math.round((s.treated / s.students) * 100);
+                    return (
                       <tr key={i} className="hover:bg-gray-50">
-                        <td className="px-4 py-2.5 font-medium text-gray-900">{r.student}</td>
-                        <td className="px-4 py-2.5 text-gray-500">{r.date}</td>
-                        <td className="px-4 py-2.5 text-gray-600">{r.facility}</td>
-                        <td className="px-4 py-2.5 text-gray-600 max-w-[200px] truncate">{r.reason}</td>
+                        <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{s.date}</td>
+                        <td className="px-4 py-2.5 text-gray-600 max-w-[160px] truncate">{getSchoolShortName(s.school)}</td>
+                        <td className="px-4 py-2.5 font-medium text-gray-900">{s.grade} — {s.section}</td>
+                        <td className="px-4 py-2.5 text-gray-600">{s.students}</td>
                         <td className="px-4 py-2.5">
-                          <span className={`px-2 py-0.5 rounded-full font-semibold capitalize ${outcomeBadge(r.outcome)}`}>
-                            {r.outcome}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-900">{s.treated}</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${pct === 100 ? 'bg-green-100 text-green-700' : pct >= 80 ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>{pct}%</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <div className="flex flex-wrap gap-1">
+                            {s.procedures.map((p, pi) => (
+                              <span key={pi} className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[10px] font-medium">{p}</span>
+                            ))}
+                          </div>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>
