@@ -163,6 +163,50 @@ const REPORT_SCHOOLS = [
   'South Daang Hari Elementary School Main',
 ];
 
+const ALL_GRADES_INT = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'];
+const PROCEDURES = ['Fluoride Varnish','Oral Prophylaxis','Temp Filling','Perm Filling','Extraction (Primary)','Extraction (Permanent)','Sealant','SDF Application','OHE / Counseling'];
+const CONDITIONS  = ['Caries (Primary)','Caries (Permanent)','Gingivitis','Malocclusion','Orally Fit'];
+type GX = Record<string,{M:number,F:number}>;
+const MX = (vals: number[][]): GX => Object.fromEntries(ALL_GRADES_INT.map((g,i) => [g,{M:vals[i][0],F:vals[i][1]}]));
+
+const treatmentMatrix: Record<string,GX> = {
+  'Fluoride Varnish':       MX([[4,5],[12,13],[11,14],[13,12],[10,11],[9,10],[8,9],[6,7],[5,6],[4,5],[3,4]]),
+  'Oral Prophylaxis':       MX([[2,3],[8,9],[7,8],[9,8],[7,7],[6,7],[5,6],[4,5],[3,4],[3,3],[2,3]]),
+  'Temp Filling':           MX([[1,1],[3,4],[4,3],[3,3],[2,3],[2,2],[1,2],[1,1],[1,1],[0,1],[0,0]]),
+  'Perm Filling':           MX([[0,0],[1,1],[2,2],[3,2],[3,3],[4,3],[3,4],[3,3],[2,3],[2,2],[1,2]]),
+  'Extraction (Primary)':  MX([[2,2],[4,3],[3,4],[2,2],[1,2],[1,1],[0,0],[0,0],[0,0],[0,0],[0,0]]),
+  'Extraction (Permanent)':MX([[0,0],[0,0],[1,0],[1,1],[2,1],[2,2],[2,2],[2,2],[1,2],[1,1],[1,1]]),
+  'Sealant':                MX([[1,1],[3,3],[3,4],[4,3],[3,3],[2,3],[2,2],[1,2],[1,1],[1,1],[0,1]]),
+  'SDF Application':        MX([[2,2],[4,5],[3,3],[2,2],[1,2],[1,1],[0,1],[0,0],[0,0],[0,0],[0,0]]),
+  'OHE / Counseling':       MX([[4,5],[14,15],[13,14],[12,13],[11,12],[10,11],[9,10],[7,8],[6,7],[5,6],[4,5]]),
+};
+const conditionMatrix: Record<string,GX> = {
+  'Caries (Primary)':   MX([[3,2],[8,7],[7,8],[6,6],[4,5],[3,4],[2,2],[0,0],[0,0],[0,0],[0,0]]),
+  'Caries (Permanent)': MX([[0,0],[2,2],[3,3],[4,4],[5,5],[6,6],[7,7],[6,7],[5,6],[4,5],[3,4]]),
+  'Gingivitis':         MX([[1,1],[3,3],[4,4],[5,4],[6,5],[7,6],[8,7],[7,8],[6,7],[5,6],[4,5]]),
+  'Malocclusion':       MX([[1,0],[2,2],[2,2],[3,2],[2,3],[2,2],[2,2],[2,2],[1,2],[1,1],[1,1]]),
+  'Orally Fit':         MX([[3,4],[10,12],[9,11],[8,10],[9,10],[8,9],[7,8],[6,7],[5,6],[4,5],[3,4]]),
+};
+
+const getCount = (matrix: Record<string,GX>, key: string, grade: string, gender: string): number => {
+  const row = matrix[key];
+  if (!row) return 0;
+  if (grade !== 'all') {
+    const g = row[grade];
+    if (!g) return 0;
+    if (gender === 'M') return g.M;
+    if (gender === 'F') return g.F;
+    return g.M + g.F;
+  }
+  return ALL_GRADES_INT.reduce((sum, gr) => {
+    const g = row[gr];
+    if (!g) return sum;
+    if (gender === 'M') return sum + g.M;
+    if (gender === 'F') return sum + g.F;
+    return sum + g.M + g.F;
+  }, 0);
+};
+
 export const Reports = () => {
   const { selectedSchool } = useAuth();
   const [activeReportTab, setActiveReportTab] = useState<'doh'|'internal'>('doh');
@@ -170,6 +214,10 @@ export const Reports = () => {
   const [reportYear,  setReportYear]  = useState(2026);
   // Local school override — defaults to All Schools regardless of global context
   const [reportSchool, setReportSchool] = useState<string|null>(null);
+  const [internalSection, setInternalSection] = useState<'treatment'|'conditions'|'admin'>('treatment');
+  const [periodType, setPeriodType] = useState<'monthly'|'biannual'|'annual'>('monthly');
+  const [intGradeFilter, setIntGradeFilter] = useState('all');
+  const [intGenderFilter, setIntGenderFilter] = useState('all');
 
 // Build column definitions: for each grade, each age bracket, M and F
   const cols: { grade:string; age:string; sex:'M'|'F' }[] = [];
@@ -391,156 +439,339 @@ export const Reports = () => {
 
       {/* ── INTERNAL REPORTS ── */}
       {activeReportTab === 'internal' && (
-        <div className="space-y-5">
-          {/* Monthly Treatment Chart */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 className="text-sm font-bold text-gray-900 mb-4">Monthly Treatment Summary</h3>
-            <div style={{height:220}}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={treatmentChartData} margin={{top:4,right:8,bottom:24,left:0}}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="name" tick={{fontSize:11}} angle={-20} textAnchor="end" interval={0} />
-                  <YAxis tick={{fontSize:11}} />
-                  <Tooltip />
-                  <Bar dataKey="value" name="Procedures" fill="#1E40AF" radius={[4,4,0,0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+        <div className="space-y-4">
+          {/* Section sub-tabs */}
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+            {([['treatment','Treatment Summary'],['conditions','Condition Summary'],['admin','Admin']] as const).map(([k,l]) => (
+              <button key={k} onClick={() => setInternalSection(k)}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${internalSection===k ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                {l}
+              </button>
+            ))}
           </div>
 
-          {/* Consent + Quick Stats */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="text-sm font-bold text-gray-900 mb-4">Consent Compliance by School</h3>
-              <div className="space-y-4">
-                {[
-                  { school:'Bagong Tanyag Integrated School',          complete:48, total:60, color:'#1E40AF' },
-                  { school:'Bagong Tanyag Elementary School Annex A',  complete:52, total:60, color:'#0D9488' },
-                  { school:'South Daang Hari Elementary School Main',  complete:41, total:60, color:'#EA580C' },
-                ].map(s => {
-                  const pct = Math.round((s.complete/s.total)*100);
-                  return (
-                    <div key={s.school}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium text-gray-700">{getSchoolShortName(s.school)}</span>
-                        <span className="text-xs font-bold" style={{color:s.color}}>{s.complete}/{s.total} ({pct}%)</span>
-                      </div>
-                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{width:`${pct}%`,backgroundColor:s.color}} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="mt-4 pt-3 border-t border-gray-100 grid grid-cols-3 gap-2 text-center text-xs">
-                <div><div className="text-base font-bold text-green-600">141</div><div className="text-gray-400">Complete</div></div>
-                <div><div className="text-base font-bold text-yellow-600">29</div><div className="text-gray-400">Pending</div></div>
-                <div><div className="text-base font-bold text-red-600">10</div><div className="text-gray-400">Missing</div></div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="text-sm font-bold text-gray-900 mb-4">Quick Stats</h3>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { label:'High Risk Students',   value:3,  color:'red',   Icon:AlertTriangle },
-                  { label:'Medium Risk Students', value:2,  color:'amber', Icon:AlertCircle   },
-                  { label:'Sessions This Month',  value:8,  color:'blue',  Icon:Calendar      },
-                  { label:'Students Treated',     value:227,color:'green', Icon:Users         },
-                ].map(s => (
-                  <div key={s.label} className={`bg-${s.color}-50 rounded-xl p-4`}>
-                    <s.Icon className={`w-5 h-5 text-${s.color}-600 mb-2`} />
-                    <div className={`text-2xl font-bold text-${s.color}-700`}>{s.value}</div>
-                    <div className={`text-xs text-${s.color}-600 mt-0.5`}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Treatment Sessions */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-gray-900">Treatment Sessions</h3>
-              <span className="text-xs text-gray-400">{mockSessions.length} sessions recorded</span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    {['Date','School','Grade / Section','Students','Treated','Procedures'].map(h => (
-                      <th key={h} className="text-left px-4 py-2.5 font-semibold text-gray-500 uppercase tracking-wide text-[10px]">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {mockSessions.map((s, i) => {
-                    const pct = Math.round((s.treated / s.students) * 100);
-                    return (
-                      <tr key={i} className="hover:bg-gray-50">
-                        <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{s.date}</td>
-                        <td className="px-4 py-2.5 text-gray-600 max-w-[160px] truncate">{getSchoolShortName(s.school)}</td>
-                        <td className="px-4 py-2.5 font-medium text-gray-900">{s.grade} — {s.section}</td>
-                        <td className="px-4 py-2.5 text-gray-600">{s.students}</td>
-                        <td className="px-4 py-2.5">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-gray-900">{s.treated}</span>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${pct === 100 ? 'bg-green-100 text-green-700' : pct >= 80 ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>{pct}%</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <div className="flex flex-wrap gap-1">
-                            {s.procedures.map((p, pi) => (
-                              <span key={pi} className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[10px] font-medium">{p}</span>
-                            ))}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Referral Tracking */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-gray-900">Referral Tracking</h3>
-              <span className="text-xs text-gray-400">{mockReferrals.length} referrals issued</span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    {['Student','School','Grade','Date Issued','Facility','Reason','Follow-up','Status'].map(h => (
-                      <th key={h} className="text-left px-4 py-2.5 font-semibold text-gray-500 uppercase tracking-wide text-[10px]">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {mockReferrals.map((r, i) => (
-                    <tr key={i} className="hover:bg-gray-50">
-                      <td className="px-4 py-2.5 font-medium text-gray-900 whitespace-nowrap">{r.student}</td>
-                      <td className="px-4 py-2.5 text-gray-500 max-w-[130px] truncate">{getSchoolShortName(r.school)}</td>
-                      <td className="px-4 py-2.5 text-gray-600">{r.grade}</td>
-                      <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{r.date}</td>
-                      <td className="px-4 py-2.5 text-gray-600">{r.facility}</td>
-                      <td className="px-4 py-2.5 text-gray-600 max-w-[180px] truncate">{r.reason}</td>
-                      <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{r.followUp}</td>
-                      <td className="px-4 py-2.5">
-                        <span className={`px-2 py-0.5 rounded-full font-semibold capitalize text-[10px] ${
-                          r.status === 'completed' ? 'bg-green-100 text-green-700' :
-                          r.status === 'no-show'   ? 'bg-red-100 text-red-700' :
-                          'bg-yellow-100 text-yellow-700'
-                        }`}>{r.status}</span>
-                      </td>
-                    </tr>
+          {/* ── TREATMENT SUMMARY ── */}
+          {internalSection === 'treatment' && (
+            <div className="space-y-4">
+              {/* Filters */}
+              <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                  {(['monthly','biannual','annual'] as const).map(p => (
+                    <button key={p} onClick={() => setPeriodType(p)}
+                      className={`px-3 py-1 rounded-md text-xs font-medium capitalize transition-colors ${periodType===p ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500'}`}>
+                      {p === 'biannual' ? 'Bi-annual' : p}
+                    </button>
                   ))}
-                </tbody>
-              </table>
+                </div>
+                <select value={intGradeFilter} onChange={e => setIntGradeFilter(e.target.value)}
+                  className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="all">All Grades</option>
+                  {ALL_GRADES_INT.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+                <select value={intGenderFilter} onChange={e => setIntGenderFilter(e.target.value)}
+                  className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="all">All Genders</option>
+                  <option value="M">Male</option>
+                  <option value="F">Female</option>
+                </select>
+                <span className="text-xs text-gray-400 ml-auto">{MONTHS[reportMonth-1]} {reportYear}{periodType==='biannual'?' (6-month period)':periodType==='annual'?' (full year)':''}</span>
+              </div>
+
+              {/* Summary cards */}
+              {(() => {
+                const totals = PROCEDURES.map(p => getCount(treatmentMatrix, p, intGradeFilter, intGenderFilter));
+                const grandTotal = totals.reduce((a,b) => a+b, 0);
+                const topIdx = totals.indexOf(Math.max(...totals));
+                return (
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                      { label:'Total Procedures', value: grandTotal, color:'text-blue-700 bg-blue-50 border-blue-200' },
+                      { label:'Most Common', value: PROCEDURES[topIdx], color:'text-green-700 bg-green-50 border-green-200', small: true },
+                      { label:'Sessions', value: mockSessions.length, color:'text-cyan-700 bg-cyan-50 border-cyan-200' },
+                      { label:'Students Treated', value: mockSessions.reduce((s,x)=>s+x.treated,0), color:'text-purple-700 bg-purple-50 border-purple-200' },
+                    ].map((c,i) => (
+                      <div key={i} className={`rounded-xl border p-4 ${c.color}`}>
+                        <div className={`font-bold mt-1 ${(c as any).small ? 'text-sm' : 'text-2xl'}`}>{c.value}</div>
+                        <div className="text-xs mt-0.5 opacity-70">{c.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Chart */}
+              <div className="bg-white rounded-xl border border-gray-200 p-4">
+                <h3 className="text-sm font-bold text-gray-900 mb-3">Procedures Performed</h3>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={PROCEDURES.map(p => ({ name: p, count: getCount(treatmentMatrix, p, intGradeFilter, intGenderFilter) }))}
+                    margin={{top:4,right:8,bottom:40,left:0}}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="name" tick={{fontSize:10}} angle={-25} textAnchor="end" interval={0} />
+                    <YAxis tick={{fontSize:11}} />
+                    <Tooltip />
+                    <Bar dataKey="count" name="Count" fill="#1E40AF" radius={[4,4,0,0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Table */}
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-gray-900">Procedure Counts</h3>
+                  <button onClick={() => window.print()} className="flex items-center gap-1.5 text-xs px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600">
+                    <Printer className="w-3 h-3" /> Print
+                  </button>
+                </div>
+                <table className="w-full text-xs">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="text-left px-4 py-2.5 font-semibold text-gray-500 uppercase tracking-wide text-[10px]">Procedure</th>
+                      <th className="text-center px-4 py-2.5 font-semibold text-blue-500 uppercase tracking-wide text-[10px]">Male</th>
+                      <th className="text-center px-4 py-2.5 font-semibold text-pink-500 uppercase tracking-wide text-[10px]">Female</th>
+                      <th className="text-center px-4 py-2.5 font-semibold text-gray-600 uppercase tracking-wide text-[10px]">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {PROCEDURES.map(p => {
+                      const m = getCount(treatmentMatrix, p, intGradeFilter, 'M');
+                      const f = getCount(treatmentMatrix, p, intGradeFilter, 'F');
+                      const t = m + f;
+                      return (
+                        <tr key={p} className="hover:bg-gray-50">
+                          <td className="px-4 py-2.5 font-medium text-gray-800">{p}</td>
+                          <td className="px-4 py-2.5 text-center text-blue-700">{m}</td>
+                          <td className="px-4 py-2.5 text-center text-pink-700">{f}</td>
+                          <td className="px-4 py-2.5 text-center font-bold text-gray-900">{t}</td>
+                        </tr>
+                      );
+                    })}
+                    <tr className="bg-gray-50 border-t-2 border-gray-300">
+                      <td className="px-4 py-2.5 font-bold text-gray-900">TOTAL</td>
+                      <td className="px-4 py-2.5 text-center font-bold text-blue-700">{PROCEDURES.reduce((s,p)=>s+getCount(treatmentMatrix,p,intGradeFilter,'M'),0)}</td>
+                      <td className="px-4 py-2.5 text-center font-bold text-pink-700">{PROCEDURES.reduce((s,p)=>s+getCount(treatmentMatrix,p,intGradeFilter,'F'),0)}</td>
+                      <td className="px-4 py-2.5 text-center font-bold text-gray-900">{PROCEDURES.reduce((s,p)=>s+getCount(treatmentMatrix,p,intGradeFilter,'all'),0)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* ── CONDITION SUMMARY ── */}
+          {internalSection === 'conditions' && (
+            <div className="space-y-4">
+              {/* Filters */}
+              <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-wrap items-center gap-3">
+                <select value={intGradeFilter} onChange={e => setIntGradeFilter(e.target.value)}
+                  className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="all">All Grades</option>
+                  {ALL_GRADES_INT.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+                <select value={intGenderFilter} onChange={e => setIntGenderFilter(e.target.value)}
+                  className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="all">All Genders</option>
+                  <option value="M">Male</option>
+                  <option value="F">Female</option>
+                </select>
+              </div>
+
+              {/* Summary cards */}
+              {(() => {
+                const orallyFit = getCount(conditionMatrix,'Orally Fit',intGradeFilter,intGenderFilter);
+                const cariesP   = getCount(conditionMatrix,'Caries (Primary)',intGradeFilter,intGenderFilter);
+                const cariesPerm= getCount(conditionMatrix,'Caries (Permanent)',intGradeFilter,intGenderFilter);
+                const gingivitis= getCount(conditionMatrix,'Gingivitis',intGradeFilter,intGenderFilter);
+                return (
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                      { label:'Orally Fit',          value: orallyFit,          color:'text-green-700 bg-green-50 border-green-200' },
+                      { label:'Caries (Primary)',     value: cariesP,            color:'text-red-700 bg-red-50 border-red-200' },
+                      { label:'Caries (Permanent)',   value: cariesPerm,         color:'text-orange-700 bg-orange-50 border-orange-200' },
+                      { label:'Gingivitis',           value: gingivitis,         color:'text-yellow-700 bg-yellow-50 border-yellow-200' },
+                    ].map((c,i) => (
+                      <div key={i} className={`rounded-xl border p-4 ${c.color}`}>
+                        <div className="text-2xl font-bold mt-1">{c.value}</div>
+                        <div className="text-xs mt-0.5 opacity-70">{c.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Chart */}
+              <div className="bg-white rounded-xl border border-gray-200 p-4">
+                <h3 className="text-sm font-bold text-gray-900 mb-3">Condition Distribution</h3>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={CONDITIONS.map(c => ({ name: c, count: getCount(conditionMatrix, c, intGradeFilter, intGenderFilter) }))}
+                    margin={{top:4,right:8,bottom:36,left:0}}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="name" tick={{fontSize:10}} angle={-20} textAnchor="end" interval={0} />
+                    <YAxis tick={{fontSize:11}} />
+                    <Tooltip />
+                    <Bar dataKey="count" name="Count" fill="#0D9488" radius={[4,4,0,0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Table — by grade */}
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-gray-900">Condition Counts by Grade</h3>
+                  <button onClick={() => window.print()} className="flex items-center gap-1.5 text-xs px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600">
+                    <Printer className="w-3 h-3" /> Print
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="text-left px-4 py-2.5 font-semibold text-gray-500 uppercase tracking-wide text-[10px] sticky left-0 bg-gray-50">Condition</th>
+                        {ALL_GRADES_INT.map(g => <th key={g} className="text-center px-3 py-2.5 font-semibold text-gray-500 uppercase tracking-wide text-[10px] whitespace-nowrap">{g}</th>)}
+                        <th className="text-center px-4 py-2.5 font-semibold text-gray-700 uppercase tracking-wide text-[10px]">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {CONDITIONS.map(cond => (
+                        <tr key={cond} className="hover:bg-gray-50">
+                          <td className="px-4 py-2.5 font-medium text-gray-800 sticky left-0 bg-white">{cond}</td>
+                          {ALL_GRADES_INT.map(g => (
+                            <td key={g} className="px-3 py-2.5 text-center text-gray-700">{getCount(conditionMatrix, cond, g, intGenderFilter)}</td>
+                          ))}
+                          <td className="px-4 py-2.5 text-center font-bold text-gray-900">{getCount(conditionMatrix, cond, 'all', intGenderFilter)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── ADMIN ── */}
+          {internalSection === 'admin' && (
+            <div className="space-y-4">
+              {/* Quick Stats + Consent */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <h3 className="text-sm font-bold text-gray-900 mb-4">Quick Stats</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { label:'High Risk Students',   value:3,  color:'red',   Icon:AlertTriangle },
+                      { label:'Medium Risk Students', value:2,  color:'amber', Icon:AlertCircle   },
+                      { label:'Sessions This Month',  value:8,  color:'blue',  Icon:Calendar      },
+                      { label:'Students Treated',     value:227,color:'green', Icon:Users         },
+                    ].map(s => (
+                      <div key={s.label} className={`bg-${s.color}-50 rounded-xl p-4`}>
+                        <s.Icon className={`w-5 h-5 text-${s.color}-600 mb-2`} />
+                        <div className={`text-2xl font-bold text-${s.color}-700`}>{s.value}</div>
+                        <div className={`text-xs text-${s.color}-600 mt-0.5`}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <h3 className="text-sm font-bold text-gray-900 mb-4">Consent Compliance by School</h3>
+                  <div className="space-y-4">
+                    {[
+                      { school:'Bagong Tanyag Integrated School',         complete:48, total:60, color:'#1E40AF' },
+                      { school:'Bagong Tanyag Elementary School Annex A', complete:52, total:60, color:'#0D9488' },
+                      { school:'South Daang Hari Elementary School Main', complete:41, total:60, color:'#EA580C' },
+                    ].map(s => {
+                      const pct = Math.round((s.complete/s.total)*100);
+                      return (
+                        <div key={s.school}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-medium text-gray-700">{getSchoolShortName(s.school)}</span>
+                            <span className="text-xs font-bold" style={{color:s.color}}>{s.complete}/{s.total} ({pct}%)</span>
+                          </div>
+                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full" style={{width:`${pct}%`,backgroundColor:s.color}} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100 grid grid-cols-3 gap-2 text-center text-xs">
+                    <div><div className="text-base font-bold text-green-600">141</div><div className="text-gray-400">Complete</div></div>
+                    <div><div className="text-base font-bold text-yellow-600">29</div><div className="text-gray-400">Pending</div></div>
+                    <div><div className="text-base font-bold text-red-600">10</div><div className="text-gray-400">Missing</div></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Treatment Sessions */}
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-gray-900">Treatment Sessions</h3>
+                  <span className="text-xs text-gray-400">{mockSessions.length} sessions recorded</span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>{['Date','School','Grade / Section','Students','Treated','Procedures'].map(h => (
+                        <th key={h} className="text-left px-4 py-2.5 font-semibold text-gray-500 uppercase tracking-wide text-[10px]">{h}</th>
+                      ))}</tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {mockSessions.map((s, i) => {
+                        const pct = Math.round((s.treated / s.students) * 100);
+                        return (
+                          <tr key={i} className="hover:bg-gray-50">
+                            <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{s.date}</td>
+                            <td className="px-4 py-2.5 text-gray-600 max-w-[140px] truncate">{getSchoolShortName(s.school)}</td>
+                            <td className="px-4 py-2.5 font-medium text-gray-900">{s.grade} — {s.section}</td>
+                            <td className="px-4 py-2.5 text-gray-600">{s.students}</td>
+                            <td className="px-4 py-2.5">
+                              <span className="font-semibold text-gray-900">{s.treated}</span>
+                              <span className={`ml-2 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${pct===100?'bg-green-100 text-green-700':pct>=80?'bg-blue-100 text-blue-700':'bg-yellow-100 text-yellow-700'}`}>{pct}%</span>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <div className="flex flex-wrap gap-1">
+                                {s.procedures.map((p, pi) => <span key={pi} className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[10px] font-medium">{p}</span>)}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Referral Tracking */}
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-gray-900">Referral Tracking</h3>
+                  <span className="text-xs text-gray-400">{mockReferrals.length} referrals issued</span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>{['Student','School','Grade','Date Issued','Facility','Reason','Follow-up','Status'].map(h => (
+                        <th key={h} className="text-left px-4 py-2.5 font-semibold text-gray-500 uppercase tracking-wide text-[10px]">{h}</th>
+                      ))}</tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {mockReferrals.map((r, i) => (
+                        <tr key={i} className="hover:bg-gray-50">
+                          <td className="px-4 py-2.5 font-medium text-gray-900 whitespace-nowrap">{r.student}</td>
+                          <td className="px-4 py-2.5 text-gray-500 max-w-[120px] truncate">{getSchoolShortName(r.school)}</td>
+                          <td className="px-4 py-2.5 text-gray-600">{r.grade}</td>
+                          <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{r.date}</td>
+                          <td className="px-4 py-2.5 text-gray-600">{r.facility}</td>
+                          <td className="px-4 py-2.5 text-gray-600 max-w-[160px] truncate">{r.reason}</td>
+                          <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{r.followUp}</td>
+                          <td className="px-4 py-2.5">
+                            <span className={`px-2 py-0.5 rounded-full font-semibold capitalize text-[10px] ${r.status==='completed'?'bg-green-100 text-green-700':r.status==='no-show'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}`}>{r.status}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
