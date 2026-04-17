@@ -158,7 +158,7 @@ export const Dashboard = () => {
           <StatCard
             icon={Users}
             label="Total Patients"
-            value="220"
+            value="215"
             color="text-blue-600"
             trend="↑ 12 this month"
             linkTo="/patients"

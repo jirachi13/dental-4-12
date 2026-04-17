@@ -10,7 +10,7 @@ const SCHOOLS = [
   'Bagong Tanyag Elementary School Annex A',
   'South Daang Hari Elementary School Main',
 ];
-const GRADES = ['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
+const GRADES = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'];
 
 const ViewToggle = ({ mode, onChange }: { mode: 'school' | 'list'; onChange: (m: 'school' | 'list') => void }) => (
   <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
@@ -244,6 +244,41 @@ export const PatientList = () => {
     { id: '178', name: 'Ronnie Martinez', birthdate: '2015-02-06', gender: 'Male', grade: 'Grade 6', section: 'Guijo', school: 'South Daang Hari Elementary School Main', lastVisit: '2026-03-19', oralStatus: 'Needs Treatment', riskLevel: 'Medium' },
     { id: '179', name: 'Danica Mendoza', birthdate: '2015-09-03', gender: 'Female', grade: 'Grade 6', section: 'Guijo', school: 'South Daang Hari Elementary School Main', lastVisit: '2026-01-12', oralStatus: 'Needs Treatment', riskLevel: 'Low' },
     { id: '180', name: 'Maria Reyes', birthdate: '2015-11-17', gender: 'Female', grade: 'Grade 6', section: 'Guijo', school: 'South Daang Hari Elementary School Main', lastVisit: '2026-02-06', oralStatus: 'Orally Fit', riskLevel: 'High' },
+    { id: '181', name: 'Luis Santos', birthdate: '2020-06-14', gender: 'Male', grade: 'Kinder', section: 'Ilang-ilang', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-02-10', oralStatus: 'Needs Treatment', riskLevel: 'Low' },
+    { id: '182', name: 'Sofia Dela Cruz', birthdate: '2020-08-22', gender: 'Female', grade: 'Kinder', section: 'Ilang-ilang', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-01-15', oralStatus: 'Orally Fit', riskLevel: 'Low' },
+    { id: '183', name: 'Nico Bautista', birthdate: '2020-03-05', gender: 'Male', grade: 'Kinder', section: 'Kamia', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-03-01', oralStatus: 'Needs Treatment', riskLevel: 'Medium' },
+    { id: '184', name: 'Mia Reyes', birthdate: '2020-11-30', gender: 'Female', grade: 'Kinder', section: 'Kamia', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-02-20', oralStatus: 'Orally Fit', riskLevel: 'Low' },
+    { id: '185', name: 'Liam Cruz', birthdate: '2020-09-17', gender: 'Male', grade: 'Kinder', section: 'Kamia', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-01-28', oralStatus: 'Needs Follow-up', riskLevel: 'Low' },
+    { id: '186', name: 'Jasmine Villanueva', birthdate: '2020-07-08', gender: 'Female', grade: 'Kinder', section: 'Cadena de Amor', school: 'Bagong Tanyag Elementary School Annex A', lastVisit: '2026-02-18', oralStatus: 'Orally Fit', riskLevel: 'Low' },
+    { id: '187', name: 'Aaron Garcia', birthdate: '2020-10-14', gender: 'Male', grade: 'Kinder', section: 'Cadena de Amor', school: 'Bagong Tanyag Elementary School Annex A', lastVisit: '2026-01-22', oralStatus: 'Needs Treatment', riskLevel: 'Medium' },
+    { id: '188', name: 'Ella Navarro', birthdate: '2020-04-19', gender: 'Female', grade: 'Kinder', section: 'Santan', school: 'Bagong Tanyag Elementary School Annex A', lastVisit: '2026-03-05', oralStatus: 'Orally Fit', riskLevel: 'Low' },
+    { id: '189', name: 'Ben Torres', birthdate: '2020-12-02', gender: 'Male', grade: 'Kinder', section: 'Santan', school: 'Bagong Tanyag Elementary School Annex A', lastVisit: '2026-02-14', oralStatus: 'Needs Follow-up', riskLevel: 'Low' },
+    { id: '190', name: 'Lea Gomez', birthdate: '2020-05-25', gender: 'Female', grade: 'Kinder', section: 'Santan', school: 'Bagong Tanyag Elementary School Annex A', lastVisit: '2026-01-09', oralStatus: 'Needs Treatment', riskLevel: 'Medium' },
+    { id: '191', name: 'Marc Flores', birthdate: '2020-08-11', gender: 'Male', grade: 'Kinder', section: 'Banaba', school: 'South Daang Hari Elementary School Main', lastVisit: '2026-03-12', oralStatus: 'Orally Fit', riskLevel: 'Low' },
+    { id: '192', name: 'Tina Lopez', birthdate: '2020-01-27', gender: 'Female', grade: 'Kinder', section: 'Banaba', school: 'South Daang Hari Elementary School Main', lastVisit: '2026-02-03', oralStatus: 'Needs Treatment', riskLevel: 'Low' },
+    { id: '193', name: 'Kevin Mendoza', birthdate: '2020-06-30', gender: 'Male', grade: 'Kinder', section: 'Banaba', school: 'South Daang Hari Elementary School Main', lastVisit: '2026-01-18', oralStatus: 'Orally Fit', riskLevel: 'Low' },
+    { id: '194', name: 'Grace Castillo', birthdate: '2020-03-21', gender: 'Female', grade: 'Kinder', section: 'Alagaw', school: 'South Daang Hari Elementary School Main', lastVisit: '2026-02-27', oralStatus: 'Needs Follow-up', riskLevel: 'Medium' },
+    { id: '195', name: 'Dan Magno', birthdate: '2020-10-08', gender: 'Male', grade: 'Kinder', section: 'Alagaw', school: 'South Daang Hari Elementary School Main', lastVisit: '2026-03-04', oralStatus: 'Orally Fit', riskLevel: 'Low' },
+    { id: '196', name: 'Renzo Dela Cruz', birthdate: '2013-07-15', gender: 'Male', grade: 'Grade 7', section: 'Makabayan', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-02-11', oralStatus: 'Needs Treatment', riskLevel: 'Medium' },
+    { id: '197', name: 'Carla Santos', birthdate: '2013-04-02', gender: 'Female', grade: 'Grade 7', section: 'Makabayan', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-01-20', oralStatus: 'Orally Fit', riskLevel: 'Low' },
+    { id: '198', name: 'Rodel Cruz', birthdate: '2013-09-18', gender: 'Male', grade: 'Grade 7', section: 'Makabayan', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-03-07', oralStatus: 'Under Treatment', riskLevel: 'High' },
+    { id: '199', name: 'Ailyn Morales', birthdate: '2013-11-06', gender: 'Female', grade: 'Grade 7', section: 'Masagana', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-02-25', oralStatus: 'Needs Follow-up', riskLevel: 'Medium' },
+    { id: '200', name: 'Enzo Navarro', birthdate: '2013-03-24', gender: 'Male', grade: 'Grade 7', section: 'Masagana', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-01-13', oralStatus: 'Needs Treatment', riskLevel: 'High' },
+    { id: '201', name: 'Bea Villanueva', birthdate: '2013-08-30', gender: 'Female', grade: 'Grade 8', section: 'Narra', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-03-15', oralStatus: 'Orally Fit', riskLevel: 'Low' },
+    { id: '202', name: 'Karl Garcia', birthdate: '2012-06-12', gender: 'Male', grade: 'Grade 8', section: 'Narra', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-02-07', oralStatus: 'Needs Treatment', riskLevel: 'High' },
+    { id: '203', name: 'Nina Bautista', birthdate: '2012-01-19', gender: 'Female', grade: 'Grade 8', section: 'Narra', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-03-21', oralStatus: 'Under Treatment', riskLevel: 'Medium' },
+    { id: '204', name: 'Gelo Reyes', birthdate: '2012-10-04', gender: 'Male', grade: 'Grade 8', section: 'Yakal', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-01-31', oralStatus: 'Needs Follow-up', riskLevel: 'Medium' },
+    { id: '205', name: 'Trish Lopez', birthdate: '2012-07-23', gender: 'Female', grade: 'Grade 8', section: 'Yakal', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-02-16', oralStatus: 'Orally Fit', riskLevel: 'Low' },
+    { id: '206', name: 'Jonah Martinez', birthdate: '2011-09-09', gender: 'Male', grade: 'Grade 9', section: 'Acacia', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-03-02', oralStatus: 'Needs Treatment', riskLevel: 'High' },
+    { id: '207', name: 'Cris Torres', birthdate: '2011-05-14', gender: 'Male', grade: 'Grade 9', section: 'Acacia', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-01-26', oralStatus: 'Under Treatment', riskLevel: 'High' },
+    { id: '208', name: 'Abby Diaz', birthdate: '2011-12-28', gender: 'Female', grade: 'Grade 9', section: 'Molave', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-02-19', oralStatus: 'Orally Fit', riskLevel: 'Low' },
+    { id: '209', name: 'Mark Gomez', birthdate: '2011-03-07', gender: 'Male', grade: 'Grade 9', section: 'Molave', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-03-10', oralStatus: 'Needs Follow-up', riskLevel: 'Medium' },
+    { id: '210', name: 'Zoe Castillo', birthdate: '2011-07-16', gender: 'Female', grade: 'Grade 9', section: 'Molave', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-01-08', oralStatus: 'Needs Treatment', riskLevel: 'Medium' },
+    { id: '211', name: 'Paolo Flores', birthdate: '2010-08-20', gender: 'Male', grade: 'Grade 10', section: 'Bangkal', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-02-22', oralStatus: 'Orally Fit', riskLevel: 'Low' },
+    { id: '212', name: 'Ivy Mendoza', birthdate: '2010-04-11', gender: 'Female', grade: 'Grade 10', section: 'Bangkal', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-03-18', oralStatus: 'Needs Treatment', riskLevel: 'Medium' },
+    { id: '213', name: 'Roy Dela Cruz', birthdate: '2010-11-03', gender: 'Male', grade: 'Grade 10', section: 'Talisay', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-01-14', oralStatus: 'Under Treatment', riskLevel: 'High' },
+    { id: '214', name: 'Mae Santos', birthdate: '2010-06-27', gender: 'Female', grade: 'Grade 10', section: 'Talisay', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-02-05', oralStatus: 'Needs Follow-up', riskLevel: 'Low' },
+    { id: '215', name: 'Jan Cruz', birthdate: '2010-02-15', gender: 'Male', grade: 'Grade 10', section: 'Talisay', school: 'Bagong Tanyag Integrated School', lastVisit: '2026-03-25', oralStatus: 'Orally Fit', riskLevel: 'Low' },
   ];
 
   // Filter by selected school context
