@@ -10,6 +10,7 @@ const SCHOOLS = [
   'Bagong Tanyag Elementary School Annex A',
   'South Daang Hari Elementary School Main',
 ];
+const GRADES = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'];
 
 const ViewToggle = ({ mode, onChange }: { mode: 'school' | 'list'; onChange: (m: 'school' | 'list') => void }) => (
   <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
@@ -47,10 +48,11 @@ export const AIAnalytics = () => {
   };
 
   const getAgeGroup = (age: number) => {
-    if (age >= 0 && age <= 5) return '0-5 years';
-    if (age >= 6 && age <= 14) return '6-14 years';
-    if (age >= 15 && age <= 19) return '15-19 years';
-    return 'Other';
+    if (age <= 4) return '4 & below';
+    if (age <= 9) return '5-9';
+    if (age <= 14) return '10-14';
+    if (age <= 19) return '15-19';
+    return '20 & above';
   };
 
   // ── Risk Scoring Algorithm (mirrors Base44 logic) ──────────────────────────
@@ -383,12 +385,9 @@ export const AIAnalytics = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF] appearance-none bg-white text-sm"
             >
               <option value="all">All Grades</option>
-              <option value="Grade 1">Grade 1</option>
-              <option value="Grade 2">Grade 2</option>
-              <option value="Grade 3">Grade 3</option>
-              <option value="Grade 4">Grade 4</option>
-              <option value="Grade 5">Grade 5</option>
-              <option value="Grade 6">Grade 6</option>
+              {GRADES.map((grade) => (
+                <option key={grade} value={grade}>{grade}</option>
+              ))}
             </select>
           </div>
 
@@ -414,9 +413,11 @@ export const AIAnalytics = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF] appearance-none bg-white text-sm"
             >
               <option value="all">All Ages</option>
-              <option value="0-5 years">0-5 years</option>
-              <option value="6-14 years">6-14 years</option>
-              <option value="15-19 years">15-19 years</option>
+              <option value="4 & below">4 & below</option>
+              <option value="5-9">5-9</option>
+              <option value="10-14">10-14</option>
+              <option value="15-19">15-19</option>
+              <option value="20 & above">20 & above</option>
             </select>
           </div>
 
@@ -563,7 +564,7 @@ export const AIAnalytics = () => {
       {analyticsSubTab === 'pending' && (
         <div className="space-y-4">
           {(() => {
-            const gradeOrder = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
+            const gradeOrder = GRADES;
             const pendingStudents = studentsWithRisk.filter(s => s.riskLevel !== 'Low');
             const byGrade: Record<string, any[]> = {};
             pendingStudents.forEach(s => {

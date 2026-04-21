@@ -40,10 +40,11 @@ export const TreatmentRecords = () => {
   const [dateTo, setDateTo] = useState('');
 
   const getAgeGroup = (age: number) => {
-    if (age <= 5) return 'Under 5';
-    if (age <= 10) return '6-10';
+    if (age <= 4) return '4 & below';
+    if (age <= 9) return '5-9';
     if (age <= 14) return '10-14';
-    return '15-19';
+    if (age <= 19) return '15-19';
+    return '20 & above';
   };
 
   const filtered = useMemo(() => mockTreatments.filter(t => {
@@ -86,7 +87,7 @@ export const TreatmentRecords = () => {
           <FS value={sectionFilter} onChange={setSectionFilter} label="All Sections" opts={[...new Set((gradeFilter !== 'all' ? mockTreatments.filter((r:any) => r.grade === gradeFilter) : mockTreatments).map((r:any) => r.section))].sort().map((s:any) => ({ v: s, l: s }))} />
           <FS value={genderFilter} onChange={setGenderFilter} label="All Genders" opts={[{ v:'Male', l:'Male' }, { v:'Female', l:'Female' }]} />
           <FS value={ageGroupFilter} onChange={setAgeGroupFilter} label="All Age Groups"
-            opts={[{ v:'Under 5', l:'Under 5' }, { v:'6-10', l:'6–10' }, { v:'10-14', l:'10–14' }, { v:'15-19', l:'15–19' }]} />
+            opts={[{ v:'4 & below', l:'4 & below' }, { v:'5-9', l:'5-9' }, { v:'10-14', l:'10-14' }, { v:'15-19', l:'15-19' }, { v:'20 & above', l:'20 & above' }]} />
           <FS value={treatmentFilter} onChange={setTreatmentFilter} label="All Treatment Types" opts={TREATMENT_TYPES.map(t => ({ v: t, l: t }))} />
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500">From</span>

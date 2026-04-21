@@ -222,9 +222,11 @@ export const Reports = () => {
   const [expandedReferral, setExpandedReferral] = useState<number|null>(null);
 
   const AGE_TO_GRADES: Record<string,string[]> = {
-    '5-9 yrs':   ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4'],
-    '10-14 yrs': ['Grade 5','Grade 6','Grade 7','Grade 8','Grade 9'],
-    '15+ yrs':   ['Grade 10'],
+    '4 & below': ['Kinder'],
+    '5-9': ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4'],
+    '10-14': ['Grade 5','Grade 6','Grade 7','Grade 8','Grade 9'],
+    '15-19': ['Grade 10'],
+    '20 & above': [],
   };
   const activeGrades = intAgeFilter !== 'all'
     ? AGE_TO_GRADES[intAgeFilter]
@@ -486,9 +488,11 @@ export const Reports = () => {
                 <select value={intAgeFilter} onChange={e => { setIntAgeFilter(e.target.value); setIntGradeFilter('all'); }}
                   className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="all">All Ages</option>
-                  <option value="5-9 yrs">5–9 yrs</option>
-                  <option value="10-14 yrs">10–14 yrs</option>
-                  <option value="15+ yrs">15+ yrs</option>
+                  <option value="4 & below">4 & below</option>
+                  <option value="5-9">5-9</option>
+                  <option value="10-14">10-14</option>
+                  <option value="15-19">15-19</option>
+                  <option value="20 & above">20 & above</option>
                 </select>
                 <select value={intGradeFilter} onChange={e => { setIntGradeFilter(e.target.value); setIntAgeFilter('all'); }}
                   className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -598,9 +602,11 @@ export const Reports = () => {
                 <select value={intAgeFilter} onChange={e => { setIntAgeFilter(e.target.value); setIntGradeFilter('all'); }}
                   className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="all">All Ages</option>
-                  <option value="5-9 yrs">5–9 yrs</option>
-                  <option value="10-14 yrs">10–14 yrs</option>
-                  <option value="15+ yrs">15+ yrs</option>
+                  <option value="4 & below">4 & below</option>
+                  <option value="5-9">5-9</option>
+                  <option value="10-14">10-14</option>
+                  <option value="15-19">15-19</option>
+                  <option value="20 & above">20 & above</option>
                 </select>
                 <select value={intGradeFilter} onChange={e => { setIntGradeFilter(e.target.value); setIntAgeFilter('all'); }}
                   className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">

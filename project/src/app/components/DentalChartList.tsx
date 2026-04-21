@@ -20,7 +20,7 @@ export const DentalChartList = () => {
   ];
 
   const schools = ['Bagong Tanyag Integrated School', 'South Daang Hari Elementary School Main', 'Bagong Bagong Tanyag Integrated School School Annex A'];
-  const grades = ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6'];
+  const grades = ['Kinder', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'];
 
   const filteredPatients = patients.filter(patient => {
     const matchesSearch = patient.name.toLowerCase().includes(searchQuery.toLowerCase());

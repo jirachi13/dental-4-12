@@ -57,10 +57,11 @@ export const PatientList = () => {
   };
 
   const getAgeGroup = (age: number) => {
-    if (age <= 5) return 'Under 5';
-    if (age <= 10) return '6-10';
+    if (age <= 4) return '4 & below';
+    if (age <= 9) return '5-9';
     if (age <= 14) return '10-14';
-    return '15-19';
+    if (age <= 19) return '15-19';
+    return '20 & above';
   };
 
   const allStudents = [
@@ -522,7 +523,7 @@ export const PatientList = () => {
               <FilterSelect value={genderFilter} onChange={setGenderFilter} label="All Genders"
                 options={[{ value:'Male', label:'Male' }, { value:'Female', label:'Female' }]} />
               <FilterSelect value={ageGroupFilter} onChange={setAgeGroupFilter} label="All Age Groups"
-                options={[{ value:'Under 5', label:'Under 5' }, { value:'6-10', label:'6–10' }, { value:'10-14', label:'10–14' }, { value:'15-19', label:'15–19' }]} />
+                options={[{ value:'4 & below', label:'4 & below' }, { value:'5-9', label:'5-9' }, { value:'10-14', label:'10-14' }, { value:'15-19', label:'15-19' }, { value:'20 & above', label:'20 & above' }]} />
               <FilterSelect value={riskFilter} onChange={setRiskFilter} label="All Risk Levels"
                 options={[{ value:'High', label:'High Risk' }, { value:'Medium', label:'Medium Risk' }, { value:'Low', label:'Low Risk' }]} />
               <FilterSelect value={statusFilter} onChange={setStatusFilter} label="All Statuses"
