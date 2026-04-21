@@ -519,6 +519,106 @@ export const DentalChart = () => {
       </div>
       </div>
 
+      {/* Tabs */}
+      <div className="sticky z-30 bg-gray-50 space-y-0" style={{ top: stickyOffsets.tabsTop }}>
+        <div className="bg-white rounded-xl border border-gray-200">
+          <div
+            ref={tabsRowRef}
+            className="rounded-t-xl border-b border-gray-200 bg-white"
+          >
+            <div className="overflow-x-auto">
+            <div className="flex min-w-max">
+            {[
+              { key: 'history',      label: 'History & Oral'    },
+              { key: 'chart',        label: 'Dental Chart'     },
+              { key: 'appointments', label: 'Consent'          },
+              { key: 'treatments',   label: 'Treatment History' },
+              { key: 'records',      label: 'DMFT History'     },
+              { key: 'referrals',    label: 'Referrals'        },
+              { key: 'ai',           label: 'AI Risk'          },
+            ].map(tab => (
+              <button key={tab.key} onClick={() => setActiveTab(tab.key as TabKey)}
+                className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors ${activeTab === tab.key ? 'border-b-2 border-blue-700 text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
+                {tab.key === 'referrals' && referrals.length > 0 ? (
+                  <span className="flex items-center gap-1.5">
+                    {tab.label}
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold leading-none">
+                      {referrals.length}
+                    </span>
+                  </span>
+                ) : tab.label}
+              </button>
+            ))}
+            </div>
+            </div>
+          </div>
+          {showStickyYearBar && (
+            <div className="border-t border-gray-100 bg-white px-4 pt-3">
+              <div className="overflow-x-auto">
+              <div className="flex items-center gap-0 min-w-max">
+              {activeYears.map((yr, idx) => {
+                const yrDmft = computeDMFT(chartData[idx] || {});
+                const isActive = selectedYear === idx;
+                return (
+                  <div
+                    key={yr}
+                    className={`mr-1 flex flex-shrink-0 items-stretch border-b-2 ${isActive ? 'border-blue-700 bg-blue-50 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setSelectedYear(idx)}
+                      className="px-4 py-2.5 text-left text-xs font-medium transition-all"
+                    >
+                      <div>{yr}</div>
+                      {activeTab === 'chart' && (
+                        <div style={{ fontSize: '10px', marginTop: '2px' }} className={isActive ? 'text-blue-600' : 'text-gray-400'}>
+                          DMFT: {yrDmft.T + yrDmft.t}
+                        </div>
+                      )}
+                      <div style={{ fontSize: '10px', marginTop: '2px' }} className={isActive ? 'text-blue-600' : 'text-gray-400'}>
+                        {formatDateStamp(medHistory[idx]?.dateExamined)}
+                      </div>
+                    </button>
+                    {canEdit && isManagingYears && activeYears.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteYear(idx)}
+                        className="border-l border-gray-200 px-2 text-gray-400 transition-colors hover:bg-white hover:text-red-600"
+                        title={`Delete ${yr}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              {canEdit && (
+                <div className="ml-2 flex flex-shrink-0 items-center gap-2 py-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsManagingYears(prev => !prev)}
+                    className={`rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors ${isManagingYears ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : 'border border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}`}
+                  >
+                    {isManagingYears ? 'Done' : 'Edit Years'}
+                  </button>
+                  {isManagingYears && !!getNextSchoolYear() && (
+                    <button
+                      type="button"
+                      onClick={handleAddYear}
+                      className="flex-shrink-0 px-3 py-2 text-xs text-gray-400 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-300 transition-all"
+                    >
+                      + Add Year
+                    </button>
+                  )}
+                </div>
+              )}
+              </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Patient Info Card */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         {editingInfo ? (
@@ -644,39 +744,8 @@ export const DentalChart = () => {
         )}
       </div>
 
-      {/* Tabs */}
+      {/* Tab Content */}
       <div className="bg-white rounded-xl border border-gray-200">
-        <div
-          ref={tabsRowRef}
-          className="sticky z-30 rounded-t-xl border-b border-gray-200 bg-white"
-          style={{ top: stickyOffsets.tabsTop }}
-        >
-          <div className="overflow-x-auto">
-          <div className="flex min-w-max">
-          {[
-            { key: 'history',      label: 'History & Oral'    },
-            { key: 'chart',        label: 'Dental Chart'     },
-            { key: 'appointments', label: 'Consent'          },
-            { key: 'treatments',   label: 'Treatment History' },
-            { key: 'records',      label: 'DMFT History'     },
-            { key: 'referrals',    label: 'Referrals'        },
-            { key: 'ai',           label: 'AI Risk'          },
-          ].map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key as TabKey)}
-              className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors ${activeTab === tab.key ? 'border-b-2 border-blue-700 text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
-              {tab.key === 'referrals' && referrals.length > 0 ? (
-                <span className="flex items-center gap-1.5">
-                  {tab.label}
-                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold leading-none">
-                    {referrals.length}
-                  </span>
-                </span>
-              ) : tab.label}
-            </button>
-          ))}
-          </div>
-          </div>
-        </div>
 
         {/* ── TAB 1: History ── */}
         {activeTab === 'history' && (
@@ -684,70 +753,26 @@ export const DentalChart = () => {
             <table className="w-full text-xs border-collapse">
               <thead>
                 <tr>
-                  <th
-                    className="sticky left-0 z-[22] bg-gray-50 px-4 py-2.5 text-left font-semibold text-gray-600 border border-gray-200 min-w-[180px]"
-                    style={{ top: stickyOffsets.yearTop }}
-                  ></th>
+                  <th className="bg-gray-50 px-4 py-2.5 text-left font-semibold text-gray-600 border border-gray-200 min-w-[180px]">Field</th>
                   {activeYears.map((yr, idx) => (
                     <th
                       key={yr}
                       onClick={() => setSelectedYear(idx)}
-                      className={`sticky z-[21] px-3 py-2.5 text-center font-semibold border border-gray-200 min-w-[110px] cursor-pointer select-none ${idx === selectedYear ? 'bg-blue-100 text-blue-800' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}
-                      style={{ top: stickyOffsets.yearTop }}
+                      className={`px-3 py-2.5 text-center font-semibold border border-gray-200 min-w-[110px] cursor-pointer select-none ${idx === selectedYear ? 'bg-blue-100 text-blue-800' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}
                     >
                       <div className="flex flex-col items-center gap-1">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <span>{yr}</span>
-                          {canEdit && isManagingYears && activeYears.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleDeleteYear(idx);
-                              }}
-                              className="rounded p-0.5 text-gray-400 transition-colors hover:bg-white/80 hover:text-red-600"
-                              title={`Delete ${yr}`}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          )}
-                        </div>
+                        <span>{yr}</span>
                         <span className={`text-[10px] font-medium ${idx === selectedYear ? 'text-blue-600' : 'text-gray-400'}`}>
                           {formatDateStamp(medHistory[idx]?.dateExamined)}
                         </span>
                       </div>
                     </th>
                   ))}
-                  <th
-                    className="sticky z-[21] bg-gray-50 border border-gray-200 px-2 py-2.5 text-center min-w-[120px]"
-                    style={{ top: stickyOffsets.yearTop }}
-                  >
-                    {canEdit && (
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setIsManagingYears(prev => !prev)}
-                          className={`rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors ${isManagingYears ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : 'border border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}`}
-                        >
-                          {isManagingYears ? 'Done' : 'Edit Years'}
-                        </button>
-                        {isManagingYears && !!getNextSchoolYear() && (
-                          <button
-                            type="button"
-                            onClick={handleAddYear}
-                            className="text-xs text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap"
-                          >
-                            + Year
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </th>
                 </tr>
               </thead>
               <tbody>
                 {/* ── Medical History header ── */}
-                <tr><td colSpan={activeYears.length + 2} className="px-4 py-2 font-bold text-gray-800 uppercase tracking-wide text-[10px] bg-gray-100 border border-gray-200">Medical History</td></tr>
+                <tr><td colSpan={activeYears.length + 1} className="px-4 py-2 font-bold text-gray-800 uppercase tracking-wide text-[10px] bg-gray-100 border border-gray-200">Medical History</td></tr>
 
                 {([
                   ['Allergies', 'allergies', 'text'],
@@ -773,12 +798,11 @@ export const DentalChart = () => {
                         }
                       </td>
                     ))}
-                    <td className="border border-gray-200" />
                   </tr>
                 ))}
 
                 {/* ── Dietary header ── */}
-                <tr><td colSpan={activeYears.length + 2} className="px-4 py-2 font-bold text-gray-800 uppercase tracking-wide text-[10px] bg-gray-100 border border-gray-200">Dietary Habits and Social History</td></tr>
+                <tr><td colSpan={activeYears.length + 1} className="px-4 py-2 font-bold text-gray-800 uppercase tracking-wide text-[10px] bg-gray-100 border border-gray-200">Dietary Habits and Social History</td></tr>
 
                 {([
                   ['Sugar Sweetened Beverages/Food', 'sugarSweetened'],
@@ -796,12 +820,11 @@ export const DentalChart = () => {
                         <input type="checkbox" disabled={!canEditHistory} checked={idx === selectedYear ? !!(diet as any)[field] : false} onChange={e => idx === selectedYear && updateDietField(field, e.target.checked)} className="w-4 h-4 rounded accent-teal-600 disabled:cursor-not-allowed" />
                       </td>
                     ))}
-                    <td className="border border-gray-200" />
                   </tr>
                 ))}
 
                 {/* ── Oral Health — dentist only ── */}
-                <tr><td colSpan={activeYears.length + 2} className="px-4 py-2 font-bold text-gray-800 uppercase tracking-wide text-[10px] bg-gray-100 border border-gray-200">
+                <tr><td colSpan={activeYears.length + 1} className="px-4 py-2 font-bold text-gray-800 uppercase tracking-wide text-[10px] bg-gray-100 border border-gray-200">
                   Oral Health Condition{!canEdit && <span className="ml-2 normal-case font-normal text-gray-400">(dentist only)</span>}
                 </td></tr>
 
@@ -827,7 +850,6 @@ export const DentalChart = () => {
                         }
                       </td>
                     ))}
-                    <td className="border border-gray-200" />
                   </tr>
                 ))}
               </tbody>
@@ -838,66 +860,6 @@ export const DentalChart = () => {
         {/* ── TAB 2: Dental Chart ── */}
         {activeTab === 'chart' && (
           <div className="p-0 space-y-0">
-            {/* Year tabs */}
-            <div
-              className="sticky z-20 border-b border-gray-200 bg-white px-4 pt-3"
-              style={{ top: stickyOffsets.yearTop }}
-            >
-              <div className="overflow-x-auto">
-              <div className="flex items-center gap-0 min-w-max">
-              {activeYears.map((yr, idx) => {
-                const yrDmft = computeDMFT(chartData[idx] || {});
-                return (
-                  <div
-                    key={yr}
-                    className={`mr-1 flex flex-shrink-0 items-stretch border-b-2 ${selectedYear === idx ? 'border-blue-700 bg-blue-50 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                  >
-                    <button
-                      onClick={() => setSelectedYear(idx)}
-                      className="px-4 py-2.5 text-left text-xs font-medium transition-all"
-                    >
-                      <div>{yr}</div>
-                      <div style={{ fontSize: '10px', marginTop: '2px' }} className={selectedYear === idx ? 'text-blue-600' : 'text-gray-400'}>
-                        DMFT: {yrDmft.T + yrDmft.t}
-                      </div>
-                      <div style={{ fontSize: '10px', marginTop: '2px' }} className={selectedYear === idx ? 'text-blue-600' : 'text-gray-400'}>
-                        {formatDateStamp(medHistory[idx]?.dateExamined)}
-                      </div>
-                    </button>
-                    {canEdit && isManagingYears && activeYears.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteYear(idx)}
-                        className="border-l border-gray-200 px-2 text-gray-400 transition-colors hover:bg-white hover:text-red-600"
-                        title={`Delete ${yr}`}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-              {canEdit && (
-                <div className="ml-2 flex flex-shrink-0 items-center gap-2 py-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsManagingYears(prev => !prev)}
-                    className={`rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors ${isManagingYears ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : 'border border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}`}
-                  >
-                    {isManagingYears ? 'Done' : 'Edit Years'}
-                  </button>
-                  {isManagingYears && !!getNextSchoolYear() && (
-                    <button
-                      onClick={handleAddYear}
-                      className="flex-shrink-0 px-3 py-2 text-xs text-gray-400 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-300 transition-all">
-                      + Add Year
-                    </button>
-                  )}
-                </div>
-              )}
-              </div>
-              </div>
-            </div>
             <div className="p-4 space-y-4">
             {/* Code selector — edit only */}
             <div className={`bg-blue-50 rounded-xl p-4 ${!canEdit ? 'opacity-50 pointer-events-none select-none' : ''}`}>
