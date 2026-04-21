@@ -867,24 +867,24 @@ export const DentalChart = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
                   <div className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Condition Codes</div>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
                     {conditionCodes.map(c => (
                       <button key={c.code} onClick={() => { setSelectedCondition(selectedCondition === c.code ? null : c.code); setSelectedTreatment(null); }}
-                        className={`aspect-square min-h-[68px] rounded-xl border p-2 text-center transition-all flex flex-col items-center justify-center gap-1.5 ${selectedCondition === c.code ? 'bg-teal-600 text-white ring-2 ring-teal-300 border-teal-600' : 'bg-white border-gray-300 text-gray-700 hover:border-teal-400'}`}>
-                        <div className="text-base sm:text-lg font-bold font-mono leading-none">{c.perm}/{c.temp}</div>
-                        <div className="text-[10px] sm:text-[11px] font-medium leading-tight">{c.label}</div>
+                        className={`aspect-square min-h-[54px] rounded-lg border p-1.5 text-center transition-all flex flex-col items-center justify-center gap-1 ${selectedCondition === c.code ? 'bg-teal-600 text-white ring-2 ring-teal-300 border-teal-600' : 'bg-white border-gray-300 text-gray-700 hover:border-teal-400'}`}>
+                        <div className="text-[13px] sm:text-[15px] font-bold font-mono leading-none">{c.perm}/{c.temp}</div>
+                        <div className="text-[9px] sm:text-[10px] font-medium leading-tight">{c.label}</div>
                       </button>
                     ))}
                   </div>
                 </div>
                 <div>
                   <div className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Treatment Codes</div>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
                     {treatmentCodes.map(t => (
                       <button key={t.code} onClick={() => { setSelectedTreatment(selectedTreatment === t.code ? null : t.code); setSelectedCondition(null); }}
-                        className={`aspect-square min-h-[68px] rounded-xl border p-2 text-center transition-all flex flex-col items-center justify-center gap-1.5 ${selectedTreatment === t.code ? 'bg-blue-600 text-white ring-2 ring-blue-300 border-blue-600' : 'bg-white border-gray-300 text-gray-700 hover:border-blue-400'}`}>
-                        <span className="text-base sm:text-lg font-bold font-mono leading-none">{t.code}</span>
-                        <span className="text-[10px] sm:text-[11px] font-medium leading-tight">{t.label}</span>
+                        className={`aspect-square min-h-[54px] rounded-lg border p-1.5 text-center transition-all flex flex-col items-center justify-center gap-1 ${selectedTreatment === t.code ? 'bg-blue-600 text-white ring-2 ring-blue-300 border-blue-600' : 'bg-white border-gray-300 text-gray-700 hover:border-blue-400'}`}>
+                        <span className="text-[13px] sm:text-[15px] font-bold font-mono leading-none">{t.code}</span>
+                        <span className="text-[9px] sm:text-[10px] font-medium leading-tight">{t.label}</span>
                       </button>
                     ))}
                   </div>
