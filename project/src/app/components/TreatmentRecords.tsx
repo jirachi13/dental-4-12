@@ -110,6 +110,10 @@ export const TreatmentRecords = () => {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Student</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Grade</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Section</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Gender</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Age</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Visit Date</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Treatment Type</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Diagnosis</th>
@@ -118,7 +122,7 @@ export const TreatmentRecords = () => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-12 text-gray-400">No treatment records match the selected filters.</td></tr>
+                <tr><td colSpan={9} className="text-center py-12 text-gray-400">No treatment records match the selected filters.</td></tr>
               ) : filtered.map(t => {
                 const gc = getGradeColor(t.grade);
                 return (
@@ -128,12 +132,15 @@ export const TreatmentRecords = () => {
                         <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-xs flex-shrink-0">
                           {t.studentName.split(' ').map((n: string) => n[0]).join('').slice(0,2)}
                         </div>
-                        <div>
-                          <div className="font-medium text-gray-900">{t.studentName}</div>
-                          <div className="text-xs text-gray-500">{t.grade} {t.section} • {t.gender} • Age {t.age}</div>
-                        </div>
+                        <span className="font-medium text-gray-900">{t.studentName}</span>
                       </div>
                     </td>
+                    <td className="px-4 py-3">
+                      <span style={{ backgroundColor: gc.light, color: gc.solid }} className="inline-block px-2 py-0.5 rounded text-xs font-semibold">{t.grade}</span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{t.section}</td>
+                    <td className="px-4 py-3 text-gray-600">{t.gender}</td>
+                    <td className="px-4 py-3 text-gray-600">{t.age}</td>
                     <td className="px-4 py-3 text-gray-600">{t.visitDate}</td>
                     <td className="px-4 py-3"><span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">{t.treatmentType}</span></td>
                     <td className="px-4 py-3 text-gray-600 text-xs max-w-[160px] truncate">{t.diagnosis}</td>
