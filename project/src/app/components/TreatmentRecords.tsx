@@ -318,7 +318,7 @@ export const TreatmentRecords = () => {
                   <tr key={t.id} onClick={() => navigate(`/dental-chart/${t.id}?tab=treatments`)} className="hover:bg-gray-50 transition-colors cursor-pointer">
                     <td className="px-4 py-3 font-medium text-gray-900">{formatName(t.name)}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${gc.light}`} style={{ color: gc.solid }}>{t.grade}</span>
+                      <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold" style={{ backgroundColor: gc.light, color: gc.solid }}>{t.grade}</span>
                     </td>
                     <td className="px-4 py-3 text-gray-600">{t.section}</td>
                     <td className="px-4 py-3 text-gray-600">{t.gender}</td>

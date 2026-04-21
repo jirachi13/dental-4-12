@@ -324,7 +324,7 @@ export const DentalChartNav = () => {
                   <tr key={p.id} onClick={() => navigate(`/dental-chart/${p.id}`)} className="hover:bg-gray-50 transition-colors cursor-pointer">
                     <td className="px-4 py-3 font-medium text-gray-900">{formatName(p.name)}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${gc.light}`} style={{ color: gc.solid }}>{p.grade}</span>
+                      <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold" style={{ backgroundColor: gc.light, color: gc.solid }}>{p.grade}</span>
                     </td>
                     <td className="px-4 py-3 text-gray-600">{p.section}</td>
                     <td className="px-4 py-3 text-gray-600">{p.gender}</td>
