@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { X } from 'lucide-react';
-import { getGradeColor } from '../utils/gradeColors';
+import { formatStudentName } from '../utils/formatStudentName';
+import { GradePill } from './GradePill';
 
 const GRADES = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'];
 
@@ -240,14 +241,6 @@ const getAgeGroup = (age: number) => {
   return '20 & above';
 };
 
-const formatName = (fullName: string) => {
-  const parts = fullName.split(' ');
-  if (parts.length < 2) return fullName;
-  const firstName = parts.slice(0, -1).join(' ');
-  const lastName = parts[parts.length - 1];
-  return `${lastName}, ${firstName}`;
-};
-
 export const TreatmentRecords = () => {
   const navigate = useNavigate();
   const [gradeFilter, setGradeFilter] = useState('all');
@@ -313,12 +306,11 @@ export const TreatmentRecords = () => {
                 <tr><td colSpan={5} className="text-center py-12 text-gray-400">No treatment records match the selected filters.</td></tr>
               ) : filtered.map(t => {
                 const age = calculateAge(t.birthdate);
-                const gc = getGradeColor(t.grade);
                 return (
                   <tr key={t.id} onClick={() => navigate(`/dental-chart/${t.id}?tab=treatments`)} className="hover:bg-gray-50 transition-colors cursor-pointer">
-                    <td className="px-4 py-3 font-medium text-gray-900">{formatName(t.name)}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900">{formatStudentName(t.name)}</td>
                     <td className="px-4 py-3">
-                      <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold" style={{ backgroundColor: gc.light, color: gc.solid }}>{t.grade}</span>
+                      <GradePill grade={t.grade} />
                     </td>
                     <td className="px-4 py-3 text-gray-600">{t.section}</td>
                     <td className="px-4 py-3 text-gray-600">{t.gender}</td>
