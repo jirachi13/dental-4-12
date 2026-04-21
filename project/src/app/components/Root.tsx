@@ -52,7 +52,7 @@ export const Root = () => {
       roles: ['dentist','dental_aide','school_admin']
     },
     {
-      id: 8, path: '/ai-analytics', label: 'AI Analytics', icon: Brain,
+      id: 8, path: '/ai-analytics', label: 'Risk Classification', icon: Brain,
       roles: ['dentist']
     },
     {
