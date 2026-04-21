@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Search, Plus, Eye, FileText, X, School as SchoolIcon, List, ChevronRight, Users, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
+import { GradePill } from './GradePill';
 
 const SCHOOLS = [
   'Bagong Tanyag Integrated School',
@@ -536,7 +537,9 @@ export const PatientList = () => {
                     return (
                       <tr key={student.id} onClick={() => navigate(`/dental-chart/${student.id}?tab=history`)} className="hover:bg-gray-50 cursor-pointer">
                         <td className="px-4 py-3 font-medium text-gray-900">{student.name}</td>
-                        <td className="px-4 py-3 text-gray-600">{student.grade}</td>
+                        <td className="px-4 py-3">
+                          <GradePill grade={student.grade} />
+                        </td>
                         <td className="px-4 py-3 text-gray-600">{student.section}</td>
                         <td className="px-4 py-3 text-gray-600">{student.gender}</td>
                         <td className="px-4 py-3 text-gray-600">{age}</td>
@@ -686,7 +689,9 @@ export const PatientList = () => {
                           <tr key={i} className="hover:bg-gray-50">
                             <td className="px-3 py-2 font-medium text-gray-900">{s.lastName}, {s.firstName}</td>
                             <td className="px-3 py-2 text-gray-600">{s.sex}</td>
-                            <td className="px-3 py-2 text-gray-600">{s.grade}</td>
+                            <td className="px-3 py-2">
+                              <GradePill grade={s.grade} />
+                            </td>
                             <td className="px-3 py-2 text-gray-600">{s.section}</td>
                           </tr>
                         ))}

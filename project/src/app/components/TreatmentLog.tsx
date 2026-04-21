@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { ArrowLeft, Plus, Calendar, FileText } from 'lucide-react';
+import { GradePill } from './GradePill';
 
 export const TreatmentLog = () => {
   const { id } = useParams();
@@ -52,7 +53,10 @@ export const TreatmentLog = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Treatment Log</h1>
-            <p className="text-gray-600 mt-1">{patient.name} • {patient.grade}</p>
+            <div className="mt-1 flex items-center gap-2 text-gray-600">
+              <span>{patient.name}</span>
+              <GradePill grade={patient.grade} />
+            </div>
           </div>
           <button
             onClick={() => setShowAddForm(!showAddForm)}

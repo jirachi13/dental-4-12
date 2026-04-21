@@ -1,4 +1,6 @@
-import { getGradeColor } from '../utils/gradeColors';
+import { useMemo, useState } from 'react';
+import { X } from 'lucide-react';
+import { GradePill } from './GradePill';
 
 // Mock patient data with all fields
 const mockPatients = [
@@ -331,12 +333,11 @@ export const DentalChartList = () => {
                 <tr><td colSpan={5} className="text-center py-12 text-gray-400">No dental charts match the selected filters.</td></tr>
               ) : filtered.map(patient => {
                 const age = calculateAge(patient.birthdate);
-                const gc = getGradeColor(patient.grade);
                 return (
                   <tr key={patient.id} onClick={() => window.location.href = `/dental-chart/${patient.id}`} className="hover:bg-gray-50 cursor-pointer">
                     <td className="px-4 py-3 font-medium text-gray-900">{formatName(patient.name)}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${gc.light}`} style={{ color: gc.solid }}>{patient.grade}</span>
+                      <GradePill grade={patient.grade} />
                     </td>
                     <td className="px-4 py-3 text-gray-600">{patient.section}</td>
                     <td className="px-4 py-3 text-gray-600">{patient.gender}</td>

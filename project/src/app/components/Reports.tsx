@@ -3,6 +3,7 @@ import { FileSpreadsheet, FileText, Printer, AlertTriangle, AlertCircle, CheckCi
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { getSchoolShortName } from '../utils/schoolColors';
+import { GradePill } from './GradePill';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -771,7 +772,12 @@ export const Reports = () => {
                           <tr key={i} className="hover:bg-gray-50">
                             <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{s.date}</td>
                             <td className="px-4 py-2.5 text-gray-600 max-w-[140px] truncate">{getSchoolShortName(s.school)}</td>
-                            <td className="px-4 py-2.5 font-medium text-gray-900">{s.grade} — {s.section}</td>
+                            <td className="px-4 py-2.5">
+                              <div className="flex items-center gap-2 font-medium text-gray-900">
+                                <GradePill grade={s.grade} />
+                                <span>{s.section}</span>
+                              </div>
+                            </td>
                             <td className="px-4 py-2.5 text-gray-600">{s.students}</td>
                             <td className="px-4 py-2.5">
                               <span className="font-semibold text-gray-900">{s.treated}</span>
@@ -810,7 +816,9 @@ export const Reports = () => {
                           className="hover:bg-orange-50/40 cursor-pointer select-none">
                           <td className="px-4 py-2.5 font-medium text-gray-900 whitespace-nowrap">{r.student}</td>
                           <td className="px-4 py-2.5 text-gray-500 max-w-[120px] truncate">{getSchoolShortName(r.school)}</td>
-                          <td className="px-4 py-2.5 text-gray-600">{r.grade}</td>
+                          <td className="px-4 py-2.5">
+                            <GradePill grade={r.grade} />
+                          </td>
                           <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{r.date}</td>
                           <td className="px-4 py-2.5 text-gray-600">{r.facility}</td>
                           <td className="px-4 py-2.5 text-gray-600 max-w-[160px] truncate">{r.reason}</td>

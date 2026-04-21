@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { AlertCircle, TrendingUp, CheckCircle, Filter, Eye, Brain, Activity, School as SchoolIcon, List } from 'lucide-react';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { GradePill } from './GradePill';
 
 const SCHOOLS = [
   'Bagong Tanyag Integrated School',
@@ -485,7 +486,10 @@ export const AIAnalytics = () => {
                   className="hover:bg-gray-50 cursor-pointer transition-colors">
                   <td className="px-4 py-3">
                     <div className="font-medium text-gray-900">{student.name}</div>
-                    <div className="text-xs text-gray-500">{student.grade} · {student.school}</div>
+                    <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                      <GradePill grade={student.grade} />
+                      <span>{student.school}</span>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getRiskBadgeColor(student.riskLevel)}`}>
@@ -578,9 +582,9 @@ export const AIAnalytics = () => {
               gradeStudents.forEach(s => { if (!bySec[s.section]) bySec[s.section] = []; bySec[s.section].push(s); });
               return (
                 <div key={grade} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                  <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200">
-                    <span className="text-sm font-bold text-gray-800">{grade}</span>
-                    <span className="ml-2 text-xs text-gray-500">{gradeStudents.length} student{gradeStudents.length !== 1 ? 's' : ''} need attention</span>
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border-b border-gray-200">
+                    <GradePill grade={grade} className="text-sm" />
+                    <span className="text-xs text-gray-500">{gradeStudents.length} student{gradeStudents.length !== 1 ? 's' : ''} need attention</span>
                   </div>
                   {Object.entries(bySec).map(([section, students]) => (
                     <div key={section}>
@@ -594,7 +598,10 @@ export const AIAnalytics = () => {
                             <div className="flex items-start justify-between mb-2">
                               <div>
                                 <span className="text-sm font-semibold text-gray-900">{s.name}</span>
-                                <span className="ml-2 text-xs text-gray-400">{s.grade} · {s.section}</span>
+                                <span className="ml-2 inline-flex items-center gap-2 text-xs text-gray-400">
+                                  <GradePill grade={s.grade} />
+                                  <span>{s.section}</span>
+                                </span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${riskLevel === 'High' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
