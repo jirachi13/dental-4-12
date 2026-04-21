@@ -409,11 +409,11 @@ export const DentalChart = () => {
     return (
       <button
         onClick={() => canEdit && handleToothClick(num)}
-        className={`relative w-9 h-10 border-2 rounded-sm text-center transition-all ${colorClass} ${isSelected ? 'hover:border-teal-500 hover:ring-2 hover:ring-teal-300 hover:bg-teal-50 cursor-pointer' : 'cursor-default'}`}
+        className={`relative flex h-12 w-10 shrink-0 flex-col items-center justify-between rounded-md border-2 px-0.5 py-1 text-center transition-all md:h-[54px] md:w-[44px] ${colorClass} ${isSelected ? 'hover:border-teal-500 hover:ring-2 hover:ring-teal-300 hover:bg-teal-50 cursor-pointer' : 'cursor-default'}`}
       >
-        <div className="text-[7px] text-slate-400 leading-none mt-0.5">{num}</div>
-        {cond && <div className="text-[9px] font-bold text-slate-700 leading-none">{cond}</div>}
-        {treat && <div className="text-[7px] text-teal-600 leading-none">{treat}</div>}
+        <div className="text-[8px] font-medium text-slate-500 leading-none">{num}</div>
+        {cond && <div className="text-[11px] md:text-xs font-bold text-slate-700 leading-none">{cond}</div>}
+        {treat && <div className="text-[8px] md:text-[9px] font-semibold text-teal-700 leading-none">{treat}</div>}
       </button>
     );
   };
@@ -864,27 +864,27 @@ export const DentalChart = () => {
             {/* Code selector — edit only */}
             <div className={`bg-blue-50 rounded-xl p-4 ${!canEdit ? 'opacity-50 pointer-events-none select-none' : ''}`}>
               {!canEdit && <p className="text-xs text-gray-500 mb-2 italic">View only — editing restricted to Dentist / Dental Aide</p>}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 <div>
-                  <div className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Condition Codes</div>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Condition Codes</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {conditionCodes.map(c => (
                       <button key={c.code} onClick={() => { setSelectedCondition(selectedCondition === c.code ? null : c.code); setSelectedTreatment(null); }}
-                        className={`px-2 py-2 rounded-lg text-xs transition-all text-left ${selectedCondition === c.code ? 'bg-teal-600 text-white ring-2 ring-teal-300' : 'bg-white border border-gray-300 text-gray-700 hover:border-teal-400'}`}>
-                        <div className="font-bold font-mono">{c.perm}/{c.temp}</div>
-                        <div className="text-[9px] font-normal leading-tight mt-0.5 truncate">{c.label}</div>
+                        className={`aspect-square min-h-[90px] rounded-xl border p-2.5 text-center transition-all flex flex-col items-center justify-center gap-2 ${selectedCondition === c.code ? 'bg-teal-600 text-white ring-2 ring-teal-300 border-teal-600' : 'bg-white border-gray-300 text-gray-700 hover:border-teal-400'}`}>
+                        <div className="text-lg font-bold font-mono leading-none">{c.perm}/{c.temp}</div>
+                        <div className="text-[11px] sm:text-xs font-medium leading-tight">{c.label}</div>
                       </button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Treatment Codes</div>
-                  <div className="flex flex-col gap-1.5">
+                  <div className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Treatment Codes</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {treatmentCodes.map(t => (
                       <button key={t.code} onClick={() => { setSelectedTreatment(selectedTreatment === t.code ? null : t.code); setSelectedCondition(null); }}
-                        className={`px-3 py-2 rounded-lg text-xs transition-all text-left flex items-center gap-2 ${selectedTreatment === t.code ? 'bg-blue-600 text-white ring-2 ring-blue-300' : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-400'}`}>
-                        <span className="font-bold font-mono w-8 flex-shrink-0">{t.code}</span>
-                        <span className="text-[10px] leading-tight">{t.label}</span>
+                        className={`aspect-square min-h-[90px] rounded-xl border p-2.5 text-center transition-all flex flex-col items-center justify-center gap-2 ${selectedTreatment === t.code ? 'bg-blue-600 text-white ring-2 ring-blue-300 border-blue-600' : 'bg-white border-gray-300 text-gray-700 hover:border-blue-400'}`}>
+                        <span className="text-lg font-bold font-mono leading-none">{t.code}</span>
+                        <span className="text-[11px] sm:text-xs font-medium leading-tight">{t.label}</span>
                       </button>
                     ))}
                   </div>
@@ -912,29 +912,29 @@ export const DentalChart = () => {
 
             {/* Odontogram */}
             <div className="bg-white rounded-xl border border-gray-200 p-4 overflow-x-auto">
-              <div className="min-w-[600px] space-y-2">
+              <div className="min-w-[680px] space-y-2.5">
                 {/* Upper permanent */}
-                <div className="flex justify-center gap-0.5">
+                <div className="flex justify-center gap-1">
                   {upperPermanent.map(n => <ToothButton key={n} num={n} />)}
                 </div>
                 {/* Upper temporary */}
-                <div className="flex justify-center gap-0.5">
-                  <div className="flex gap-0.5">{upperTemporary.slice(0, 5).map(n => <ToothButton key={n} num={n} />)}</div>
-                  <div className="w-8" />
-                  <div className="flex gap-0.5">{upperTemporary.slice(5).map(n => <ToothButton key={n} num={n} />)}</div>
+                <div className="flex justify-center gap-1">
+                  <div className="flex gap-1">{upperTemporary.slice(0, 5).map(n => <ToothButton key={n} num={n} />)}</div>
+                  <div className="w-9" />
+                  <div className="flex gap-1">{upperTemporary.slice(5).map(n => <ToothButton key={n} num={n} />)}</div>
                 </div>
 
                 {/* Divider */}
                 <div className="border-t-2 border-dashed border-gray-300 my-2" />
 
                 {/* Lower temporary */}
-                <div className="flex justify-center gap-0.5">
-                  <div className="flex gap-0.5">{lowerTemporary.slice(0, 5).map(n => <ToothButton key={n} num={n} />)}</div>
-                  <div className="w-8" />
-                  <div className="flex gap-0.5">{lowerTemporary.slice(5).map(n => <ToothButton key={n} num={n} />)}</div>
+                <div className="flex justify-center gap-1">
+                  <div className="flex gap-1">{lowerTemporary.slice(0, 5).map(n => <ToothButton key={n} num={n} />)}</div>
+                  <div className="w-9" />
+                  <div className="flex gap-1">{lowerTemporary.slice(5).map(n => <ToothButton key={n} num={n} />)}</div>
                 </div>
                 {/* Lower permanent */}
-                <div className="flex justify-center gap-0.5">
+                <div className="flex justify-center gap-1">
                   {lowerPermanent.map(n => <ToothButton key={n} num={n} />)}
                 </div>
               </div>
