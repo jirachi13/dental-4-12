@@ -18,7 +18,7 @@ export const Appointments = () => {
   const navigate = useNavigate();
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'past' | 'rotation'>('today');
+  const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'completed' | 'missed' | 'rotation'>('today');
 
   // Filters
   const [gradeFilter, setGradeFilter] = useState('all');
@@ -103,7 +103,8 @@ export const Appointments = () => {
   // Tab filters
   const todayAppts = appointments.filter(a => a.date === TODAY);
   const upcomingAppts = appointments.filter(a => a.date > TODAY && getStatus(a) === 'Scheduled');
-  const pastAppts = appointments.filter(a => a.date < TODAY || ['Completed','Missed','Cancelled'].includes(getStatus(a)));
+  const completedAppts = appointments.filter(a => getStatus(a) === 'Completed');
+  const missedAppts = appointments.filter(a => getStatus(a) === 'Missed');
 
   const filteredAppointments = appointments.filter(a => {
     if (gradeFilter !== 'all' && a.grade !== gradeFilter) return false;
@@ -221,10 +222,6 @@ export const Appointments = () => {
           <p className="text-sm text-gray-500 mt-0.5">{appointments.length} appointment{appointments.length !== 1 ? 's' : ''} total</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowRotationModal(true)}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">
-            <Stethoscope className="w-4 h-4" /> Set Rotation
-          </button>
           <button onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
             <Plus className="w-4 h-4" /> New Appointment
@@ -275,13 +272,14 @@ export const Appointments = () => {
         </div>
       </div>
 
-      {/* ── TABS: Today / Upcoming / Past ── */}
+      {/* ── TABS: Today / Upcoming / Completed / Missed ── */}
       <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
         {[
-          { key: 'today',    label: `Today (${todayAppts.length})`        },
-          { key: 'upcoming', label: `Upcoming (${upcomingAppts.length})`  },
-          { key: 'past',     label: `Past (${pastAppts.length})`          },
-          { key: 'rotation', label: 'Rotation'                            },
+          { key: 'today',     label: `Today (${todayAppts.length})`            },
+          { key: 'upcoming',  label: `Upcoming (${upcomingAppts.length})`      },
+          { key: 'completed', label: `Completed (${completedAppts.length})`    },
+          { key: 'missed',    label: `Missed (${missedAppts.length})`          },
+          { key: 'rotation',  label: 'Rotation'                                },
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key as any)}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.key ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
@@ -338,18 +336,34 @@ export const Appointments = () => {
         </>
       )}
 
-      {/* PAST */}
-      {activeTab === 'past' && (
+      {/* COMPLETED */}
+      {activeTab === 'completed' && (
         <>
           <div className="px-4 py-3 border-b border-gray-100">
-            <span className="text-sm font-semibold text-gray-900">Past Appointments</span>
+            <span className="text-sm font-semibold text-gray-900">Completed Appointments</span>
           </div>
-          {pastAppts.length === 0 ? (
+          {completedAppts.length === 0 ? (
             <div className="py-12 text-center text-gray-400">
-              <p className="text-sm">No past appointments</p>
+              <p className="text-sm">No completed appointments</p>
             </div>
           ) : (
-            pastAppts.map(a => <AppointmentCard key={a.id} a={a} showActions />)
+            completedAppts.map(a => <AppointmentCard key={a.id} a={a} showActions />)
+          )}
+        </>
+      )}
+
+      {/* MISSED */}
+      {activeTab === 'missed' && (
+        <>
+          <div className="px-4 py-3 border-b border-gray-100">
+            <span className="text-sm font-semibold text-gray-900">Missed Appointments</span>
+          </div>
+          {missedAppts.length === 0 ? (
+            <div className="py-12 text-center text-gray-400">
+              <p className="text-sm">No missed appointments</p>
+            </div>
+          ) : (
+            missedAppts.map(a => <AppointmentCard key={a.id} a={a} showActions />)
           )}
         </>
       )}

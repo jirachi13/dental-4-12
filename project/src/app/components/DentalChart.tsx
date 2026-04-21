@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router';
 import { ArrowLeft, Save, ChevronLeft, ChevronRight, Shield, Users, TrendingUp, FileText, Plus, Pencil, ExternalLink, Trash2 } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 import { useAuth } from '../context/AuthContext';
+import { GradePill } from './GradePill';
 
 // ─── Ordered patient nav list (matches DentalChartNav mockCharts order) ────────
 const patientNavList = [
@@ -609,9 +610,8 @@ export const DentalChart = () => {
                   <div className="font-bold text-gray-900">{patientInfo.lastName}, {patientInfo.firstName} {patientInfo.middleName}</div>
                   <div className="text-xs text-gray-500">{patientInfo.grade} • {patientInfo.section} • {patientInfo.sex} • Age {computeAge(patientInfo.birthday)}</div>
                   <div className="flex items-center gap-2 mt-1">
-                    <span style={{ backgroundColor: gc.light, color: gc.solid }} className="text-xs font-semibold px-2 py-0.5 rounded-full">{patientInfo.grade} — {patientInfo.section}</span>
-                    {patientInfo.riskLevel === 'high' && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">High Risk</span>}
-                    {patientInfo.consentStatus === 'complete' && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Consent Complete</span>}
+                    <GradePill grade={patientInfo.grade} />
+                    <span style={{ color: gc.solid }} className="text-xs font-medium">{patientInfo.section}</span>
                     {patientInfo.is4Ps && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">4Ps</span>}
                   </div>
                 </div>

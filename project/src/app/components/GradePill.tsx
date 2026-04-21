@@ -10,7 +10,7 @@ export const GradePill = ({ grade, className = '' }: GradePillProps) => {
 
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${className}`.trim()}
+      className={`inline-flex items-center whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold leading-none ${className}`.trim()}
       style={{ backgroundColor: gc.light, color: gc.solid }}
     >
       {grade}
