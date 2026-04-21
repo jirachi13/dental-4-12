@@ -373,7 +373,7 @@ export const PatientList = () => {
       <div className="flex items-center gap-1 text-sm text-gray-500 mb-4">
         <button onClick={() => { setSelectedGrade(null); setSelectedSection(null); }} className="hover:text-[#1E40AF]">All Schools</button>
         {selectedGrade && <><ChevronRight className="w-4 h-4" /><button onClick={() => { setSelectedGrade(null); setSelectedSection(null); }} style={{ color: selectedSchool ? getSchoolColor(selectedSchool).solid : undefined }} className="truncate max-w-[160px] font-medium">{selectedSchool ? getSchoolShortName(selectedSchool) : ''}</button></>}
-        {selectedGrade && <><ChevronRight className="w-4 h-4" /><button onClick={() => setSelectedSection(null)} className="hover:text-[#1E40AF]">{selectedGrade}</button></>}
+        {selectedGrade && <><ChevronRight className="w-4 h-4" /><button onClick={() => setSelectedSection(null)} className="hover:text-[#1E40AF]"><GradePill grade={selectedGrade} /></button></>}
         {selectedSection && <><ChevronRight className="w-4 h-4" /><span className="text-gray-900 font-medium">{selectedSection}</span></>}
       </div>
     );
@@ -422,7 +422,7 @@ export const PatientList = () => {
                       style={{ backgroundColor: gc.light, borderColor: gc.solid }}
                       className="flex items-center justify-between p-4 rounded-xl border-2 hover:shadow-md transition-all group">
                       <div>
-                        <div style={{ color: gc.solid }} className="font-bold text-sm">{grade}</div>
+                        <GradePill grade={grade} />
                         <div className="text-xs text-gray-500 mt-0.5">{count} students</div>
                       </div>
                       <ChevronRight style={{ color: gc.solid }} className="w-4 h-4" />
@@ -436,7 +436,10 @@ export const PatientList = () => {
           {/* Level 3 — Sections */}
           {selectedGrade && !selectedSection && (
             <div className="space-y-3">
-              <p className="text-sm font-medium text-gray-700">{selectedGrade} — Select Section</p>
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <GradePill grade={selectedGrade} />
+                <span>Select Section</span>
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {sectionsForGrade.map(section => {
                   const gc = getGradeColor(selectedGrade);
