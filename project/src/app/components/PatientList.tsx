@@ -543,10 +543,6 @@ export const PatientList = () => {
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
                     <th className="text-left px-4 py-3 font-semibold text-gray-700">Student</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">School</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Grade / Section</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Gender</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Age</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-700">Risk</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-700">Last Visit</th>
@@ -554,7 +550,7 @@ export const PatientList = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={9} className="text-center py-12 text-gray-400">No students match the selected filters.</td></tr>
+                    <tr><td colSpan={4} className="text-center py-12 text-gray-400">No students match the selected filters.</td></tr>
                   ) : filtered.map(student => {
                     const age = calculateAge(student.birthdate);
                     const gc = getGradeColor(student.grade);
@@ -565,21 +561,12 @@ export const PatientList = () => {
                             <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-xs flex-shrink-0">
                               {student.name.split(' ').map((n: string) => n[0]).join('').slice(0,2)}
                             </div>
-                            <span className="font-medium text-gray-900">{student.name}</span>
+                            <div>
+                              <div className="font-medium text-gray-900">{student.name}</div>
+                              <div className="text-xs text-gray-500">{student.grade} {student.section} • {student.gender} • {age} yrs</div>
+                            </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 max-w-[140px]">
-                          <div className="flex items-center gap-1.5">
-                            <div style={{ backgroundColor: getSchoolColor(student.school).solid }} className="w-2 h-2 rounded-full flex-shrink-0" />
-                            <span className="text-gray-600 text-xs truncate">{getSchoolShortName(student.school)}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span style={{ backgroundColor: gc.light, color: gc.solid }} className="inline-block px-2 py-0.5 rounded text-xs font-semibold">{student.grade}</span>
-                          <span className="text-gray-500 text-xs ml-1">{student.section}</span>
-                        </td>
-                        <td className="px-4 py-3 text-gray-600">{student.gender}</td>
-                        <td className="px-4 py-3 text-gray-600">{age}</td>
                         <td className="px-4 py-3">{riskBadge(student.riskLevel)}</td>
                         <td className="px-4 py-3">{statusBadge(student.oralStatus)}</td>
                         <td className="px-4 py-3 text-gray-500">{student.lastVisit}</td>

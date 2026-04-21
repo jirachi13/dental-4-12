@@ -472,7 +472,7 @@ export const DentalChart = () => {
           </Link>
           <div className="min-w-0">
             <h1 className="text-lg font-bold text-gray-900">Individual Patient Treatment Record</h1>
-            <p className="text-xs text-gray-500">{patientInfo.lastName}, {patientInfo.firstName} · {patientInfo.school} · {patientInfo.grade}-{patientInfo.section}</p>
+            <p className="text-xs text-gray-500">{patientInfo.lastName}, {patientInfo.firstName} · {patientInfo.grade} {patientInfo.section} · {patientInfo.sex} · {computeAge(patientInfo.birthday)} yrs</p>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -607,7 +607,7 @@ export const DentalChart = () => {
                 </div>
                 <div>
                   <div className="font-bold text-gray-900">{patientInfo.lastName}, {patientInfo.firstName} {patientInfo.middleName}</div>
-                  <div className="text-xs text-gray-500">{patientInfo.school}</div>
+                  <div className="text-xs text-gray-500">{patientInfo.grade} • {patientInfo.section} • {patientInfo.sex} • Age {computeAge(patientInfo.birthday)}</div>
                   <div className="flex items-center gap-2 mt-1">
                     <span style={{ backgroundColor: gc.light, color: gc.solid }} className="text-xs font-semibold px-2 py-0.5 rounded-full">{patientInfo.grade} — {patientInfo.section}</span>
                     {patientInfo.riskLevel === 'high' && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">High Risk</span>}

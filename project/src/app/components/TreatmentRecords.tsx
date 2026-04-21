@@ -110,8 +110,6 @@ export const TreatmentRecords = () => {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Student</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">School</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Grade / Section</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Visit Date</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Treatment Type</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Diagnosis</th>
@@ -120,7 +118,7 @@ export const TreatmentRecords = () => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-12 text-gray-400">No treatment records match the selected filters.</td></tr>
+                <tr><td colSpan={5} className="text-center py-12 text-gray-400">No treatment records match the selected filters.</td></tr>
               ) : filtered.map(t => {
                 const gc = getGradeColor(t.grade);
                 return (
@@ -132,14 +130,9 @@ export const TreatmentRecords = () => {
                         </div>
                         <div>
                           <div className="font-medium text-gray-900">{t.studentName}</div>
-                          <div className="text-xs text-gray-500">{t.gender} · Age {t.age}</div>
+                          <div className="text-xs text-gray-500">{t.grade} {t.section} • {t.gender} • Age {t.age}</div>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 text-xs max-w-[140px] truncate">{t.school}</td>
-                    <td className="px-4 py-3">
-                      <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold" style={{ backgroundColor: gc.light, color: gc.solid }}>{t.grade}</span>
-                      <span className="text-gray-500 text-xs ml-1">{t.section}</span>
                     </td>
                     <td className="px-4 py-3 text-gray-600">{t.visitDate}</td>
                     <td className="px-4 py-3"><span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">{t.treatmentType}</span></td>
