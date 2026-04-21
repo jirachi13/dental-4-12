@@ -519,106 +519,6 @@ export const DentalChart = () => {
       </div>
       </div>
 
-      {/* Tabs */}
-      <div className="sticky z-30 bg-gray-50 space-y-0" style={{ top: stickyOffsets.tabsTop }}>
-        <div className="bg-white rounded-xl border border-gray-200">
-          <div
-            ref={tabsRowRef}
-            className="rounded-t-xl border-b border-gray-200 bg-white"
-          >
-            <div className="overflow-x-auto">
-            <div className="flex min-w-max">
-            {[
-              { key: 'history',      label: 'History & Oral'    },
-              { key: 'chart',        label: 'Dental Chart'     },
-              { key: 'appointments', label: 'Consent'          },
-              { key: 'treatments',   label: 'Treatment History' },
-              { key: 'records',      label: 'DMFT History'     },
-              { key: 'referrals',    label: 'Referrals'        },
-              { key: 'ai',           label: 'AI Risk'          },
-            ].map(tab => (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key as TabKey)}
-                className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors ${activeTab === tab.key ? 'border-b-2 border-blue-700 text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
-                {tab.key === 'referrals' && referrals.length > 0 ? (
-                  <span className="flex items-center gap-1.5">
-                    {tab.label}
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold leading-none">
-                      {referrals.length}
-                    </span>
-                  </span>
-                ) : tab.label}
-              </button>
-            ))}
-            </div>
-            </div>
-          </div>
-          {showStickyYearBar && (
-            <div className="border-t border-gray-100 bg-white px-4 pt-3">
-              <div className="overflow-x-auto">
-              <div className="flex items-center gap-0 min-w-max">
-              {activeYears.map((yr, idx) => {
-                const yrDmft = computeDMFT(chartData[idx] || {});
-                const isActive = selectedYear === idx;
-                return (
-                  <div
-                    key={yr}
-                    className={`mr-1 flex flex-shrink-0 items-stretch border-b-2 ${isActive ? 'border-blue-700 bg-blue-50 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setSelectedYear(idx)}
-                      className="px-4 py-2.5 text-left text-xs font-medium transition-all"
-                    >
-                      <div>{yr}</div>
-                      {activeTab === 'chart' && (
-                        <div style={{ fontSize: '10px', marginTop: '2px' }} className={isActive ? 'text-blue-600' : 'text-gray-400'}>
-                          DMFT: {yrDmft.T + yrDmft.t}
-                        </div>
-                      )}
-                      <div style={{ fontSize: '10px', marginTop: '2px' }} className={isActive ? 'text-blue-600' : 'text-gray-400'}>
-                        {formatDateStamp(medHistory[idx]?.dateExamined)}
-                      </div>
-                    </button>
-                    {canEdit && isManagingYears && activeYears.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteYear(idx)}
-                        className="border-l border-gray-200 px-2 text-gray-400 transition-colors hover:bg-white hover:text-red-600"
-                        title={`Delete ${yr}`}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-              {canEdit && (
-                <div className="ml-2 flex flex-shrink-0 items-center gap-2 py-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsManagingYears(prev => !prev)}
-                    className={`rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors ${isManagingYears ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : 'border border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}`}
-                  >
-                    {isManagingYears ? 'Done' : 'Edit Years'}
-                  </button>
-                  {isManagingYears && !!getNextSchoolYear() && (
-                    <button
-                      type="button"
-                      onClick={handleAddYear}
-                      className="flex-shrink-0 px-3 py-2 text-xs text-gray-400 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-300 transition-all"
-                    >
-                      + Add Year
-                    </button>
-                  )}
-                </div>
-              )}
-              </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Patient Info Card */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         {editingInfo ? (
@@ -742,6 +642,106 @@ export const DentalChart = () => {
             </div>
           </>
         )}
+      </div>
+
+      {/* Tabs */}
+      <div className="sticky z-30 bg-gray-50 space-y-0" style={{ top: stickyOffsets.tabsTop }}>
+        <div className="bg-white rounded-xl border border-gray-200">
+          <div
+            ref={tabsRowRef}
+            className="rounded-t-xl border-b border-gray-200 bg-white"
+          >
+            <div className="overflow-x-auto">
+            <div className="flex min-w-max">
+            {[
+              { key: 'history',      label: 'History & Oral'    },
+              { key: 'chart',        label: 'Dental Chart'     },
+              { key: 'appointments', label: 'Consent'          },
+              { key: 'treatments',   label: 'Treatment History' },
+              { key: 'records',      label: 'DMFT History'     },
+              { key: 'referrals',    label: 'Referrals'        },
+              { key: 'ai',           label: 'AI Risk'          },
+            ].map(tab => (
+              <button key={tab.key} onClick={() => setActiveTab(tab.key as TabKey)}
+                className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors ${activeTab === tab.key ? 'border-b-2 border-blue-700 text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
+                {tab.key === 'referrals' && referrals.length > 0 ? (
+                  <span className="flex items-center gap-1.5">
+                    {tab.label}
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold leading-none">
+                      {referrals.length}
+                    </span>
+                  </span>
+                ) : tab.label}
+              </button>
+            ))}
+            </div>
+            </div>
+          </div>
+          {showStickyYearBar && (
+            <div className="border-t border-gray-100 bg-white px-4 pt-3">
+              <div className="overflow-x-auto">
+              <div className="flex items-center gap-0 min-w-max">
+              {activeYears.map((yr, idx) => {
+                const yrDmft = computeDMFT(chartData[idx] || {});
+                const isActive = selectedYear === idx;
+                return (
+                  <div
+                    key={yr}
+                    className={`mr-1 flex flex-shrink-0 items-stretch border-b-2 ${isActive ? 'border-blue-700 bg-blue-50 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setSelectedYear(idx)}
+                      className="px-4 py-2.5 text-left text-xs font-medium transition-all"
+                    >
+                      <div>{yr}</div>
+                      {activeTab === 'chart' && (
+                        <div style={{ fontSize: '10px', marginTop: '2px' }} className={isActive ? 'text-blue-600' : 'text-gray-400'}>
+                          DMFT: {yrDmft.T + yrDmft.t}
+                        </div>
+                      )}
+                      <div style={{ fontSize: '10px', marginTop: '2px' }} className={isActive ? 'text-blue-600' : 'text-gray-400'}>
+                        {formatDateStamp(medHistory[idx]?.dateExamined)}
+                      </div>
+                    </button>
+                    {canEdit && isManagingYears && activeYears.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteYear(idx)}
+                        className="border-l border-gray-200 px-2 text-gray-400 transition-colors hover:bg-white hover:text-red-600"
+                        title={`Delete ${yr}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              {canEdit && (
+                <div className="ml-2 flex flex-shrink-0 items-center gap-2 py-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsManagingYears(prev => !prev)}
+                    className={`rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors ${isManagingYears ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : 'border border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}`}
+                  >
+                    {isManagingYears ? 'Done' : 'Edit Years'}
+                  </button>
+                  {isManagingYears && !!getNextSchoolYear() && (
+                    <button
+                      type="button"
+                      onClick={handleAddYear}
+                      className="flex-shrink-0 px-3 py-2 text-xs text-gray-400 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-300 transition-all"
+                    >
+                      + Add Year
+                    </button>
+                  )}
+                </div>
+              )}
+              </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Tab Content */}
