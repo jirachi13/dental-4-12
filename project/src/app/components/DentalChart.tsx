@@ -71,7 +71,12 @@ const conditionColors: Record<string, string> = {
   'p': 'bg-indigo-50 border-indigo-300',
 };
 
-const ALL_SCHOOL_YEARS = ['2023-2024', '2024-2025', '2025-2026', '2026-2027', '2027-2028', '2028-2029', '2029-2030'];
+const MAX_ACTIVE_YEARS = 11;
+const ALL_SCHOOL_YEARS = [
+  '2023-2024', '2024-2025', '2025-2026', '2026-2027', '2027-2028',
+  '2028-2029', '2029-2030', '2030-2031', '2031-2032', '2032-2033',
+  '2033-2034', '2034-2035', '2035-2036',
+];
 
 type ChartEntry = { condition: string; treatment: string };
 type MedicalHistory = {
@@ -365,6 +370,7 @@ export const DentalChart = () => {
   };
 
   const handleAddYear = () => {
+    if (activeYears.length >= MAX_ACTIVE_YEARS) return;
     const nextYear = getNextSchoolYear();
     if (!nextYear) return;
 
@@ -727,7 +733,7 @@ export const DentalChart = () => {
                   >
                     {isManagingYears ? 'Done' : 'Edit Years'}
                   </button>
-                  {isManagingYears && !!getNextSchoolYear() && (
+                  {isManagingYears && activeYears.length < MAX_ACTIVE_YEARS && !!getNextSchoolYear() && (
                     <button
                       type="button"
                       onClick={handleAddYear}
