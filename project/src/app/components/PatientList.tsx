@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import { Search, Plus, Eye, FileText, X, School as SchoolIcon, List, ChevronRight, Users, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
+import { formatStudentName } from '../utils/formatStudentName';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 import { GradePill } from './GradePill';
 
@@ -60,14 +61,6 @@ export const PatientList = () => {
     if (age <= 14) return '10-14';
     if (age <= 19) return '15-19';
     return '20 & above';
-  };
-
-  const formatName = (fullName: string) => {
-    const parts = fullName.split(' ');
-    if (parts.length < 2) return fullName;
-    const firstName = parts.slice(0, -1).join(' ');
-    const lastName = parts[parts.length - 1];
-    return `${lastName}, ${firstName}`;
   };
 
   const allStudents = [
@@ -488,7 +481,7 @@ export const PatientList = () => {
                           <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-xs flex-shrink-0">
                             {student.name.split(' ').map((n: string) => n[0]).join('').slice(0,2)}
                           </div>
-                          <span className="font-medium text-gray-900">{formatName(student.name)}</span>
+                          <span className="font-medium text-gray-900">{formatStudentName(student.name)}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-gray-600">{student.gender}</td>
@@ -547,7 +540,7 @@ export const PatientList = () => {
                     const age = calculateAge(student.birthdate);
                     return (
                       <tr key={student.id} onClick={() => navigate(`/dental-chart/${student.id}?tab=history`)} className="hover:bg-gray-50 cursor-pointer">
-                        <td className="px-4 py-3 font-medium text-gray-900">{formatName(student.name)}</td>
+                        <td className="px-4 py-3 font-medium text-gray-900">{formatStudentName(student.name)}</td>
                         <td className="px-4 py-3">
                           <GradePill grade={student.grade} />
                         </td>
