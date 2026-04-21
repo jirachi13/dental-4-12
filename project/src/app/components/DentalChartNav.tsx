@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { X } from 'lucide-react';
 import { formatStudentName } from '../utils/formatStudentName';
 import { GradeTableCell } from './GradeTableCell';
+import { ListSearchInput } from './ListSearchInput';
 import { studentListTableStyles } from './StudentListTableStyles';
 
 const GRADES = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'];
@@ -248,6 +249,7 @@ export const DentalChartNav = () => {
   const [sectionFilter, setSectionFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const allSections = useMemo(() => {
     let base = gradeFilter !== 'all' ? mockPatients.filter(p => p.grade === gradeFilter) : mockPatients;
@@ -261,11 +263,16 @@ export const DentalChartNav = () => {
     if (sectionFilter !== 'all' && p.section !== sectionFilter) return false;
     if (genderFilter !== 'all' && p.gender !== genderFilter) return false;
     if (ageGroupFilter !== 'all' && ag !== ageGroupFilter) return false;
+    if (searchTerm) {
+      const query = searchTerm.toLowerCase();
+      const formattedName = formatStudentName(p.name).toLowerCase();
+      if (!formattedName.includes(query) && !p.grade.toLowerCase().includes(query) && !p.section.toLowerCase().includes(query)) return false;
+    }
     return true;
-  }), [gradeFilter, sectionFilter, genderFilter, ageGroupFilter]);
+  }), [gradeFilter, sectionFilter, genderFilter, ageGroupFilter, searchTerm]);
 
-  const hasActiveFilters = gradeFilter !== 'all' || sectionFilter !== 'all' || genderFilter !== 'all' || ageGroupFilter !== 'all';
-  const clearFilters = () => { setGradeFilter('all'); setSectionFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); };
+  const hasActiveFilters = gradeFilter !== 'all' || sectionFilter !== 'all' || genderFilter !== 'all' || ageGroupFilter !== 'all' || searchTerm !== '';
+  const clearFilters = () => { setGradeFilter('all'); setSectionFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); setSearchTerm(''); };
 
   const FS = ({ value, onChange, opts, label }: { value: string; onChange: (v: string) => void; opts: {v:string;l:string}[]; label: string }) => (
     <select value={value} onChange={e => onChange(e.target.value)} className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -284,6 +291,7 @@ export const DentalChartNav = () => {
       </div>
       <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
         <div className="flex flex-wrap gap-2">
+          <ListSearchInput value={searchTerm} onChange={setSearchTerm} />
           <FS value={gradeFilter} onChange={g => { setGradeFilter(g); setSectionFilter('all'); }} label="All Grades" opts={GRADES.map(g => ({ v: g, l: g }))} />
           <FS value={sectionFilter} onChange={setSectionFilter} label="All Sections" opts={allSections.map(s => ({ v: s, l: s }))} />
           <FS value={genderFilter} onChange={setGenderFilter} label="All Genders" opts={[{ v:'Male', l:'Male' }, { v:'Female', l:'Female' }]} />

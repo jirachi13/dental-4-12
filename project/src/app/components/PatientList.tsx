@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
-import { Search, Plus, Eye, FileText, X, School as SchoolIcon, List, ChevronRight, Users, Upload, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, Eye, FileText, X, School as SchoolIcon, List, ChevronRight, Users, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 import { formatStudentName } from '../utils/formatStudentName';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 import { GradePill } from './GradePill';
 import { GradeTableCell } from './GradeTableCell';
+import { ListSearchInput } from './ListSearchInput';
 import { studentListTableStyles } from './StudentListTableStyles';
 
 const SCHOOLS = [
@@ -42,6 +43,7 @@ export const PatientList = () => {
   const [sectionFilter, setSectionFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newPatient, setNewPatient] = useState({ firstName:'', lastName:'', middleName:'', birthdate:'', gender:'', grade:'', section:'', school:'', guardianName:'', guardianContact:'', address:'', philhealthNumber:'', philhealthStatus:'None', is4Ps:false, fourPsId:'', consentStatus:'pending' });
   const [showBulkUpload, setShowBulkUpload] = useState(false);
@@ -320,14 +322,19 @@ export const PatientList = () => {
     if (sectionFilter !== 'all' && s.section !== sectionFilter) return false;
     if (genderFilter !== 'all' && s.gender !== genderFilter) return false;
     if (ageGroupFilter !== 'all' && ag !== ageGroupFilter) return false;
+    if (searchTerm) {
+      const query = searchTerm.toLowerCase();
+      const formattedName = formatStudentName(s.name).toLowerCase();
+      if (!formattedName.includes(query) && !s.grade.toLowerCase().includes(query) && !s.section.toLowerCase().includes(query)) return false;
+    }
     return true;
-  }), [gradeFilter, sectionFilter, genderFilter, ageGroupFilter]);
+  }), [gradeFilter, sectionFilter, genderFilter, ageGroupFilter, searchTerm]);
 
-  const hasActiveFilters = gradeFilter !== 'all' || sectionFilter !== 'all' || genderFilter !== 'all' || ageGroupFilter !== 'all';
+  const hasActiveFilters = gradeFilter !== 'all' || sectionFilter !== 'all' || genderFilter !== 'all' || ageGroupFilter !== 'all' || searchTerm !== '';
 
   const clearFilters = () => {
     setGradeFilter('all'); setSectionFilter('all');
-    setGenderFilter('all'); setAgeGroupFilter('all');
+    setGenderFilter('all'); setAgeGroupFilter('all'); setSearchTerm('');
   };
 
   const riskBadge = (level: string) => {
@@ -506,6 +513,7 @@ export const PatientList = () => {
           {/* Filters */}
           <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
             <div className="flex flex-wrap gap-2">
+              <ListSearchInput value={searchTerm} onChange={setSearchTerm} />
               <FilterSelect value={gradeFilter} onChange={v => { setGradeFilter(v); setSectionFilter('all'); }} label="All Grades"
                 options={GRADES.map(g => ({ value: g, label: g }))} />
               <FilterSelect value={sectionFilter} onChange={setSectionFilter} label="All Sections"

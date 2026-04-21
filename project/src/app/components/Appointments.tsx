@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Check, Clock, Users, Stethoscope, AlertCircle, RotateCcw, FileText } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
+import { GradePill } from './GradePill';
 
 const SCHOOLS = [
   'Bagong Tanyag Integrated School',
@@ -125,6 +126,8 @@ export const Appointments = () => {
   const appointments = selectedSchool
     ? allAppointmentsRaw.filter(a => a.school === selectedSchool)
     : allAppointmentsRaw;
+  const calendarLegendGrades = [...new Set(appointments.map(a => a.grade))]
+    .sort((a, b) => grades.indexOf(a) - grades.indexOf(b));
 
   const getStatus = (a: any) => statusMap[a.id] || a.status;
 
@@ -265,6 +268,14 @@ export const Appointments = () => {
             <button onClick={prevMonth} className="p-1.5 hover:bg-gray-100 rounded-lg"><ChevronLeft className="w-4 h-4 text-gray-600"/></button>
             <span className="text-sm font-semibold text-gray-900 min-w-[110px] text-center">{monthName}</span>
             <button onClick={nextMonth} className="p-1.5 hover:bg-gray-100 rounded-lg"><ChevronRight className="w-4 h-4 text-gray-600"/></button>
+          </div>
+        </div>
+        <div className="px-4 py-3 border-b border-gray-100 bg-white">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Grade Color Code</span>
+            {calendarLegendGrades.map(grade => (
+              <GradePill key={grade} grade={grade} />
+            ))}
           </div>
         </div>
         <div className="grid grid-cols-7 border-b border-gray-200">

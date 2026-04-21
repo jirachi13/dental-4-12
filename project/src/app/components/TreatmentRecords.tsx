@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { X } from 'lucide-react';
 import { formatStudentName } from '../utils/formatStudentName';
 import { GradeTableCell } from './GradeTableCell';
+import { ListSearchInput } from './ListSearchInput';
 import { studentListTableStyles } from './StudentListTableStyles';
 
 const GRADES = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'];
@@ -248,6 +249,7 @@ export const TreatmentRecords = () => {
   const [sectionFilter, setSectionFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const filtered = useMemo(() => mockPatients.filter(t => {
     const age = calculateAge(t.birthdate);
@@ -255,11 +257,16 @@ export const TreatmentRecords = () => {
     if (sectionFilter !== 'all' && t.section !== sectionFilter) return false;
     if (genderFilter !== 'all' && t.gender !== genderFilter) return false;
     if (ageGroupFilter !== 'all' && getAgeGroup(age) !== ageGroupFilter) return false;
+    if (searchTerm) {
+      const query = searchTerm.toLowerCase();
+      const formattedName = formatStudentName(t.name).toLowerCase();
+      if (!formattedName.includes(query) && !t.grade.toLowerCase().includes(query) && !t.section.toLowerCase().includes(query)) return false;
+    }
     return true;
-  }), [gradeFilter, sectionFilter, genderFilter, ageGroupFilter]);
+  }), [gradeFilter, sectionFilter, genderFilter, ageGroupFilter, searchTerm]);
 
-  const hasActiveFilters = [gradeFilter, sectionFilter, genderFilter, ageGroupFilter].some(f => f !== 'all');
-  const clearFilters = () => { setGradeFilter('all'); setSectionFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); };
+  const hasActiveFilters = [gradeFilter, sectionFilter, genderFilter, ageGroupFilter].some(f => f !== 'all') || searchTerm !== '';
+  const clearFilters = () => { setGradeFilter('all'); setSectionFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); setSearchTerm(''); };
 
   const FS = ({ value, onChange, opts, label }: { value: string; onChange: (v: string) => void; opts: {v:string;l:string}[]; label: string }) => (
     <select value={value} onChange={e => onChange(e.target.value)} className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -278,6 +285,7 @@ export const TreatmentRecords = () => {
       </div>
       <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
         <div className="flex flex-wrap gap-2">
+          <ListSearchInput value={searchTerm} onChange={setSearchTerm} />
           <FS value={gradeFilter} onChange={g => { setGradeFilter(g); setSectionFilter('all'); }} label="All Grades" opts={GRADES.map(g => ({ v: g, l: g }))} />
           <FS value={sectionFilter} onChange={setSectionFilter} label="All Sections" opts={[...new Set((gradeFilter !== 'all' ? mockPatients.filter((r:any) => r.grade === gradeFilter) : mockPatients).map((r:any) => r.section))].sort().map((s:any) => ({ v: s, l: s }))} />
           <FS value={genderFilter} onChange={setGenderFilter} label="All Genders" opts={[{ v:'Male', l:'Male' }, { v:'Female', l:'Female' }]} />
