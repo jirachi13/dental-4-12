@@ -1,11 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { ArrowLeft, Plus, Calendar, FileText } from 'lucide-react';
 import { GradePill } from './GradePill';
+import { useAuth } from '../context/AuthContext';
 
 export const TreatmentLog = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
+  const [staffName, setStaffName] = useState('');
+  const staffNameLabel = user?.role === 'dental_aide' ? 'Dental Aide' : 'Dentist';
+
+  useEffect(() => {
+    if (!user?.name) return;
+    setStaffName(prev => prev || user.name);
+  }, [user?.name]);
 
   const patient = {
     name: 'Juan Dela Cruz',
@@ -81,10 +90,11 @@ export const TreatmentLog = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Dentist</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{staffNameLabel}</label>
               <input
                 type="text"
-                placeholder="Dr. Maria Santos"
+                value={staffName}
+                onChange={e => setStaffName(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF] focus:border-transparent"
               />
             </div>
@@ -125,6 +135,7 @@ export const TreatmentLog = () => {
             <button 
               onClick={() => {
                 alert('Treatment entry saved successfully!');
+                setStaffName(user?.name ?? '');
                 setShowAddForm(false);
               }}
               className="px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-[#1E3A8A] transition-colors"
@@ -132,7 +143,7 @@ export const TreatmentLog = () => {
               Save Entry
             </button>
             <button
-              onClick={() => setShowAddForm(false)}
+              onClick={() => { setStaffName(user?.name ?? ''); setShowAddForm(false); }}
               className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Cancel

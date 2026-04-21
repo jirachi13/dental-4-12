@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, X, Check, Clock, Users, Stethoscope, AlertCircle, RotateCcw, FileText } from 'lucide-react';
@@ -14,8 +14,10 @@ const SCHOOLS = [
 const TODAY = '2026-04-16';
 
 export const Appointments = () => {
-  const { selectedSchool } = useAuth();
+  const { user, selectedSchool } = useAuth();
   const navigate = useNavigate();
+  const staffNameLabel = user?.role === 'dental_aide' ? 'Dental Aide' : 'Dentist';
+  const loggedInStaffName = user?.name ?? '';
 
   // Tabs
   const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'completed' | 'missed' | 'rotation'>('today');
@@ -39,7 +41,7 @@ export const Appointments = () => {
   const [appointmentDate, setAppointmentDate] = useState('');
   const [appointmentTime, setAppointmentTime] = useState('');
   const [appointmentType, setAppointmentType] = useState('');
-  const [appointmentDentist, setAppointmentDentist] = useState('Dr. Maria Santos');
+  const [appointmentDentist, setAppointmentDentist] = useState('');
 
   // Rotation form
   const [rotSchool, setRotSchool] = useState('');
@@ -50,6 +52,32 @@ export const Appointments = () => {
 
   // Appointment statuses (mutable)
   const [statusMap, setStatusMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!loggedInStaffName) return;
+
+    setAppointmentDentist(prev => prev || loggedInStaffName);
+    setRotDentist(prev => prev || loggedInStaffName);
+  }, [loggedInStaffName]);
+
+  const resetCreateAppointmentForm = () => {
+    setFormSchool('');
+    setSelectedGrade('');
+    setSelectedSection('');
+    setSelectedStudents([]);
+    setAppointmentDate('');
+    setAppointmentTime('');
+    setAppointmentType('');
+    setAppointmentDentist(loggedInStaffName);
+  };
+
+  const resetRotationForm = () => {
+    setRotSchool('');
+    setRotDentist(loggedInStaffName);
+    setRotWeekStart('');
+    setRotWeekEnd('');
+    setRotNotes('');
+  };
 
   const grades = ['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
   const sectionsByGrade: Record<string, string[]> = {
@@ -418,7 +446,7 @@ export const Appointments = () => {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <h2 className="text-lg font-bold text-gray-900">New Appointment</h2>
-              <button onClick={() => setShowCreateModal(false)} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-4 h-4"/></button>
+              <button onClick={() => { resetCreateAppointmentForm(); setShowCreateModal(false); }} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-4 h-4"/></button>
             </div>
             <div className="p-5 space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
@@ -469,7 +497,7 @@ export const Appointments = () => {
                   </select>
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Dentist</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">{staffNameLabel}</label>
                   <input type="text" value={appointmentDentist} onChange={e => setAppointmentDentist(e.target.value)}
                     className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
@@ -491,11 +519,11 @@ export const Appointments = () => {
                 </div>
               )}
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowCreateModal(false)}
+                <button onClick={() => { resetCreateAppointmentForm(); setShowCreateModal(false); }}
                   className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">
                   Cancel
                 </button>
-                <button onClick={() => { alert(`Appointment created! ${formSchool} — ${selectedGrade} ${selectedSection}`); setShowCreateModal(false); }}
+                <button onClick={() => { alert(`Appointment created! ${formSchool} — ${selectedGrade} ${selectedSection}`); resetCreateAppointmentForm(); setShowCreateModal(false); }}
                   className="flex-1 px-4 py-2 bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
                   Create Appointment
                 </button>
@@ -511,7 +539,7 @@ export const Appointments = () => {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <h2 className="text-lg font-bold text-gray-900">Set Rotation Schedule</h2>
-              <button onClick={() => setShowRotationModal(false)} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-4 h-4"/></button>
+              <button onClick={() => { resetRotationForm(); setShowRotationModal(false); }} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-4 h-4"/></button>
             </div>
             <div className="p-5 space-y-4">
               <div>
@@ -523,9 +551,9 @@ export const Appointments = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Dentist Name</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">{staffNameLabel} Name</label>
                 <input type="text" value={rotDentist} onChange={e => setRotDentist(e.target.value)}
-                  placeholder="e.g. Dr. Maria Santos"
+                  placeholder={loggedInStaffName || `e.g. ${staffNameLabel}`}
                   className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -547,14 +575,14 @@ export const Appointments = () => {
                   className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowRotationModal(false)}
+                <button onClick={() => { resetRotationForm(); setShowRotationModal(false); }}
                   className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">
                   Cancel
                 </button>
                 <button onClick={() => {
                   if (rotSchool && rotDentist && rotWeekStart) {
                     setRotations(prev => [...prev, { id: `r${Date.now()}`, school: rotSchool, dentist: rotDentist, weekStart: rotWeekStart, weekEnd: rotWeekEnd, notes: rotNotes }]);
-                    setRotSchool(''); setRotDentist(''); setRotWeekStart(''); setRotWeekEnd(''); setRotNotes('');
+                    resetRotationForm();
                     setShowRotationModal(false);
                     setActiveTab('rotation');
                   }

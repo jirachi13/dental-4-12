@@ -192,6 +192,7 @@ export const DentalChart = () => {
   const { user } = useAuth();
   const canEdit = user?.role === 'dentist';
   const canEditHistory = user?.role === 'dentist' || user?.role === 'dental_aide';
+  const staffNameLabel = user?.role === 'dental_aide' ? 'Dental Aide' : 'Dentist';
 
   const navIndex = patientNavList.findIndex(p => p.id === id);
   const prevPatient = navIndex > 0 ? patientNavList[navIndex - 1] : null;
@@ -1210,7 +1211,7 @@ export const DentalChart = () => {
                   </div>
                   <div><label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
                     <input type="date" className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
-                  <div><label className="block text-xs font-medium text-gray-700 mb-1">Dentist</label>
+                  <div><label className="block text-xs font-medium text-gray-700 mb-1">{staffNameLabel}</label>
                     <input type="text" value={user?.name ?? ''} readOnly className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-gray-50 cursor-default text-gray-700" /></div>
                   <div className="md:col-span-2"><label className="block text-xs font-medium text-gray-700 mb-1">Chief Complaint</label>
                     <input type="text" className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
