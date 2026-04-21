@@ -1,53 +1,52 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { Search, X, FileText, School as SchoolIcon, List } from 'lucide-react';
+import { X } from 'lucide-react';
 
-import { getGradeColor } from '../utils/gradeColors';
-
-const SCHOOLS = [
-  'Bagong Tanyag Integrated School',
-  'Bagong Tanyag Elementary School Annex A',
-  'South Daang Hari Elementary School Main',
-];
 const GRADES = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'];
-const TREATMENT_TYPES = ['Oral Prophylaxis','Fluoride Varnish','Tooth Extraction','Permanent Filling','Temporary Filling','Pit & Fissure Sealant','Silver Diamine Fluoride','Oral Health Instruction','Screening'];
 
-const mockTreatments = [
-  { id:'1',  studentId:'1',  studentName:'Juan Morales',       gender:'Male',   age:10, grade:'Grade 4', section:'Sampaguita', school:'Bagong Tanyag Integrated School',               visitDate:'2026-03-10', treatmentType:'Tooth Extraction',         diagnosis:'Dental Caries',                 treatmentDone:'Extraction tooth 16' },
-  { id:'2',  studentId:'2',  studentName:'Isabella Villanueva',gender:'Female', age:9,  grade:'Grade 3', section:'Jasmine',    school:'Bagong Tanyag Integrated School',               visitDate:'2026-03-08', treatmentType:'Fluoride Varnish',          diagnosis:'Caries risk — high',            treatmentDone:'Fluoride varnish application' },
-  { id:'3',  studentId:'3',  studentName:'Aldrin Villanueva',  gender:'Male',   age:8,  grade:'Grade 2', section:'Rose',       school:'Bagong Tanyag Integrated School',               visitDate:'2026-03-05', treatmentType:'Oral Prophylaxis',          diagnosis:'Gingivitis',                    treatmentDone:'Oral prophylaxis' },
-  { id:'4',  studentId:'7',  studentName:'Jose Martinez',      gender:'Male',   age:11, grade:'Grade 6', section:'Coral',      school:'Bagong Tanyag Elementary School Annex A',       visitDate:'2026-03-12', treatmentType:'Permanent Filling',        diagnosis:'Caries tooth 36',               treatmentDone:'Composite filling' },
-  { id:'5',  studentId:'9',  studentName:'Miguel Torres',      gender:'Male',   age:9,  grade:'Grade 4', section:'Opal',       school:'Bagong Tanyag Elementary School Annex A',       visitDate:'2026-03-09', treatmentType:'Tooth Extraction',         diagnosis:'Non-restorable caries',         treatmentDone:'Extraction tooth 74' },
-  { id:'6',  studentId:'11', studentName:'Pedro Reyes',        gender:'Male',   age:11, grade:'Grade 5', section:'Yakal',      school:'South Daang Hari Elementary School Main',       visitDate:'2026-03-01', treatmentType:'Fluoride Varnish',          diagnosis:'Preventive care visit 1',       treatmentDone:'Fluoride varnish + OHI' },
-  { id:'7',  studentId:'13', studentName:'Lucia Diaz',         gender:'Female', age:10, grade:'Grade 5', section:'Lauan',      school:'South Daang Hari Elementary School Main',       visitDate:'2026-02-28', treatmentType:'Oral Prophylaxis',          diagnosis:'Plaque accumulation',           treatmentDone:'Scaling and polishing' },
-  { id:'8',  studentId:'15', studentName:'Valentina Cruz',     gender:'Female', age:9,  grade:'Grade 3', section:'Bamboo',     school:'South Daang Hari Elementary School Main',       visitDate:'2026-02-25', treatmentType:'Pit & Fissure Sealant',    diagnosis:'Deep fissures',                 treatmentDone:'PFS teeth 16,26,36,46' },
-  { id:'9',  studentId:'4',  studentName:'Elena Morales',      gender:'Female', age:8,  grade:'Grade 2', section:'Dahlia',     school:'Bagong Tanyag Integrated School',               visitDate:'2026-02-20', treatmentType:'Screening',                diagnosis:'Annual oral health screening',  treatmentDone:'Oral examination — orally fit' },
-  { id:'10', studentId:'8',  studentName:'Carmen Flores',      gender:'Female', age:8,  grade:'Grade 2', section:'Diamond',    school:'Bagong Tanyag Elementary School Annex A',       visitDate:'2026-02-18', treatmentType:'Silver Diamine Fluoride',  diagnosis:'Early childhood caries',        treatmentDone:'SDF application' },
-  { id:'11', studentId:'14', studentName:'Rafael Santos',      gender:'Male',   age:9,  grade:'Grade 4', section:'Kamagong',   school:'South Daang Hari Elementary School Main',       visitDate:'2026-02-15', treatmentType:'Temporary Filling',        diagnosis:'Caries tooth 85',               treatmentDone:'IRM temporary filling' },
-  { id:'12', studentId:'5',  studentName:'Sofia Reyes',        gender:'Female', age:10, grade:'Grade 5', section:'Sunflower',  school:'Bagong Tanyag Integrated School',               visitDate:'2026-02-10', treatmentType:'Oral Health Instruction',  diagnosis:'Poor oral hygiene',             treatmentDone:'Brushing and flossing demo' },
+const mockPatients = [
+  { id: '1', name: 'Juan Morales', birthdate: '2020-07-23', gender: 'Male', grade: 'Grade 1', section: 'Sampaguita' },
+  { id: '2', name: 'Isabella Villanueva', birthdate: '2020-08-07', gender: 'Female', grade: 'Grade 1', section: 'Sampaguita' },
+  { id: '3', name: 'Aldrin Villanueva', birthdate: '2020-11-22', gender: 'Male', grade: 'Grade 1', section: 'Sampaguita' },
+  { id: '4', name: 'Elena Morales', birthdate: '2020-10-10', gender: 'Female', grade: 'Grade 1', section: 'Sampaguita' },
+  { id: '5', name: 'Trisha Santos', birthdate: '2020-01-27', gender: 'Female', grade: 'Grade 1', section: 'Sampaguita' },
+  { id: '6', name: 'Katrina Lopez', birthdate: '2020-12-23', gender: 'Female', grade: 'Grade 1', section: 'Rosal' },
+  { id: '7', name: 'Ana Morales', birthdate: '2020-11-11', gender: 'Female', grade: 'Grade 1', section: 'Rosal' },
+  { id: '8', name: 'Patricia Garcia', birthdate: '2020-01-03', gender: 'Female', grade: 'Grade 1', section: 'Rosal' },
+  { id: '9', name: 'Trisha Lopez', birthdate: '2020-02-13', gender: 'Female', grade: 'Grade 1', section: 'Rosal' },
+  { id: '10', name: 'Nico Castillo', birthdate: '2020-02-17', gender: 'Male', grade: 'Grade 1', section: 'Rosal' },
 ];
+
+const calculateAge = (birthdate: string) => {
+  const today = new Date();
+  const birth = new Date(birthdate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+};
+
+const getAgeGroup = (age: number) => {
+  if (age <= 4) return '4 & below';
+  if (age <= 9) return '5-9';
+  if (age <= 14) return '10-14';
+  if (age <= 19) return '15-19';
+  return '20 & above';
+};
 
 export const TreatmentRecords = () => {
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<'school' | 'list'>('school');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
 
-  const getAgeGroup = (age: number) => {
-    if (age <= 4) return '4 & below';
-    if (age <= 9) return '5-9';
-    if (age <= 14) return '10-14';
-    if (age <= 19) return '15-19';
-    return '20 & above';
-  };
-
-  const filtered = useMemo(() => mockTreatments.filter(t => {
+  const filtered = useMemo(() => mockPatients.filter(t => {
+    const age = calculateAge(t.birthdate);
     if (gradeFilter !== 'all' && t.grade !== gradeFilter) return false;
     if (sectionFilter !== 'all' && t.section !== sectionFilter) return false;
     if (genderFilter !== 'all' && t.gender !== genderFilter) return false;
-    if (ageGroupFilter !== 'all' && getAgeGroup(t.age) !== ageGroupFilter) return false;
+    if (ageGroupFilter !== 'all' && getAgeGroup(age) !== ageGroupFilter) return false;
     return true;
   }), [gradeFilter, sectionFilter, genderFilter, ageGroupFilter]);
 
@@ -72,7 +71,7 @@ export const TreatmentRecords = () => {
       <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
         <div className="flex flex-wrap gap-2">
           <FS value={gradeFilter} onChange={g => { setGradeFilter(g); setSectionFilter('all'); }} label="All Grades" opts={GRADES.map(g => ({ v: g, l: g }))} />
-          <FS value={sectionFilter} onChange={setSectionFilter} label="All Sections" opts={[...new Set((gradeFilter !== 'all' ? mockTreatments.filter((r:any) => r.grade === gradeFilter) : mockTreatments).map((r:any) => r.section))].sort().map((s:any) => ({ v: s, l: s }))} />
+          <FS value={sectionFilter} onChange={setSectionFilter} label="All Sections" opts={[...new Set((gradeFilter !== 'all' ? mockPatients.filter((r:any) => r.grade === gradeFilter) : mockPatients).map((r:any) => r.section))].sort().map((s:any) => ({ v: s, l: s }))} />
           <FS value={genderFilter} onChange={setGenderFilter} label="All Genders" opts={[{ v:'Male', l:'Male' }, { v:'Female', l:'Female' }]} />
           <FS value={ageGroupFilter} onChange={setAgeGroupFilter} label="All Age Groups"
             opts={[{ v:'4 & below', l:'4 & below' }, { v:'5-9', l:'5-9' }, { v:'10-14', l:'10-14' }, { v:'15-19', l:'15-19' }, { v:'20 & above', l:'20 & above' }]} />
@@ -99,21 +98,21 @@ export const TreatmentRecords = () => {
               {filtered.length === 0 ? (
                 <tr><td colSpan={5} className="text-center py-12 text-gray-400">No treatment records match the selected filters.</td></tr>
               ) : filtered.map(t => {
-                const gc = getGradeColor(t.grade);
+                const age = calculateAge(t.birthdate);
                 return (
-                  <tr key={t.id} onClick={() => navigate(`/dental-chart/${t.studentId}?tab=treatments`)} className="hover:bg-gray-50 transition-colors cursor-pointer">
-                    <td className="px-4 py-3 font-medium text-gray-900">{t.studentName}</td>
+                  <tr key={t.id} onClick={() => navigate(`/dental-chart/${t.id}?tab=treatments`)} className="hover:bg-gray-50 transition-colors cursor-pointer">
+                    <td className="px-4 py-3 font-medium text-gray-900">{t.name}</td>
                     <td className="px-4 py-3 text-gray-600">{t.grade}</td>
                     <td className="px-4 py-3 text-gray-600">{t.section}</td>
                     <td className="px-4 py-3 text-gray-600">{t.gender}</td>
-                    <td className="px-4 py-3 text-gray-600">{t.age}</td>
+                    <td className="px-4 py-3 text-gray-600">{age}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
-        {filtered.length > 0 && <div className="px-4 py-3 border-t border-gray-100 text-sm text-gray-500">Showing {filtered.length} of {mockTreatments.length} records</div>}
+        {filtered.length > 0 && <div className="px-4 py-3 border-t border-gray-100 text-sm text-gray-500">Showing {filtered.length} of {mockPatients.length} records</div>}
       </div>
     </div>
   );

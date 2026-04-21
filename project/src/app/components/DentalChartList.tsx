@@ -3,17 +3,17 @@ import { useState, useMemo } from 'react';
 import { X } from 'lucide-react';
 
 // Mock patient data with all fields
-const allPatients = [
-  { id: '1', name: 'Juan Morales', birthdate: '2015-07-23', gender: 'Male', grade: 'Grade 1', section: 'Sampaguita' },
-  { id: '2', name: 'Isabella Villanueva', birthdate: '2015-08-07', gender: 'Female', grade: 'Grade 1', section: 'Sampaguita' },
-  { id: '3', name: 'Aldrin Villanueva', birthdate: '2015-11-22', gender: 'Male', grade: 'Grade 1', section: 'Sampaguita' },
-  { id: '4', name: 'Elena Morales', birthdate: '2015-10-10', gender: 'Female', grade: 'Grade 1', section: 'Sampaguita' },
-  { id: '5', name: 'Trisha Santos', birthdate: '2015-01-27', gender: 'Female', grade: 'Grade 1', section: 'Sampaguita' },
-  { id: '6', name: 'Katrina Lopez', birthdate: '2014-12-23', gender: 'Female', grade: 'Grade 1', section: 'Rosal' },
-  { id: '7', name: 'Ana Morales', birthdate: '2014-11-11', gender: 'Female', grade: 'Grade 1', section: 'Rosal' },
-  { id: '8', name: 'Patricia Garcia', birthdate: '2015-01-03', gender: 'Female', grade: 'Grade 1', section: 'Rosal' },
-  { id: '9', name: 'Trisha Lopez', birthdate: '2015-02-13', gender: 'Female', grade: 'Grade 1', section: 'Rosal' },
-  { id: '10', name: 'Nico Castillo', birthdate: '2015-02-17', gender: 'Male', grade: 'Grade 1', section: 'Rosal' },
+const mockPatients = [
+  { id: '1', name: 'Juan Morales', birthdate: '2020-07-23', gender: 'Male', grade: 'Grade 1', section: 'Sampaguita' },
+  { id: '2', name: 'Isabella Villanueva', birthdate: '2020-08-07', gender: 'Female', grade: 'Grade 1', section: 'Sampaguita' },
+  { id: '3', name: 'Aldrin Villanueva', birthdate: '2020-11-22', gender: 'Male', grade: 'Grade 1', section: 'Sampaguita' },
+  { id: '4', name: 'Elena Morales', birthdate: '2020-10-10', gender: 'Female', grade: 'Grade 1', section: 'Sampaguita' },
+  { id: '5', name: 'Trisha Santos', birthdate: '2020-01-27', gender: 'Female', grade: 'Grade 1', section: 'Sampaguita' },
+  { id: '6', name: 'Katrina Lopez', birthdate: '2020-12-23', gender: 'Female', grade: 'Grade 1', section: 'Rosal' },
+  { id: '7', name: 'Ana Morales', birthdate: '2020-11-11', gender: 'Female', grade: 'Grade 1', section: 'Rosal' },
+  { id: '8', name: 'Patricia Garcia', birthdate: '2020-01-03', gender: 'Female', grade: 'Grade 1', section: 'Rosal' },
+  { id: '9', name: 'Trisha Lopez', birthdate: '2020-02-13', gender: 'Female', grade: 'Grade 1', section: 'Rosal' },
+  { id: '10', name: 'Nico Castillo', birthdate: '2020-02-17', gender: 'Male', grade: 'Grade 1', section: 'Rosal' },
 ];
 
 const GRADES = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'];
@@ -42,11 +42,11 @@ export const DentalChartList = () => {
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
 
   const allSections = useMemo(() => {
-    let base = gradeFilter !== 'all' ? allPatients.filter(p => p.grade === gradeFilter) : allPatients;
+    let base = gradeFilter !== 'all' ? mockPatients.filter(p => p.grade === gradeFilter) : mockPatients;
     return [...new Set(base.map(p => p.section))].sort();
   }, [gradeFilter]);
 
-  const filtered = useMemo(() => allPatients.filter(p => {
+  const filtered = useMemo(() => mockPatients.filter(p => {
     const age = calculateAge(p.birthdate);
     const ag = getAgeGroup(age);
     if (gradeFilter !== 'all' && p.grade !== gradeFilter) return false;
@@ -135,7 +135,7 @@ export const DentalChartList = () => {
         </div>
         {filtered.length > 0 && (
           <div className="px-4 py-3 border-t border-gray-100 text-sm text-gray-500">
-            Showing {filtered.length} of {allPatients.length} records
+            Showing {filtered.length} of {mockPatients.length} records
           </div>
         )}
       </div>
