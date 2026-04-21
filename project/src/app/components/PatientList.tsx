@@ -34,13 +34,10 @@ export const PatientList = () => {
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
 
   // List view filters
-  const [searchTerm, setSearchTerm] = useState('');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
-  const [riskFilter, setRiskFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newPatient, setNewPatient] = useState({ firstName:'', lastName:'', middleName:'', birthdate:'', gender:'', grade:'', section:'', school:'', guardianName:'', guardianContact:'', address:'', philhealthNumber:'', philhealthStatus:'None', is4Ps:false, fourPsId:'', consentStatus:'pending' });
   const [showBulkUpload, setShowBulkUpload] = useState(false);
@@ -318,20 +315,15 @@ export const PatientList = () => {
     if (gradeFilter !== 'all' && s.grade !== gradeFilter) return false;
     if (sectionFilter !== 'all' && s.section !== sectionFilter) return false;
     if (genderFilter !== 'all' && s.gender !== genderFilter) return false;
-    if (riskFilter !== 'all' && s.riskLevel !== riskFilter) return false;
-    if (statusFilter !== 'all' && s.oralStatus !== statusFilter) return false;
     if (ageGroupFilter !== 'all' && ag !== ageGroupFilter) return false;
-    if (searchTerm && !s.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
-  }), [gradeFilter, sectionFilter, genderFilter, riskFilter, statusFilter, ageGroupFilter, searchTerm]);
+  }), [gradeFilter, sectionFilter, genderFilter, ageGroupFilter]);
 
-  const hasActiveFilters = gradeFilter !== 'all' || sectionFilter !== 'all' ||
-    genderFilter !== 'all' || ageGroupFilter !== 'all' || riskFilter !== 'all' || statusFilter !== 'all' || searchTerm !== '';
+  const hasActiveFilters = gradeFilter !== 'all' || sectionFilter !== 'all' || genderFilter !== 'all' || ageGroupFilter !== 'all';
 
   const clearFilters = () => {
     setGradeFilter('all'); setSectionFilter('all');
-    setGenderFilter('all'); setAgeGroupFilter('all'); setRiskFilter('all');
-    setStatusFilter('all'); setSearchTerm('');
+    setGenderFilter('all'); setAgeGroupFilter('all');
   };
 
   const riskBadge = (level: string) => {
@@ -473,10 +465,6 @@ export const PatientList = () => {
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
                     <th className="text-left px-4 py-3 font-semibold text-gray-700">Student</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Gender</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Age</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Risk</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-700">Last Visit</th>
                   </tr>
                 </thead>
@@ -510,11 +498,6 @@ export const PatientList = () => {
         <div className="space-y-4">
           {/* Filters */}
           <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input type="text" placeholder="Search by student name..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
             <div className="flex flex-wrap gap-2">
               <FilterSelect value={gradeFilter} onChange={v => { setGradeFilter(v); setSectionFilter('all'); }} label="All Grades"
                 options={GRADES.map(g => ({ value: g, label: g }))} />
@@ -524,10 +507,6 @@ export const PatientList = () => {
                 options={[{ value:'Male', label:'Male' }, { value:'Female', label:'Female' }]} />
               <FilterSelect value={ageGroupFilter} onChange={setAgeGroupFilter} label="All Age Groups"
                 options={[{ value:'4 & below', label:'4 & below' }, { value:'5-9', label:'5-9' }, { value:'10-14', label:'10-14' }, { value:'15-19', label:'15-19' }, { value:'20 & above', label:'20 & above' }]} />
-              <FilterSelect value={riskFilter} onChange={setRiskFilter} label="All Risk Levels"
-                options={[{ value:'High', label:'High Risk' }, { value:'Medium', label:'Medium Risk' }, { value:'Low', label:'Low Risk' }]} />
-              <FilterSelect value={statusFilter} onChange={setStatusFilter} label="All Statuses"
-                options={[{ value:'Orally Fit', label:'Orally Fit' }, { value:'Needs Treatment', label:'Needs Treatment' }, { value:'Under Treatment', label:'Under Treatment' }, { value:'Needs Follow-up', label:'Needs Follow-up' }]} />
               {hasActiveFilters && (
                 <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
                   <X className="w-3 h-3" /> Clear All

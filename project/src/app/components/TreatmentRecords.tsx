@@ -30,14 +30,10 @@ const mockTreatments = [
 export const TreatmentRecords = () => {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<'school' | 'list'>('school');
-  const [searchTerm, setSearchTerm] = useState('');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
-  const [treatmentFilter, setTreatmentFilter] = useState('all');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
 
   const getAgeGroup = (age: number) => {
     if (age <= 4) return '4 & below';
@@ -49,17 +45,14 @@ export const TreatmentRecords = () => {
 
   const filtered = useMemo(() => mockTreatments.filter(t => {
     if (gradeFilter !== 'all' && t.grade !== gradeFilter) return false;
+    if (sectionFilter !== 'all' && t.section !== sectionFilter) return false;
     if (genderFilter !== 'all' && t.gender !== genderFilter) return false;
     if (ageGroupFilter !== 'all' && getAgeGroup(t.age) !== ageGroupFilter) return false;
-    if (treatmentFilter !== 'all' && t.treatmentType !== treatmentFilter) return false;
-    if (dateFrom && t.visitDate < dateFrom) return false;
-    if (dateTo && t.visitDate > dateTo) return false;
-    if (searchTerm && !t.studentName.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
-  }), [gradeFilter, genderFilter, ageGroupFilter, treatmentFilter, dateFrom, dateTo, searchTerm]);
+  }), [gradeFilter, sectionFilter, genderFilter, ageGroupFilter]);
 
-  const hasActiveFilters = [gradeFilter, genderFilter, ageGroupFilter, treatmentFilter].some(f => f !== 'all') || searchTerm !== '' || dateFrom !== '' || dateTo !== '';
-  const clearFilters = () => { setGradeFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); setTreatmentFilter('all'); setDateFrom(''); setDateTo(''); setSearchTerm(''); };
+  const hasActiveFilters = [gradeFilter, sectionFilter, genderFilter, ageGroupFilter].some(f => f !== 'all');
+  const clearFilters = () => { setGradeFilter('all'); setSectionFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); };
 
   const FS = ({ value, onChange, opts, label }: { value: string; onChange: (v: string) => void; opts: {v:string;l:string}[]; label: string }) => (
     <select value={value} onChange={e => onChange(e.target.value)} className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -77,26 +70,12 @@ export const TreatmentRecords = () => {
         </div>
       </div>
       <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input type="text" placeholder="Search by student name..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        </div>
         <div className="flex flex-wrap gap-2">
           <FS value={gradeFilter} onChange={g => { setGradeFilter(g); setSectionFilter('all'); }} label="All Grades" opts={GRADES.map(g => ({ v: g, l: g }))} />
           <FS value={sectionFilter} onChange={setSectionFilter} label="All Sections" opts={[...new Set((gradeFilter !== 'all' ? mockTreatments.filter((r:any) => r.grade === gradeFilter) : mockTreatments).map((r:any) => r.section))].sort().map((s:any) => ({ v: s, l: s }))} />
           <FS value={genderFilter} onChange={setGenderFilter} label="All Genders" opts={[{ v:'Male', l:'Male' }, { v:'Female', l:'Female' }]} />
           <FS value={ageGroupFilter} onChange={setAgeGroupFilter} label="All Age Groups"
             opts={[{ v:'4 & below', l:'4 & below' }, { v:'5-9', l:'5-9' }, { v:'10-14', l:'10-14' }, { v:'15-19', l:'15-19' }, { v:'20 & above', l:'20 & above' }]} />
-          <FS value={treatmentFilter} onChange={setTreatmentFilter} label="All Treatment Types" opts={TREATMENT_TYPES.map(t => ({ v: t, l: t }))} />
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">From</span>
-            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-              className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <span className="text-sm text-gray-500">To</span>
-            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-              className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          </div>
           {hasActiveFilters && (
             <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
               <X className="w-3 h-3" /> Clear All
@@ -110,19 +89,14 @@ export const TreatmentRecords = () => {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Student</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Grade</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Section</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Gender</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Age</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Visit Date</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Treatment Type</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Diagnosis</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Treatment Done</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.length === 0 ? (
-                <tr><td colSpan={9} className="text-center py-12 text-gray-400">No treatment records match the selected filters.</td></tr>
+                <tr><td colSpan={4} className="text-center py-12 text-gray-400">No treatment records match the selected filters.</td></tr>
               ) : filtered.map(t => {
                 const gc = getGradeColor(t.grade);
                 return (
@@ -132,19 +106,15 @@ export const TreatmentRecords = () => {
                         <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-xs flex-shrink-0">
                           {t.studentName.split(' ').map((n: string) => n[0]).join('').slice(0,2)}
                         </div>
-                        <span className="font-medium text-gray-900">{t.studentName}</span>
+                        <div>
+                          <div className="font-medium text-gray-900">{t.studentName}</div>
+                          <div className="text-xs text-gray-500">{t.grade} • {t.section} • {t.gender} • {t.age}yrs</div>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <span style={{ backgroundColor: gc.light, color: gc.solid }} className="inline-block px-2 py-0.5 rounded text-xs font-semibold">{t.grade}</span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{t.section}</td>
-                    <td className="px-4 py-3 text-gray-600">{t.gender}</td>
-                    <td className="px-4 py-3 text-gray-600">{t.age}</td>
                     <td className="px-4 py-3 text-gray-600">{t.visitDate}</td>
-                    <td className="px-4 py-3"><span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">{t.treatmentType}</span></td>
-                    <td className="px-4 py-3 text-gray-600 text-xs max-w-[160px] truncate">{t.diagnosis}</td>
-                    <td className="px-4 py-3 text-gray-600 text-xs max-w-[160px] truncate">{t.treatmentDone}</td>
+                    <td className="px-4 py-3 text-gray-600 text-xs max-w-[160px]">{t.diagnosis}</td>
+                    <td className="px-4 py-3 text-gray-600 text-xs max-w-[160px]">{t.treatmentDone}</td>
                   </tr>
                 );
               })}
