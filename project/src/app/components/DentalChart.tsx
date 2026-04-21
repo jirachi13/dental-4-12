@@ -647,9 +647,10 @@ export const DentalChart = () => {
       <div className="bg-white rounded-xl border border-gray-200">
         <div
           ref={tabsRowRef}
-          className="sticky z-30 rounded-t-xl border-b border-gray-200 bg-white overflow-x-auto"
+          className="sticky z-30 rounded-t-xl border-b border-gray-200 bg-white"
           style={{ top: stickyOffsets.tabsTop }}
         >
+          <div className="overflow-x-auto">
           <div className="flex min-w-max">
           {[
             { key: 'history',      label: 'History & Oral'    },
@@ -672,6 +673,7 @@ export const DentalChart = () => {
               ) : tab.label}
             </button>
           ))}
+          </div>
           </div>
         </div>
 
@@ -743,7 +745,6 @@ export const DentalChart = () => {
                 </tr>
               </thead>
               <tbody>
-                <fieldset disabled={!canEditHistory} className={!canEditHistory ? 'opacity-60' : ''} style={{ display: 'contents' }}>
                 {/* ── Medical History header ── */}
                 <tr><td colSpan={activeYears.length + 2} className="px-4 py-2 font-bold text-gray-800 uppercase tracking-wide text-[10px] bg-gray-100 border border-gray-200">Medical History</td></tr>
 
@@ -761,13 +762,13 @@ export const DentalChart = () => {
                   ['Tattoo', 'tattoo', 'check'],
                   ['Others', 'others', 'text'],
                 ] as [string,string,string][]).map(([label, field, type]) => (
-                  <tr key={field} className="hover:bg-gray-50/50">
+                  <tr key={field} className={`hover:bg-gray-50/50 ${!canEditHistory ? 'opacity-60' : ''}`}>
                     <td className="sticky left-0 z-10 bg-white px-4 py-2 text-gray-700 border border-gray-200">{label}</td>
                     {activeYears.map((yr, idx) => (
                       <td key={yr} className={`px-2 py-2 text-center border border-gray-200 ${idx === selectedYear ? 'bg-blue-50/40' : ''}`}>
                         {type === 'check'
-                          ? <input type="checkbox" checked={idx === selectedYear ? !!(med as any)[field] : false} onChange={e => idx === selectedYear && updateMedField(field, e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
-                          : <input type="text" value={idx === selectedYear ? ((med as any)[field] || '') : ''} onChange={e => idx === selectedYear && updateMedField(field, e.target.value)} placeholder="—" className="w-full text-xs border border-gray-200 rounded px-1.5 py-0.5 text-center focus:outline-none focus:ring-1 focus:ring-blue-500 bg-transparent" />
+                          ? <input type="checkbox" disabled={!canEditHistory} checked={idx === selectedYear ? !!(med as any)[field] : false} onChange={e => idx === selectedYear && updateMedField(field, e.target.checked)} className="w-4 h-4 rounded accent-teal-600 disabled:cursor-not-allowed" />
+                          : <input type="text" disabled={!canEditHistory} value={idx === selectedYear ? ((med as any)[field] || '') : ''} onChange={e => idx === selectedYear && updateMedField(field, e.target.value)} placeholder="—" className="w-full text-xs border border-gray-200 rounded px-1.5 py-0.5 text-center focus:outline-none focus:ring-1 focus:ring-blue-500 bg-transparent disabled:cursor-not-allowed" />
                         }
                       </td>
                     ))}
@@ -787,20 +788,18 @@ export const DentalChart = () => {
                   ['Nail Biting', 'nailBiting'],
                   ['Thumbsucking', 'thumbsucking'],
                 ] as [string,string][]).map(([label, field]) => (
-                  <tr key={field} className="hover:bg-gray-50/50">
+                  <tr key={field} className={`hover:bg-gray-50/50 ${!canEditHistory ? 'opacity-60' : ''}`}>
                     <td className="sticky left-0 z-10 bg-white px-4 py-2 text-gray-700 border border-gray-200">{label}</td>
                     {activeYears.map((yr, idx) => (
                       <td key={yr} className={`px-2 py-2 text-center border border-gray-200 ${idx === selectedYear ? 'bg-blue-50/40' : ''}`}>
-                        <input type="checkbox" checked={idx === selectedYear ? !!(diet as any)[field] : false} onChange={e => idx === selectedYear && updateDietField(field, e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
+                        <input type="checkbox" disabled={!canEditHistory} checked={idx === selectedYear ? !!(diet as any)[field] : false} onChange={e => idx === selectedYear && updateDietField(field, e.target.checked)} className="w-4 h-4 rounded accent-teal-600 disabled:cursor-not-allowed" />
                       </td>
                     ))}
                     <td className="border border-gray-200" />
                   </tr>
                 ))}
-                </fieldset>
 
                 {/* ── Oral Health — dentist only ── */}
-                <fieldset disabled={!canEdit} className={!canEdit ? 'opacity-60' : ''} style={{ display: 'contents' }}>
                 <tr><td colSpan={activeYears.length + 2} className="px-4 py-2 font-bold text-gray-800 uppercase tracking-wide text-[10px] bg-gray-100 border border-gray-200">
                   Oral Health Condition{!canEdit && <span className="ml-2 normal-case font-normal text-gray-400">(dentist only)</span>}
                 </td></tr>
@@ -817,20 +816,19 @@ export const DentalChart = () => {
                   ['Completely Edentulous', 'edentulous', 'check'],
                   ['Others', 'others', 'text'],
                 ] as [string,string,string][]).map(([label, field, type]) => (
-                  <tr key={field} className="hover:bg-gray-50/50">
+                  <tr key={field} className={`hover:bg-gray-50/50 ${!canEdit ? 'opacity-60' : ''}`}>
                     <td className="sticky left-0 z-10 bg-white px-4 py-2 text-gray-700 border border-gray-200">{label}</td>
                     {activeYears.map((yr, idx) => (
                       <td key={yr} className={`px-2 py-2 text-center border border-gray-200 ${idx === selectedYear ? 'bg-blue-50/40' : ''}`}>
                         {type === 'check'
-                          ? <input type="checkbox" checked={idx === selectedYear ? !!(oral as any)[field] : false} onChange={e => idx === selectedYear && updateOralField(field, e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
-                          : <input type="text" value={idx === selectedYear ? ((oral as any)[field] || '') : ''} onChange={e => idx === selectedYear && updateOralField(field, e.target.value)} placeholder="—" className="w-full text-xs border border-gray-200 rounded px-1.5 py-0.5 text-center focus:outline-none focus:ring-1 focus:ring-blue-500 bg-transparent" />
+                          ? <input type="checkbox" disabled={!canEdit} checked={idx === selectedYear ? !!(oral as any)[field] : false} onChange={e => idx === selectedYear && updateOralField(field, e.target.checked)} className="w-4 h-4 rounded accent-teal-600 disabled:cursor-not-allowed" />
+                          : <input type="text" disabled={!canEdit} value={idx === selectedYear ? ((oral as any)[field] || '') : ''} onChange={e => idx === selectedYear && updateOralField(field, e.target.value)} placeholder="—" className="w-full text-xs border border-gray-200 rounded px-1.5 py-0.5 text-center focus:outline-none focus:ring-1 focus:ring-blue-500 bg-transparent disabled:cursor-not-allowed" />
                         }
                       </td>
                     ))}
                     <td className="border border-gray-200" />
                   </tr>
                 ))}
-                </fieldset>
               </tbody>
             </table>
           </div>
@@ -841,9 +839,10 @@ export const DentalChart = () => {
           <div className="p-0 space-y-0">
             {/* Year tabs */}
             <div
-              className="sticky z-20 border-b border-gray-200 bg-white px-4 pt-3 overflow-x-auto"
+              className="sticky z-20 border-b border-gray-200 bg-white px-4 pt-3"
               style={{ top: stickyOffsets.yearTop }}
             >
+              <div className="overflow-x-auto">
               <div className="flex items-center gap-0 min-w-max">
               {activeYears.map((yr, idx) => {
                 const yrDmft = computeDMFT(chartData[idx] || {});
@@ -895,6 +894,7 @@ export const DentalChart = () => {
                   )}
                 </div>
               )}
+              </div>
               </div>
             </div>
             <div className="p-4 space-y-4">
