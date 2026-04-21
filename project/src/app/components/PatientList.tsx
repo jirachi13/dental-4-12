@@ -7,6 +7,7 @@ import { formatStudentName } from '../utils/formatStudentName';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 import { GradePill } from './GradePill';
 import { GradeTableCell } from './GradeTableCell';
+import { studentListTableStyles } from './StudentListTableStyles';
 
 const SCHOOLS = [
   'Bagong Tanyag Integrated School',
@@ -522,30 +523,30 @@ export const PatientList = () => {
           </div>
 
           {/* Table */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
+          <div className={studentListTableStyles.wrapper}>
+            <div className={studentListTableStyles.scroller}>
+              <table className={studentListTableStyles.table}>
+                <thead className={studentListTableStyles.head}>
                   <tr>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Student</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Grade</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Section</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Gender</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Age</th>
+                    <th className={studentListTableStyles.headerCell}>Student</th>
+                    <th className={studentListTableStyles.headerCell}>Grade</th>
+                    <th className={studentListTableStyles.headerCell}>Section</th>
+                    <th className={studentListTableStyles.headerCell}>Gender</th>
+                    <th className={studentListTableStyles.headerCell}>Age</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className={studentListTableStyles.body}>
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={8} className="text-center py-12 text-gray-400">No students match the selected filters.</td></tr>
+                    <tr><td colSpan={5} className={studentListTableStyles.emptyCell}>No students match the selected filters.</td></tr>
                   ) : filtered.map(student => {
                     const age = calculateAge(student.birthdate);
                     return (
-                      <tr key={student.id} onClick={() => navigate(`/dental-chart/${student.id}?tab=history`)} className="hover:bg-gray-50 cursor-pointer">
-                        <td className="px-4 py-3 font-medium text-gray-900">{formatStudentName(student.name)}</td>
+                      <tr key={student.id} onClick={() => navigate(`/dental-chart/${student.id}?tab=history`)} className={studentListTableStyles.row}>
+                        <td className={studentListTableStyles.primaryCell}>{formatStudentName(student.name)}</td>
                         <GradeTableCell grade={student.grade} />
-                        <td className="px-4 py-3 text-gray-600">{student.section}</td>
-                        <td className="px-4 py-3 text-gray-600">{student.gender}</td>
-                        <td className="px-4 py-3 text-gray-600">{age}</td>
+                        <td className={studentListTableStyles.secondaryCell}>{student.section}</td>
+                        <td className={studentListTableStyles.secondaryCell}>{student.gender}</td>
+                        <td className={studentListTableStyles.secondaryCell}>{age}</td>
                       </tr>
                     );
                   })}
@@ -553,7 +554,7 @@ export const PatientList = () => {
               </table>
             </div>
             {filtered.length > 0 && (
-              <div className="px-4 py-3 border-t border-gray-100 text-sm text-gray-500">
+              <div className={studentListTableStyles.footer}>
                 Showing {filtered.length} of {allStudents.length} students
               </div>
             )}

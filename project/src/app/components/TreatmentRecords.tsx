@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { X } from 'lucide-react';
 import { formatStudentName } from '../utils/formatStudentName';
 import { GradeTableCell } from './GradeTableCell';
+import { studentListTableStyles } from './StudentListTableStyles';
 
 const GRADES = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'];
 
@@ -289,37 +290,37 @@ export const TreatmentRecords = () => {
           )}
         </div>
       </div>
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+      <div className={studentListTableStyles.wrapper}>
+        <div className={studentListTableStyles.scroller}>
+          <table className={studentListTableStyles.table}>
+            <thead className={studentListTableStyles.head}>
               <tr>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Student</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Grade</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Section</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Gender</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Age</th>
+                <th className={studentListTableStyles.headerCell}>Student</th>
+                <th className={studentListTableStyles.headerCell}>Grade</th>
+                <th className={studentListTableStyles.headerCell}>Section</th>
+                <th className={studentListTableStyles.headerCell}>Gender</th>
+                <th className={studentListTableStyles.headerCell}>Age</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className={studentListTableStyles.body}>
               {filtered.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-12 text-gray-400">No treatment records match the selected filters.</td></tr>
+                <tr><td colSpan={5} className={studentListTableStyles.emptyCell}>No treatment records match the selected filters.</td></tr>
               ) : filtered.map(t => {
                 const age = calculateAge(t.birthdate);
                 return (
-                  <tr key={t.id} onClick={() => navigate(`/dental-chart/${t.id}?tab=treatments`)} className="hover:bg-gray-50 transition-colors cursor-pointer">
-                    <td className="px-4 py-3 font-medium text-gray-900">{formatStudentName(t.name)}</td>
+                  <tr key={t.id} onClick={() => navigate(`/dental-chart/${t.id}?tab=treatments`)} className={studentListTableStyles.row}>
+                    <td className={studentListTableStyles.primaryCell}>{formatStudentName(t.name)}</td>
                     <GradeTableCell grade={t.grade} />
-                    <td className="px-4 py-3 text-gray-600">{t.section}</td>
-                    <td className="px-4 py-3 text-gray-600">{t.gender}</td>
-                    <td className="px-4 py-3 text-gray-600">{age}</td>
+                    <td className={studentListTableStyles.secondaryCell}>{t.section}</td>
+                    <td className={studentListTableStyles.secondaryCell}>{t.gender}</td>
+                    <td className={studentListTableStyles.secondaryCell}>{age}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
-        {filtered.length > 0 && <div className="px-4 py-3 border-t border-gray-100 text-sm text-gray-500">Showing {filtered.length} of {mockPatients.length} records</div>}
+        {filtered.length > 0 && <div className={studentListTableStyles.footer}>Showing {filtered.length} of {mockPatients.length} records</div>}
       </div>
     </div>
   );
