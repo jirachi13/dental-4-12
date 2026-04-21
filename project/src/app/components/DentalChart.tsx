@@ -458,6 +458,7 @@ export const DentalChart = () => {
   const med = medHistory[selectedYear] || {};
   const diet = dietHistory[selectedYear] || {};
   const oral = oralCondition[selectedYear] || {};
+  const showStickyYearBar = activeTab === 'history' || activeTab === 'chart';
 
   return (
     <div className="space-y-4 max-w-5xl mx-auto">
