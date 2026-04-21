@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { X } from 'lucide-react';
 import { formatStudentName } from '../utils/formatStudentName';
-import { GradePill } from './GradePill';
+import { GradeTableCell } from './GradeTableCell';
 
 const GRADES = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'];
 
@@ -315,9 +315,7 @@ export const DentalChartNav = () => {
                 return (
                   <tr key={p.id} onClick={() => navigate(`/dental-chart/${p.id}`)} className="hover:bg-gray-50 transition-colors cursor-pointer">
                     <td className="px-4 py-3 font-medium text-gray-900">{formatStudentName(p.name)}</td>
-                    <td className="px-4 py-3">
-                      <GradePill grade={p.grade} />
-                    </td>
+                    <GradeTableCell grade={p.grade} />
                     <td className="px-4 py-3 text-gray-600">{p.section}</td>
                     <td className="px-4 py-3 text-gray-600">{p.gender}</td>
                     <td className="px-4 py-3 text-gray-600">{age}</td>

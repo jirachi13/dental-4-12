@@ -6,6 +6,7 @@ import { getGradeColor } from '../utils/gradeColors';
 import { formatStudentName } from '../utils/formatStudentName';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 import { GradePill } from './GradePill';
+import { GradeTableCell } from './GradeTableCell';
 
 const SCHOOLS = [
   'Bagong Tanyag Integrated School',
@@ -541,9 +542,7 @@ export const PatientList = () => {
                     return (
                       <tr key={student.id} onClick={() => navigate(`/dental-chart/${student.id}?tab=history`)} className="hover:bg-gray-50 cursor-pointer">
                         <td className="px-4 py-3 font-medium text-gray-900">{formatStudentName(student.name)}</td>
-                        <td className="px-4 py-3">
-                          <GradePill grade={student.grade} />
-                        </td>
+                        <GradeTableCell grade={student.grade} />
                         <td className="px-4 py-3 text-gray-600">{student.section}</td>
                         <td className="px-4 py-3 text-gray-600">{student.gender}</td>
                         <td className="px-4 py-3 text-gray-600">{age}</td>
