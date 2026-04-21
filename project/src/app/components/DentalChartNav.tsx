@@ -1,58 +1,63 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { Search, X, Eye, School as SchoolIcon, List } from 'lucide-react';
+import { X } from 'lucide-react';
 
-import { getGradeColor } from '../utils/gradeColors';
-
-const SCHOOLS = [
-  'Bagong Tanyag Integrated School',
-  'Bagong Tanyag Elementary School Annex A',
-  'South Daang Hari Elementary School Main',
-];
 const GRADES = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'];
 
-const mockCharts = [
-  { id:'1', studentId:'1', studentName:'Juan Morales',        gender:'Male',   grade:'Grade 4', section:'Sampaguita', school:'Bagong Tanyag Integrated School',         yearNumber:2026, dateCharted:'2026-03-10', dmfIndex:4, status:'Complete' },
-  { id:'2', studentId:'2', studentName:'Isabella Villanueva', gender:'Female', grade:'Grade 3', section:'Jasmine',    school:'Bagong Tanyag Integrated School',         yearNumber:2026, dateCharted:'2026-03-08', dmfIndex:2, status:'Complete' },
-  { id:'3', studentId:'3', studentName:'Aldrin Villanueva',   gender:'Male',   grade:'Grade 2', section:'Rose',       school:'Bagong Tanyag Integrated School',         yearNumber:2026, dateCharted:'2026-03-05', dmfIndex:1, status:'Incomplete' },
-  { id:'4', studentId:'7', studentName:'Jose Martinez',       gender:'Male',   grade:'Grade 6', section:'Coral',      school:'Bagong Tanyag Elementary School Annex A', yearNumber:2026, dateCharted:'2026-03-12', dmfIndex:6, status:'Complete' },
-  { id:'5', studentId:'9', studentName:'Miguel Torres',       gender:'Male',   grade:'Grade 4', section:'Opal',       school:'Bagong Tanyag Elementary School Annex A', yearNumber:2026, dateCharted:'2026-03-09', dmfIndex:3, status:'Pending Review' },
-  { id:'6', studentId:'11', studentName:'Pedro Reyes',        gender:'Male',   grade:'Grade 5', section:'Yakal',      school:'South Daang Hari Elementary School Main', yearNumber:2026, dateCharted:'2026-03-01', dmfIndex:2, status:'Complete' },
-  { id:'7', studentId:'13', studentName:'Lucia Diaz',         gender:'Female', grade:'Grade 5', section:'Lauan',      school:'South Daang Hari Elementary School Main', yearNumber:2026, dateCharted:'2026-02-28', dmfIndex:0, status:'Complete' },
-  { id:'8', studentId:'15', studentName:'Valentina Cruz',     gender:'Female', grade:'Grade 3', section:'Bamboo',     school:'South Daang Hari Elementary School Main', yearNumber:2026, dateCharted:'2026-02-25', dmfIndex:1, status:'Incomplete' },
-  { id:'9', studentId:'4',  studentName:'Elena Morales',      gender:'Female', grade:'Grade 2', section:'Dahlia',     school:'Bagong Tanyag Integrated School',         yearNumber:2026, dateCharted:'2026-02-20', dmfIndex:0, status:'Complete' },
-  { id:'10', studentId:'8', studentName:'Carmen Flores',      gender:'Female', grade:'Grade 2', section:'Diamond',    school:'Bagong Tanyag Elementary School Annex A', yearNumber:2026, dateCharted:'2026-02-18', dmfIndex:3, status:'Pending Review' },
+const mockPatients = [
+  { id: '1', name: 'Juan Morales', birthdate: '2020-07-23', gender: 'Male', grade: 'Grade 1', section: 'Sampaguita' },
+  { id: '2', name: 'Isabella Villanueva', birthdate: '2020-08-07', gender: 'Female', grade: 'Grade 1', section: 'Sampaguita' },
+  { id: '3', name: 'Aldrin Villanueva', birthdate: '2020-11-22', gender: 'Male', grade: 'Grade 1', section: 'Sampaguita' },
+  { id: '4', name: 'Elena Morales', birthdate: '2020-10-10', gender: 'Female', grade: 'Grade 1', section: 'Sampaguita' },
+  { id: '5', name: 'Trisha Santos', birthdate: '2020-01-27', gender: 'Female', grade: 'Grade 1', section: 'Sampaguita' },
+  { id: '6', name: 'Katrina Lopez', birthdate: '2020-12-23', gender: 'Female', grade: 'Grade 1', section: 'Rosal' },
+  { id: '7', name: 'Ana Morales', birthdate: '2020-11-11', gender: 'Female', grade: 'Grade 1', section: 'Rosal' },
+  { id: '8', name: 'Patricia Garcia', birthdate: '2020-01-03', gender: 'Female', grade: 'Grade 1', section: 'Rosal' },
+  { id: '9', name: 'Trisha Lopez', birthdate: '2020-02-13', gender: 'Female', grade: 'Grade 1', section: 'Rosal' },
+  { id: '10', name: 'Nico Castillo', birthdate: '2020-02-17', gender: 'Male', grade: 'Grade 1', section: 'Rosal' },
 ];
+
+const calculateAge = (birthdate: string) => {
+  const today = new Date();
+  const birth = new Date(birthdate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+};
+
+const getAgeGroup = (age: number) => {
+  if (age <= 4) return '4 & below';
+  if (age <= 9) return '5-9';
+  if (age <= 14) return '10-14';
+  if (age <= 19) return '15-19';
+  return '20 & above';
+};
 
 export const DentalChartNav = () => {
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<'school' | 'list'>('school');
-  const [searchTerm, setSearchTerm] = useState('');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('all');
-  const [ageGroupFilter, setAgeGroupFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [ageGroupFilter, setAgeGroupFilter] = useState('all');
 
-  const filtered = useMemo(() => mockCharts.filter(c => {
-    if (gradeFilter !== 'all' && c.grade !== gradeFilter) return false;
-    if (genderFilter !== 'all' && c.gender !== genderFilter) return false;
-    if (statusFilter !== 'all' && c.status !== statusFilter) return false;
-    if (searchTerm && !c.studentName.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+  const allSections = useMemo(() => {
+    let base = gradeFilter !== 'all' ? mockPatients.filter(p => p.grade === gradeFilter) : mockPatients;
+    return [...new Set(base.map(p => p.section))].sort();
+  }, [gradeFilter]);
+
+  const filtered = useMemo(() => mockPatients.filter(p => {
+    const age = calculateAge(p.birthdate);
+    const ag = getAgeGroup(age);
+    if (gradeFilter !== 'all' && p.grade !== gradeFilter) return false;
+    if (sectionFilter !== 'all' && p.section !== sectionFilter) return false;
+    if (genderFilter !== 'all' && p.gender !== genderFilter) return false;
+    if (ageGroupFilter !== 'all' && ag !== ageGroupFilter) return false;
     return true;
-  }), [gradeFilter, genderFilter, statusFilter, searchTerm]);
+  }), [gradeFilter, sectionFilter, genderFilter, ageGroupFilter]);
 
-  const hasActiveFilters = [gradeFilter, genderFilter, statusFilter].some(f => f !== 'all') || searchTerm !== '';
-  const clearFilters = () => { setGradeFilter('all'); setGenderFilter('all'); setStatusFilter('all'); setSearchTerm(''); };
-
-  const statusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      'Complete': 'bg-green-100 text-green-800',
-      'Incomplete': 'bg-yellow-100 text-yellow-800',
-      'Pending Review': 'bg-blue-100 text-blue-800',
-    };
-    return <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${colors[status] || 'bg-gray-100 text-gray-700'}`}>{status}</span>;
-  };
+  const hasActiveFilters = gradeFilter !== 'all' || sectionFilter !== 'all' || genderFilter !== 'all' || ageGroupFilter !== 'all';
+  const clearFilters = () => { setGradeFilter('all'); setSectionFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); };
 
   const FS = ({ value, onChange, opts, label }: { value: string; onChange: (v: string) => void; opts: {v:string;l:string}[]; label: string }) => (
     <select value={value} onChange={e => onChange(e.target.value)} className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -70,17 +75,12 @@ export const DentalChartNav = () => {
         </div>
       </div>
       <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input type="text" placeholder="Search by student name..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        </div>
         <div className="flex flex-wrap gap-2">
           <FS value={gradeFilter} onChange={g => { setGradeFilter(g); setSectionFilter('all'); }} label="All Grades" opts={GRADES.map(g => ({ v: g, l: g }))} />
-          <FS value={sectionFilter} onChange={setSectionFilter} label="All Sections" opts={[...new Set((gradeFilter !== 'all' ? mockCharts.filter((r:any) => r.grade === gradeFilter) : mockCharts).map((r:any) => r.section))].sort().map((s:any) => ({ v: s, l: s }))} />
+          <FS value={sectionFilter} onChange={setSectionFilter} label="All Sections" opts={allSections.map(s => ({ v: s, l: s }))} />
           <FS value={genderFilter} onChange={setGenderFilter} label="All Genders" opts={[{ v:'Male', l:'Male' }, { v:'Female', l:'Female' }]} />
-          <FS value={statusFilter} onChange={setStatusFilter} label="All Statuses"
-            opts={[{ v:'Complete', l:'Complete' }, { v:'Incomplete', l:'Incomplete' }, { v:'Pending Review', l:'Pending Review' }]} />
+          <FS value={ageGroupFilter} onChange={setAgeGroupFilter} label="All Age Groups"
+            opts={[{ v:'4 & below', l:'4 & below' }, { v:'5-9', l:'5-9' }, { v:'10-14', l:'10-14' }, { v:'15-19', l:'15-19' }, { v:'20 & above', l:'20 & above' }]} />
           {hasActiveFilters && (
             <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
               <X className="w-3 h-3" /> Clear All
@@ -94,52 +94,31 @@ export const DentalChartNav = () => {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Student</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">School</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Grade / Section</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Year</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Date Charted</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">DMF Index</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Grade</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Section</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Gender</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Age</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-12 text-gray-400">No dental charts match the selected filters.</td></tr>
-              ) : filtered.map(c => {
-                const gc = getGradeColor(c.grade);
+                <tr><td colSpan={5} className="text-center py-12 text-gray-400">No dental charts match the selected filters.</td></tr>
+              ) : filtered.map(p => {
+                const age = calculateAge(p.birthdate);
                 return (
-                  <tr key={c.id} onClick={() => navigate(`/dental-chart/${c.studentId}?tab=chart`)} className="hover:bg-gray-50 transition-colors cursor-pointer">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-xs flex-shrink-0">
-                          {c.studentName.split(' ').map((n: string) => n[0]).join('').slice(0,2)}
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900">{c.studentName}</div>
-                          <div className="text-xs text-gray-500">{c.gender}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 text-xs max-w-[140px] truncate">{c.school}</td>
-                    <td className="px-4 py-3">
-                      <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold" style={{ backgroundColor: gc.light, color: gc.solid }}>{c.grade}</span>
-                      <span className="text-gray-500 text-xs ml-1">{c.section}</span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{c.yearNumber}</td>
-                    <td className="px-4 py-3 text-gray-600">{c.dateCharted}</td>
-                    <td className="px-4 py-3">
-                      <span className={`font-bold text-lg ${c.dmfIndex >= 5 ? 'text-red-600' : c.dmfIndex >= 3 ? 'text-yellow-600' : 'text-green-600'}`}>
-                        {c.dmfIndex}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">{statusBadge(c.status)}</td>
+                  <tr key={p.id} onClick={() => navigate(`/dental-chart/${p.id}`)} className="hover:bg-gray-50 transition-colors cursor-pointer">
+                    <td className="px-4 py-3 font-medium text-gray-900">{p.name}</td>
+                    <td className="px-4 py-3 text-gray-600">{p.grade}</td>
+                    <td className="px-4 py-3 text-gray-600">{p.section}</td>
+                    <td className="px-4 py-3 text-gray-600">{p.gender}</td>
+                    <td className="px-4 py-3 text-gray-600">{age}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
-        {filtered.length > 0 && <div className="px-4 py-3 border-t border-gray-100 text-sm text-gray-500">Showing {filtered.length} of {mockCharts.length} charts</div>}
+        {filtered.length > 0 && <div className="px-4 py-3 border-t border-gray-100 text-sm text-gray-500">Showing {filtered.length} of {mockPatients.length} charts</div>}
       </div>
     </div>
   );
