@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router';
-import { ArrowLeft, Save, ChevronLeft, ChevronRight, Shield, Users, TrendingUp, FileText, Plus, Pencil, ExternalLink, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, ChevronLeft, ChevronRight, Shield, Users, TrendingUp, FileText, Plus, Pencil, Trash2 } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 import { useAuth } from '../context/AuthContext';
 import { GradePill } from './GradePill';
@@ -210,7 +210,7 @@ export const DentalChart = () => {
     section: navEntry?.section ?? mockPatient.section,
   };
 
-  type TabKey = 'history' | 'chart' | 'appointments' | 'records' | 'treatments' | 'referrals' | 'ai';
+  type TabKey = 'history' | 'chart' | 'records' | 'treatments' | 'ai';
   const initialTab = (searchParams.get('tab') as TabKey) || 'history';
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
 
@@ -223,12 +223,6 @@ export const DentalChart = () => {
 
   // ── Treatment History ────────────────────────────────────────────────────
   const [showAddTreatment, setShowAddTreatment] = useState(false);
-  const [showAddReferral, setShowAddReferral] = useState(false);
-  const [referralForm, setReferralForm] = useState({ date: '', facility: '', reason: '', followUpDate: '' });
-  type Referral = { date: string; facility: string; reason: string; followUpDate: string; status: 'pending' | 'completed' | 'no-show' };
-  const [referrals, setReferrals] = useState<Referral[]>([
-    { date: '2026-03-15', facility: 'Taguig City Health Office', reason: 'Severe caries, abscess on tooth #36', followUpDate: '2026-04-15', status: 'pending' },
-  ]);
   const treatmentHistory: { date:string; complaint:string; diagnosis:string; treatment:string; dentist:string; remarks:string; type:'regular'|'rpc'; rpcVisit?:number }[] = [
     { date:'2026-03-20', complaint:'RPC Visit 2 — scheduled follow-up', diagnosis:'Post-prophylaxis check; gingivitis resolved', treatment:'Oral prophylaxis, scaling, fluoride varnish', dentist:'Dr. Maria Santos', remarks:'RPC cycle complete. Next regular visit in 6 months.', type:'rpc', rpcVisit:2 },
     { date:'2026-03-10', complaint:'Toothache on lower right molar', diagnosis:'Deep caries on tooth #36', treatment:'Temporary filling; scheduled for extraction', dentist:'Dr. Maria Santos', remarks:'Avoid hard foods. Follow-up in 1 week.', type:'regular' },
@@ -243,7 +237,6 @@ export const DentalChart = () => {
   const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
   const [selectedTreatment, setSelectedTreatment] = useState<string | null>(null);
   const [consentGiven, setConsentGiven] = useState(resolvedPatient.consentStatus === 'complete');
-  const [dataPrivacyAck, setDataPrivacyAck] = useState(false);
   const [saved, setSaved] = useState(false);
   const [patientInfo, setPatientInfo] = useState({ ...resolvedPatient });
   const [draftInfo, setDraftInfo] = useState({ ...resolvedPatient });
@@ -356,7 +349,7 @@ export const DentalChart = () => {
       resizeObserver?.disconnect();
       window.removeEventListener('resize', measureStickyOffsets);
     };
-  }, [activeTab, activeYears.length, editingInfo, referrals.length, saved]);
+  }, [activeTab, activeYears.length, editingInfo, saved]);
 
   const getNextSchoolYear = () => {
     const lastYear = activeYears[activeYears.length - 1];
@@ -640,6 +633,10 @@ export const DentalChart = () => {
                   <div className="text-gray-900">{val}</div>
                 </div>
               ))}
+              <div>
+                <div className="text-gray-400 font-medium">Consent</div>
+                <div className={`font-semibold ${consentGiven ? 'text-green-600' : 'text-gray-400'}`}>{consentGiven ? 'Obtained' : 'Pending'}</div>
+              </div>
             </div>
           </>
         )}
@@ -657,22 +654,13 @@ export const DentalChart = () => {
             {[
               { key: 'history',      label: 'History & Oral'    },
               { key: 'chart',        label: 'Dental Chart'     },
-              { key: 'appointments', label: 'Consent'          },
               { key: 'treatments',   label: 'Treatment History' },
               { key: 'records',      label: 'DMFT History'     },
-              { key: 'referrals',    label: 'Referrals'        },
               { key: 'ai',           label: 'AI Risk'          },
             ].map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key as TabKey)}
                 className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors ${activeTab === tab.key ? 'border-b-2 border-blue-700 text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
-                {tab.key === 'referrals' && referrals.length > 0 ? (
-                  <span className="flex items-center gap-1.5">
-                    {tab.label}
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold leading-none">
-                      {referrals.length}
-                    </span>
-                  </span>
-                ) : tab.label}
+                {tab.label}
               </button>
             ))}
             </div>
@@ -1057,82 +1045,6 @@ export const DentalChart = () => {
           </div>
         )}
 
-        {/* ── TAB 3: Consent & Appointments ── */}
-        {activeTab === 'appointments' && (
-          <div className="p-4 space-y-4">
-            {/* Consent Summary */}
-            <div className="bg-gray-50 rounded-xl p-4 w-48">
-              <div className="text-xs text-gray-500 mb-1">Consent Status</div>
-              <div className={`text-sm font-bold ${consentGiven ? 'text-green-600' : 'text-gray-400'}`}>
-                {consentGiven ? 'Completed' : 'Pending'}
-              </div>
-            </div>
-
-            {/* Filipino Consent */}
-            <div className="bg-slate-50 rounded-xl border border-slate-200 p-4">
-              <div className="text-xs font-bold text-slate-700 mb-2">Pahintulot ng Pasyente / Magulang o Guardian</div>
-              <p className="text-xs text-slate-600 leading-relaxed mb-4">
-                Pinahihintulutan ko ang Dentista na gawin ang mga kinakailangang Dental Procedure/Treatment sa aking ngipin at bibig o ngipin ng aking anak/kapatid/apo/pamangkin gaya ng ipinaliwanag sa akin at ng aking pagpayag dito. Nauunawaan ko rin na ang anumang impormasyong nakolekta ay gagamitin para sa mga layuning pangkalusugan lamang.
-              </p>
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <div className="text-xs text-gray-500 mb-2">Lagda ng Pasyente</div>
-                  <div className="border-b-2 border-gray-400 h-10 mb-1" />
-                  <div className="text-xs text-gray-400">Pirma sa itaas ng pangalan</div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500 mb-2">Lagda ng Magulang o Guardian</div>
-                  <div className="border-b-2 border-gray-400 h-10 mb-1" />
-                  <div className="text-xs text-gray-400">Pirma sa itaas ng pangalan</div>
-                </div>
-              </div>
-              <label className={`flex items-center gap-2 mt-4 ${canEdit ? 'cursor-pointer' : 'cursor-default'}`}>
-                <input type="checkbox" checked={consentGiven} onChange={e => canEdit && setConsentGiven(e.target.checked)} disabled={!canEdit} className="w-4 h-4 rounded accent-blue-600 disabled:opacity-60 disabled:cursor-not-allowed" />
-                <span className="text-xs text-gray-700">Nakumpleto na ang pahintulot / Consent has been obtained</span>
-              </label>
-            </div>
-
-            {/* Data Privacy Act */}
-            <div className="bg-blue-50 rounded-xl border border-blue-200 p-4">
-              <div className="flex items-start gap-3">
-                <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <div className="text-xs font-bold text-blue-900 mb-1">Republic Act No. 10173 — Data Privacy Act of 2012</div>
-                  <p className="text-xs text-blue-700 leading-relaxed mb-3">
-                    Ang impormasyong nakolekta sa form na ito ay gagamitin lamang para sa mga layuning pangkalusugan ng Dental Health Program ng Barangay Tanyag, Lungsod ng Taguig. Ang inyong personal na impormasyon ay protektado ng Batas Republika Blg. 10173 o ang Data Privacy Act ng 2012. Ang inyong datos ay hindi ibabahagi sa anumang partido na walang pahintulot maliban kung kinakailangan ng batas.
-                  </p>
-                  <label className={`flex items-center gap-2 ${canEdit ? 'cursor-pointer' : 'cursor-default'}`}>
-                    <input type="checkbox" checked={dataPrivacyAck} onChange={e => canEdit && setDataPrivacyAck(e.target.checked)} disabled={!canEdit} className="w-4 h-4 rounded accent-blue-600 disabled:opacity-60 disabled:cursor-not-allowed" />
-                    <span className="text-xs text-blue-800 font-medium">Kinikilala at sinasang-ayunan ko ang Data Privacy Act of 2012</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Upcoming Appointments placeholder */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-sm font-semibold text-gray-900">Appointments</div>
-                <Link to="/appointments" className="text-xs text-blue-600 hover:underline">View all →</Link>
-              </div>
-              <div className="space-y-2">
-                {[
-                  { date: '2026-04-20', time: '9:00 AM', type: 'Fluoride Application', status: 'Scheduled' },
-                  { date: '2026-05-15', time: '10:00 AM', type: 'Follow-up Checkup', status: 'Scheduled' },
-                ].map((apt, i) => (
-                  <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                    <div>
-                      <div className="text-xs font-medium text-gray-900">{apt.type}</div>
-                      <div className="text-xs text-gray-500">{apt.date} at {apt.time}</div>
-                    </div>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{apt.status}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* ── TAB 4: Dental Records ── */}
         {activeTab === 'records' && (
           <div className="p-4 space-y-6">
@@ -1279,110 +1191,6 @@ export const DentalChart = () => {
               ))}
             </div>
 
-          </div>
-        )}
-
-        {/* ── TAB 6: Referrals ── */}
-        {activeTab === 'referrals' && (
-          <div className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-gray-900">Referrals</h3>
-                <p className="text-xs text-gray-500 mt-0.5">Patients referred to outside facilities for care beyond clinic capacity</p>
-              </div>
-              {canEdit && (
-                <button onClick={() => setShowAddReferral(v => !v)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-orange-300 text-orange-700 bg-orange-50 rounded-lg hover:bg-orange-100">
-                  <ExternalLink className="w-3.5 h-3.5" /> Issue Referral
-                </button>
-              )}
-            </div>
-
-            {showAddReferral && (
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-3">
-                <h4 className="text-xs font-semibold text-orange-800">New Referral</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div><label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
-                    <input type="date" value={referralForm.date} onChange={e => setReferralForm(f => ({...f, date: e.target.value}))}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-                  <div><label className="block text-xs font-medium text-gray-700 mb-1">Refer To</label>
-                    <select value={referralForm.facility} onChange={e => setReferralForm(f => ({...f, facility: e.target.value}))}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
-                      <option value="">Select facility...</option>
-                      <option>Taguig City Health Office</option>
-                      <option>Taguig District Hospital</option>
-                      <option>San Juan De Dios Hospital</option>
-                      <option>Specialist Clinic</option>
-                      <option>Other</option>
-                    </select></div>
-                  <div className="md:col-span-2"><label className="block text-xs font-medium text-gray-700 mb-1">Reason for Referral</label>
-                    <input type="text" value={referralForm.reason} onChange={e => setReferralForm(f => ({...f, reason: e.target.value}))}
-                      placeholder="e.g. Severe caries requiring extraction beyond clinic capacity"
-                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-                  <div><label className="block text-xs font-medium text-gray-700 mb-1">Expected Follow-up Date</label>
-                    <input type="date" value={referralForm.followUpDate} onChange={e => setReferralForm(f => ({...f, followUpDate: e.target.value}))}
-                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => {
-                    if (referralForm.date && referralForm.facility && referralForm.reason) {
-                      setReferrals(prev => [...prev, { ...referralForm, status: 'pending' }]);
-                      setReferralForm({ date: '', facility: '', reason: '', followUpDate: '' });
-                      setShowAddReferral(false);
-                    }
-                  }} className="px-4 py-1.5 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700">Save Referral</button>
-                  <button onClick={() => setShowAddReferral(false)} className="px-4 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
-                </div>
-              </div>
-            )}
-
-            {referrals.length === 0 && !showAddReferral ? (
-              <div className="text-center py-12 text-gray-400">
-                <ExternalLink className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">No referrals on record for this patient.</p>
-              </div>
-            ) : (
-              <div className="rounded-lg border border-orange-200 overflow-hidden">
-                <table className="w-full text-xs">
-                  <thead className="bg-orange-50 border-b border-orange-200">
-                    <tr>
-                      {['Date','Facility','Reason','Follow-up','Status'].map(h => (
-                        <th key={h} className="text-left px-3 py-2 font-semibold text-orange-800">{h}</th>
-                      ))}
-                      {canEdit && <th className="px-3 py-2" />}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-orange-100 bg-white">
-                    {referrals.map((r, i) => (
-                      <tr key={i} className="hover:bg-orange-50/50">
-                        <td className="px-3 py-2.5 text-gray-600 whitespace-nowrap">{r.date}</td>
-                        <td className="px-3 py-2.5 text-gray-700 font-medium">{r.facility}</td>
-                        <td className="px-3 py-2.5 text-gray-600 max-w-[220px]">{r.reason}</td>
-                        <td className="px-3 py-2.5 text-gray-500 whitespace-nowrap">{r.followUpDate || '—'}</td>
-                        <td className="px-3 py-2.5">
-                          <span className={`px-2 py-0.5 rounded-full font-semibold capitalize ${
-                            r.status === 'completed' ? 'bg-green-100 text-green-700' :
-                            r.status === 'no-show'   ? 'bg-red-100 text-red-700' :
-                            'bg-yellow-100 text-yellow-700'
-                          }`}>{r.status}</span>
-                        </td>
-                        {canEdit && (
-                          <td className="px-3 py-2.5">
-                            <select value={r.status}
-                              onChange={e => setReferrals(prev => prev.map((x, j) => j === i ? {...x, status: e.target.value as Referral['status']} : x))}
-                              className="text-xs border border-gray-300 rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-orange-400">
-                              <option value="pending">Pending</option>
-                              <option value="completed">Completed</option>
-                              <option value="no-show">No-show</option>
-                            </select>
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </div>
         )}
 

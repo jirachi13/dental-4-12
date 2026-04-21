@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { X } from 'lucide-react';
 import { formatStudentName } from '../utils/formatStudentName';
-import { GradePill } from './GradePill';
+import { GradeTableCell } from './GradeTableCell';
+import { ListSearchInput } from './ListSearchInput';
+import { studentListTableStyles } from './StudentListTableStyles';
 
 // Mock patient data with all fields
 const mockPatients = [
@@ -242,10 +245,12 @@ const getAgeGroup = (age: number) => {
 };
 
 export const DentalChartList = () => {
+  const navigate = useNavigate();
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const allSections = useMemo(() => {
     let base = gradeFilter !== 'all' ? mockPatients.filter(p => p.grade === gradeFilter) : mockPatients;
@@ -259,11 +264,24 @@ export const DentalChartList = () => {
     if (sectionFilter !== 'all' && p.section !== sectionFilter) return false;
     if (genderFilter !== 'all' && p.gender !== genderFilter) return false;
     if (ageGroupFilter !== 'all' && ag !== ageGroupFilter) return false;
+    if (searchTerm) {
+      const query = searchTerm.toLowerCase();
+      const formattedName = formatStudentName(p.name).toLowerCase();
+      if (!formattedName.includes(query) && !p.grade.toLowerCase().includes(query) && !p.section.toLowerCase().includes(query)) return false;
+    }
     return true;
-  }), [gradeFilter, sectionFilter, genderFilter, ageGroupFilter]);
+  }), [gradeFilter, sectionFilter, genderFilter, ageGroupFilter, searchTerm]);
 
-  const hasActiveFilters = gradeFilter !== 'all' || sectionFilter !== 'all' || genderFilter !== 'all' || ageGroupFilter !== 'all';
-  const clearFilters = () => { setGradeFilter('all'); setSectionFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); };
+  const hasActiveFilters = gradeFilter !== 'all' || sectionFilter !== 'all' || genderFilter !== 'all' || ageGroupFilter !== 'all' || searchTerm !== '';
+  const clearFilters = () => { setGradeFilter('all'); setSectionFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); setSearchTerm(''); };
+
+  const FilterSelect = ({ value, onChange, label, options }: { value: string; onChange: (v: string) => void; label: string; options: { value: string; label: string }[] }) => (
+    <select value={value} onChange={e => onChange(e.target.value)}
+      className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <option value="all">{label}</option>
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  );
 
   return (
     <div className="space-y-4">
@@ -275,31 +293,15 @@ export const DentalChartList = () => {
       {/* Filters */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
         <div className="flex flex-wrap gap-2">
-          <select value={gradeFilter} onChange={e => { setGradeFilter(e.target.value); setSectionFilter('all'); }}
-            className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="all">All Grades</option>
-            {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
-          </select>
-          <select value={sectionFilter} onChange={e => setSectionFilter(e.target.value)}
-            className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="all">All Sections</option>
-            {allSections.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <select value={genderFilter} onChange={e => setGenderFilter(e.target.value)}
-            className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="all">All Genders</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-          </select>
-          <select value={ageGroupFilter} onChange={e => setAgeGroupFilter(e.target.value)}
-            className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="all">All Age Groups</option>
-            <option value="4 & below">4 & below</option>
-            <option value="5-9">5-9</option>
-            <option value="10-14">10-14</option>
-            <option value="15-19">15-19</option>
-            <option value="20 & above">20 & above</option>
-          </select>
+          <ListSearchInput value={searchTerm} onChange={setSearchTerm} />
+          <FilterSelect value={gradeFilter} onChange={v => { setGradeFilter(v); setSectionFilter('all'); }} label="All Grades"
+            options={GRADES.map(g => ({ value: g, label: g }))} />
+          <FilterSelect value={sectionFilter} onChange={setSectionFilter} label="All Sections"
+            options={allSections.map(s => ({ value: s, label: s }))} />
+          <FilterSelect value={genderFilter} onChange={setGenderFilter} label="All Genders"
+            options={[{ value: 'Male', label: 'Male' }, { value: 'Female', label: 'Female' }]} />
+          <FilterSelect value={ageGroupFilter} onChange={setAgeGroupFilter} label="All Age Groups"
+            options={[{ value: '4 & below', label: '4 & below' }, { value: '5-9', label: '5-9' }, { value: '10-14', label: '10-14' }, { value: '15-19', label: '15-19' }, { value: '20 & above', label: '20 & above' }]} />
           {hasActiveFilters && (
             <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
               <X className="w-3 h-3" /> Clear All
@@ -309,32 +311,30 @@ export const DentalChartList = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+      <div className={studentListTableStyles.wrapper}>
+        <div className={studentListTableStyles.scroller}>
+          <table className={studentListTableStyles.table}>
+            <thead className={studentListTableStyles.head}>
               <tr>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Student</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Grade</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Section</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Gender</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Age</th>
+                <th className={studentListTableStyles.headerCell}>Student</th>
+                <th className={studentListTableStyles.headerCell}>Grade</th>
+                <th className={studentListTableStyles.headerCell}>Section</th>
+                <th className={studentListTableStyles.headerCell}>Gender</th>
+                <th className={studentListTableStyles.headerCell}>Age</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className={studentListTableStyles.body}>
               {filtered.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-12 text-gray-400">No dental charts match the selected filters.</td></tr>
+                <tr><td colSpan={5} className={studentListTableStyles.emptyCell}>No dental charts match the selected filters.</td></tr>
               ) : filtered.map(patient => {
                 const age = calculateAge(patient.birthdate);
                 return (
-                  <tr key={patient.id} onClick={() => window.location.href = `/dental-chart/${patient.id}`} className="hover:bg-gray-50 cursor-pointer">
-                    <td className="px-4 py-3 font-medium text-gray-900">{formatStudentName(patient.name)}</td>
-                    <td className="px-4 py-3">
-                      <GradePill grade={patient.grade} />
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{patient.section}</td>
-                    <td className="px-4 py-3 text-gray-600">{patient.gender}</td>
-                    <td className="px-4 py-3 text-gray-600">{age}</td>
+                  <tr key={patient.id} onClick={() => navigate(`/dental-chart/${patient.id}`)} className={studentListTableStyles.row}>
+                    <td className={studentListTableStyles.primaryCell}>{formatStudentName(patient.name)}</td>
+                    <GradeTableCell grade={patient.grade} />
+                    <td className={studentListTableStyles.secondaryCell}>{patient.section}</td>
+                    <td className={studentListTableStyles.secondaryCell}>{patient.gender}</td>
+                    <td className={studentListTableStyles.secondaryCell}>{age}</td>
                   </tr>
                 );
               })}
@@ -342,7 +342,7 @@ export const DentalChartList = () => {
           </table>
         </div>
         {filtered.length > 0 && (
-          <div className="px-4 py-3 border-t border-gray-100 text-sm text-gray-500">
+          <div className={studentListTableStyles.footer}>
             Showing {filtered.length} of {mockPatients.length} records
           </div>
         )}
