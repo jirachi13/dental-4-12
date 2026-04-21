@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router';
-import { ArrowLeft, Save, ChevronLeft, ChevronRight, Shield, Users, TrendingUp, FileText, Plus, Pencil, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Save, ChevronLeft, ChevronRight, Shield, Users, TrendingUp, FileText, Plus, Pencil, ExternalLink, Trash2 } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 import { useAuth } from '../context/AuthContext';
 
@@ -72,8 +72,93 @@ const conditionColors: Record<string, string> = {
 
 const ALL_SCHOOL_YEARS = ['2023-2024', '2024-2025', '2025-2026', '2026-2027', '2027-2028', '2028-2029', '2029-2030'];
 
+type ChartEntry = { condition: string; treatment: string };
+type MedicalHistory = {
+  dateExamined: string;
+  allergies: string;
+  hypertension: boolean;
+  diabetes: boolean;
+  bloodDisorders: boolean;
+  cardiovascular: boolean;
+  thyroid: boolean;
+  hepatitis: string;
+  malignancy: string;
+  hospitalization: string;
+  bloodTransfusion: string;
+  tattoo: boolean;
+  others: string;
+};
+type DietHistory = {
+  sugarSweetened: boolean;
+  alcoholDrinker: boolean;
+  tobaccoUser: boolean;
+  betelNut: boolean;
+  bodyPiercing: boolean;
+  nailBiting: boolean;
+  thumbsucking: boolean;
+};
+type OralCondition = {
+  orallyFit: boolean;
+  dentalCaries: boolean;
+  gingivitis: boolean;
+  periodontal: boolean;
+  debris: boolean;
+  calculus: boolean;
+  abnormalGrowth: boolean;
+  cleftLipPalate: boolean;
+  edentulous: boolean;
+  others: string;
+};
+
+const getTodayIsoDate = () => new Date().toISOString().split('T')[0];
+const createEmptyMedicalHistory = (): MedicalHistory => ({
+  dateExamined: getTodayIsoDate(),
+  allergies: '',
+  hypertension: false,
+  diabetes: false,
+  bloodDisorders: false,
+  cardiovascular: false,
+  thyroid: false,
+  hepatitis: '',
+  malignancy: '',
+  hospitalization: '',
+  bloodTransfusion: '',
+  tattoo: false,
+  others: '',
+});
+const createEmptyDietHistory = (): DietHistory => ({
+  sugarSweetened: false,
+  alcoholDrinker: false,
+  tobaccoUser: false,
+  betelNut: false,
+  bodyPiercing: false,
+  nailBiting: false,
+  thumbsucking: false,
+});
+const createEmptyOralCondition = (): OralCondition => ({
+  orallyFit: false,
+  dentalCaries: false,
+  gingivitis: false,
+  periodontal: false,
+  debris: false,
+  calculus: false,
+  abnormalGrowth: false,
+  cleftLipPalate: false,
+  edentulous: false,
+  others: '',
+});
+const reindexYearRecords = <T,>(records: Record<number, T>, removedIndex: number): Record<number, T> =>
+  Object.fromEntries(
+    Object.entries(records)
+      .filter(([key]) => Number(key) !== removedIndex)
+      .map(([key, value]) => {
+        const index = Number(key);
+        return [index > removedIndex ? index - 1 : index, value];
+      }),
+  ) as Record<number, T>;
+
 // ─── DMFT calculation ─────────────────────────────────────────────────────────
-const computeDMFT = (chart: Record<number, { condition: string; treatment: string }>) => {
+const computeDMFT = (chart: Record<number, ChartEntry>) => {
   let d = 0, m = 0, f = 0, x = 0, D = 0, M = 0, F = 0, X = 0;
   Object.entries(chart).forEach(([tooth, data]) => {
     const n = parseInt(tooth);
@@ -156,25 +241,28 @@ export const DentalChart = () => {
   const [patientInfo, setPatientInfo] = useState({ ...resolvedPatient });
   const [draftInfo, setDraftInfo] = useState({ ...resolvedPatient });
   const [editingInfo, setEditingInfo] = useState(false);
+  const headerRowRef = useRef<HTMLDivElement | null>(null);
+  const tabsRowRef = useRef<HTMLDivElement | null>(null);
+  const [stickyOffsets, setStickyOffsets] = useState({ tabsTop: 0, yearTop: 0 });
 
   // Per-year dental chart data
-  const [chartData, setChartData] = useState<Record<number, Record<number, { condition: string; treatment: string }>>>({
+  const [chartData, setChartData] = useState<Record<number, Record<number, ChartEntry>>>({
     0: { 36: { condition: 'D', treatment: 'PF' }, 46: { condition: 'M', treatment: '' }, 11: { condition: '✓', treatment: 'FV' }, 16: { condition: 'F', treatment: '' } },
     1: {},
   });
 
   // Per-year medical history
-  const [medHistory, setMedHistory] = useState<Record<number, Record<string, any>>>({
+  const [medHistory, setMedHistory] = useState<Record<number, MedicalHistory>>({
     0: { dateExamined: '2025-03-10', allergies: '', hypertension: false, diabetes: false, bloodDisorders: false, cardiovascular: false, thyroid: false, hepatitis: '', malignancy: '', hospitalization: '', bloodTransfusion: '', tattoo: false, others: '' },
     1: { dateExamined: '2026-03-10', allergies: '', hypertension: false, diabetes: false, bloodDisorders: false, cardiovascular: false, thyroid: false, hepatitis: '', malignancy: '', hospitalization: '', bloodTransfusion: '', tattoo: false, others: '' },
   });
 
-  const [dietHistory, setDietHistory] = useState<Record<number, Record<string, boolean>>>({
+  const [dietHistory, setDietHistory] = useState<Record<number, DietHistory>>({
     0: { sugarSweetened: true, alcoholDrinker: false, tobaccoUser: false, betelNut: false, bodyPiercing: false, nailBiting: true, thumbsucking: false },
     1: { sugarSweetened: false, alcoholDrinker: false, tobaccoUser: false, betelNut: false, bodyPiercing: false, nailBiting: false, thumbsucking: false },
   });
 
-  const [oralCondition, setOralCondition] = useState<Record<number, Record<string, any>>>({
+  const [oralCondition, setOralCondition] = useState<Record<number, OralCondition>>({
     0: { orallyFit: false, dentalCaries: true, gingivitis: false, periodontal: false, debris: true, calculus: false, abnormalGrowth: false, cleftLipPalate: false, edentulous: false, others: '' },
     1: { orallyFit: false, dentalCaries: false, gingivitis: false, periodontal: false, debris: false, calculus: false, abnormalGrowth: false, cleftLipPalate: false, edentulous: false, others: '' },
   });
@@ -234,6 +322,65 @@ export const DentalChart = () => {
   };
   const updateOralField = (field: string, value: any) => {
     setOralCondition(prev => ({ ...prev, [selectedYear]: { ...prev[selectedYear], [field]: value } }));
+  };
+
+  useEffect(() => {
+    const measureStickyOffsets = () => {
+      const headerHeight = headerRowRef.current?.offsetHeight ?? 0;
+      const tabsHeight = tabsRowRef.current?.offsetHeight ?? 0;
+      setStickyOffsets({
+        tabsTop: headerHeight,
+        yearTop: headerHeight + tabsHeight,
+      });
+    };
+
+    measureStickyOffsets();
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(measureStickyOffsets);
+      if (headerRowRef.current) resizeObserver.observe(headerRowRef.current);
+      if (tabsRowRef.current) resizeObserver.observe(tabsRowRef.current);
+    }
+
+    window.addEventListener('resize', measureStickyOffsets);
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', measureStickyOffsets);
+    };
+  }, [activeTab, activeYears.length, editingInfo, referrals.length, saved]);
+
+  const getNextSchoolYear = () => {
+    const lastYear = activeYears[activeYears.length - 1];
+    const lastYearIndex = ALL_SCHOOL_YEARS.indexOf(lastYear);
+    return lastYearIndex >= 0 ? ALL_SCHOOL_YEARS[lastYearIndex + 1] ?? null : null;
+  };
+
+  const handleAddYear = () => {
+    const nextYear = getNextSchoolYear();
+    if (!nextYear) return;
+
+    const nextIndex = activeYears.length;
+    setActiveYears(prev => [...prev, nextYear]);
+    setChartData(prev => ({ ...prev, [nextIndex]: {} }));
+    setMedHistory(prev => ({ ...prev, [nextIndex]: createEmptyMedicalHistory() }));
+    setDietHistory(prev => ({ ...prev, [nextIndex]: createEmptyDietHistory() }));
+    setOralCondition(prev => ({ ...prev, [nextIndex]: createEmptyOralCondition() }));
+    setSelectedYear(nextIndex);
+  };
+
+  const handleDeleteYear = (yearIndex: number) => {
+    if (!canEdit || activeYears.length <= 1) return;
+
+    setActiveYears(prev => prev.filter((_, index) => index !== yearIndex));
+    setChartData(prev => reindexYearRecords(prev, yearIndex));
+    setMedHistory(prev => reindexYearRecords(prev, yearIndex));
+    setDietHistory(prev => reindexYearRecords(prev, yearIndex));
+    setOralCondition(prev => reindexYearRecords(prev, yearIndex));
+    setSelectedYear(prev => {
+      if (prev === yearIndex) return Math.max(0, yearIndex - 1);
+      return prev > yearIndex ? prev - 1 : prev;
+    });
   };
 
   const handleSave = () => {
@@ -302,8 +449,8 @@ export const DentalChart = () => {
 
   return (
     <div className="space-y-4 max-w-5xl mx-auto">
-      {/* Sticky header + patient card */}
-      <div className="sticky top-0 z-30 bg-gray-50 pb-2 space-y-2">
+      {/* Sticky header row */}
+      <div ref={headerRowRef} className="sticky top-0 z-40 bg-gray-50 pb-2">
       {/* Header */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-3 min-w-0">
@@ -356,6 +503,7 @@ export const DentalChart = () => {
             </button>
           )}
         </div>
+      </div>
       </div>
 
       {/* Patient Info Card */}
@@ -482,11 +630,15 @@ export const DentalChart = () => {
           </>
         )}
       </div>
-      </div>{/* end sticky wrapper */}
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="flex border-b border-gray-200 overflow-x-auto">
+      <div className="bg-white rounded-xl border border-gray-200">
+        <div
+          ref={tabsRowRef}
+          className="sticky z-30 rounded-t-xl border-b border-gray-200 bg-white overflow-x-auto"
+          style={{ top: stickyOffsets.tabsTop }}
+        >
+          <div className="flex min-w-max">
           {[
             { key: 'history',      label: 'History & Oral'    },
             { key: 'chart',        label: 'Dental Chart'     },
@@ -508,6 +660,7 @@ export const DentalChart = () => {
               ) : tab.label}
             </button>
           ))}
+          </div>
         </div>
 
         {/* ── TAB 1: History ── */}
@@ -516,25 +669,41 @@ export const DentalChart = () => {
             <table className="w-full text-xs border-collapse">
               <thead>
                 <tr>
-                  <th className="sticky left-0 z-10 bg-gray-50 px-4 py-2.5 text-left font-semibold text-gray-600 border border-gray-200 min-w-[180px]"></th>
+                  <th
+                    className="sticky left-0 z-[22] bg-gray-50 px-4 py-2.5 text-left font-semibold text-gray-600 border border-gray-200 min-w-[180px]"
+                    style={{ top: stickyOffsets.yearTop }}
+                  ></th>
                   {activeYears.map((yr, idx) => (
-                    <th key={yr} onClick={() => setSelectedYear(idx)}
-                      className={`px-3 py-2.5 text-center font-semibold border border-gray-200 min-w-[110px] cursor-pointer select-none ${idx === selectedYear ? 'bg-blue-100 text-blue-800' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
-                      {yr}
+                    <th
+                      key={yr}
+                      onClick={() => setSelectedYear(idx)}
+                      className={`sticky z-[21] px-3 py-2.5 text-center font-semibold border border-gray-200 min-w-[110px] cursor-pointer select-none ${idx === selectedYear ? 'bg-blue-100 text-blue-800' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}
+                      style={{ top: stickyOffsets.yearTop }}
+                    >
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span>{yr}</span>
+                        {canEdit && activeYears.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleDeleteYear(idx);
+                            }}
+                            className="rounded p-0.5 text-gray-400 transition-colors hover:bg-white/80 hover:text-red-600"
+                            title={`Delete ${yr}`}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
                     </th>
                   ))}
-                  <th className="bg-gray-50 border border-gray-200 px-2 py-2.5 text-center min-w-[90px]">
-                    {canEdit && activeYears.length < ALL_SCHOOL_YEARS.length && (
-                      <button onClick={() => {
-                        const ni = activeYears.length;
-                        const nextYr = ALL_SCHOOL_YEARS[ni];
-                        setActiveYears(prev => [...prev, nextYr]);
-                        setChartData(prev => ({ ...prev, [ni]: {} }));
-                        setMedHistory(prev => ({ ...prev, [ni]: { dateExamined:'', allergies:'', hypertension:false, diabetes:false, bloodDisorders:false, cardiovascular:false, thyroid:false, hepatitis:'', malignancy:'', hospitalization:'', bloodTransfusion:'', tattoo:false, others:'' } }));
-                        setDietHistory(prev => ({ ...prev, [ni]: { sugarSweetened:false, alcoholDrinker:false, tobaccoUser:false, betelNut:false, bodyPiercing:false, nailBiting:false, thumbsucking:false } }));
-                        setOralCondition(prev => ({ ...prev, [ni]: { orallyFit:false, dentalCaries:false, gingivitis:false, periodontal:false, debris:false, calculus:false, abnormalGrowth:false, cleftLipPalate:false, edentulous:false, others:'' } }));
-                        setSelectedYear(ni);
-                      }} className="text-xs text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap">+ Year</button>
+                  <th
+                    className="sticky z-[21] bg-gray-50 border border-gray-200 px-2 py-2.5 text-center min-w-[90px]"
+                    style={{ top: stickyOffsets.yearTop }}
+                  >
+                    {canEdit && !!getNextSchoolYear() && (
+                      <button onClick={handleAddYear} className="text-xs text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap">+ Year</button>
                     )}
                   </th>
                 </tr>
@@ -546,9 +715,12 @@ export const DentalChart = () => {
                   <td className="sticky left-0 z-10 bg-white px-4 py-2 font-semibold text-gray-700 border border-gray-200">Date Examined</td>
                   {activeYears.map((yr, idx) => (
                     <td key={yr} className={`px-2 py-1.5 border border-gray-200 ${idx === selectedYear ? 'bg-blue-50/40' : ''}`}>
-                      <input type="date" value={idx === selectedYear ? (med.dateExamined || '') : ''}
-                        onChange={e => idx === selectedYear && updateMedField('dateExamined', e.target.value)}
-                        className="w-full text-xs border border-gray-300 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                      <div className="rounded border border-gray-200 bg-gray-50 px-2 py-1 text-center text-[11px] font-medium text-gray-700">
+                        {medHistory[idx]?.dateExamined || '—'}
+                      </div>
+                      {idx === selectedYear && (
+                        <div className="mt-1 text-center text-[10px] text-gray-400">Auto-set</div>
+                      )}
                     </td>
                   ))}
                   <td className="border border-gray-200" />
@@ -650,33 +822,49 @@ export const DentalChart = () => {
         {activeTab === 'chart' && (
           <div className="p-0 space-y-0">
             {/* Year tabs */}
-            <div className="flex items-center gap-0 border-b border-gray-200 px-4 pt-3 overflow-x-auto">
+            <div
+              className="sticky z-20 border-b border-gray-200 bg-white px-4 pt-3 overflow-x-auto"
+              style={{ top: stickyOffsets.yearTop }}
+            >
+              <div className="flex items-center gap-0 min-w-max">
               {activeYears.map((yr, idx) => {
                 const yrDmft = computeDMFT(chartData[idx] || {});
                 return (
-                  <button key={yr} onClick={() => setSelectedYear(idx)}
-                    className={`flex-shrink-0 px-4 py-2.5 text-xs font-medium transition-all border-b-2 mr-1 ${selectedYear === idx ? 'border-blue-700 text-blue-700 bg-blue-50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
-                    <div>{yr}</div>
-                    <div style={{ fontSize: '10px', marginTop: '2px' }} className={selectedYear === idx ? 'text-blue-600' : 'text-gray-400'}>
-                      DMFT: {yrDmft.T + yrDmft.t}
-                    </div>
-                  </button>
+                  <div
+                    key={yr}
+                    className={`mr-1 flex flex-shrink-0 items-stretch border-b-2 ${selectedYear === idx ? 'border-blue-700 bg-blue-50 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+                  >
+                    <button
+                      onClick={() => setSelectedYear(idx)}
+                      className="px-4 py-2.5 text-left text-xs font-medium transition-all"
+                    >
+                      <div>{yr}</div>
+                      <div style={{ fontSize: '10px', marginTop: '2px' }} className={selectedYear === idx ? 'text-blue-600' : 'text-gray-400'}>
+                        DMFT: {yrDmft.T + yrDmft.t}
+                      </div>
+                    </button>
+                    {canEdit && activeYears.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteYear(idx)}
+                        className="border-l border-gray-200 px-2 text-gray-400 transition-colors hover:bg-white hover:text-red-600"
+                        title={`Delete ${yr}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
                 );
               })}
               {/* Add year button */}
-              {activeYears.length < ALL_SCHOOL_YEARS.length && (
+              {!!getNextSchoolYear() && (
                 <button
-                  onClick={() => {
-                    const next = ALL_SCHOOL_YEARS.find(y => !activeYears.includes(y));
-                    if (next) {
-                      setActiveYears(prev => [...prev, next]);
-                      setSelectedYear(activeYears.length);
-                    }
-                  }}
+                  onClick={handleAddYear}
                   className="flex-shrink-0 px-3 py-2 text-xs text-gray-400 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-300 transition-all">
                   + Add Year
                 </button>
               )}
+              </div>
             </div>
             <div className="p-4 space-y-4">
             {/* Code selector — edit only */}
