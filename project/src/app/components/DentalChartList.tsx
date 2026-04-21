@@ -1,6 +1,4 @@
-import { Link } from 'react-router';
-import { useState, useMemo } from 'react';
-import { X } from 'lucide-react';
+import { getGradeColor } from '../utils/gradeColors';
 
 // Mock patient data with all fields
 const mockPatients = [
@@ -240,6 +238,14 @@ const getAgeGroup = (age: number) => {
   return '20 & above';
 };
 
+const formatName = (fullName: string) => {
+  const parts = fullName.split(' ');
+  if (parts.length < 2) return fullName;
+  const firstName = parts.slice(0, -1).join(' ');
+  const lastName = parts[parts.length - 1];
+  return `${lastName}, ${firstName}`;
+};
+
 export const DentalChartList = () => {
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('all');
@@ -325,10 +331,13 @@ export const DentalChartList = () => {
                 <tr><td colSpan={5} className="text-center py-12 text-gray-400">No dental charts match the selected filters.</td></tr>
               ) : filtered.map(patient => {
                 const age = calculateAge(patient.birthdate);
+                const gc = getGradeColor(patient.grade);
                 return (
                   <tr key={patient.id} onClick={() => window.location.href = `/dental-chart/${patient.id}`} className="hover:bg-gray-50 cursor-pointer">
-                    <td className="px-4 py-3 font-medium text-gray-900">{patient.name}</td>
-                    <td className="px-4 py-3 text-gray-600">{patient.grade}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900">{formatName(patient.name)}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${gc.light}`} style={{ color: gc.solid }}>{patient.grade}</span>
+                    </td>
                     <td className="px-4 py-3 text-gray-600">{patient.section}</td>
                     <td className="px-4 py-3 text-gray-600">{patient.gender}</td>
                     <td className="px-4 py-3 text-gray-600">{age}</td>
