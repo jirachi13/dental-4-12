@@ -40,20 +40,20 @@ export const Root = () => {
       roles: ['dentist','dental_aide','clinic_staff']
     },
     {
-      id: 5, path: '/treatment-records', label: 'Treatment', icon: Clipboard,
-      roles: ['dentist','dental_aide','clinic_staff']
-    },
-    {
-      id: 6, path: '/rpc', label: 'RPC Tracking', icon: Shield,
-      roles: ['dentist','dental_aide','clinic_staff']
-    },
-    {
-      id: 7, path: '/reports', label: 'Reports', icon: FileBarChart,
-      roles: ['dentist','dental_aide','school_admin']
-    },
-    {
-      id: 8, path: '/ai-analytics', label: 'Risk Classification', icon: Brain,
+      id: 5, path: '/ai-analytics', label: 'Risk Classification', icon: Brain,
       roles: ['dentist']
+    },
+    {
+      id: 6, path: '/treatment-records', label: 'Treatment', icon: Clipboard,
+      roles: ['dentist','dental_aide','clinic_staff']
+    },
+    {
+      id: 7, path: '/rpc', label: 'RPC Tracking', icon: Shield,
+      roles: ['dentist','dental_aide','clinic_staff']
+    },
+    {
+      id: 8, path: '/reports', label: 'Reports', icon: FileBarChart,
+      roles: ['dentist','dental_aide','school_admin']
     },
     {
       id: 9, path: '/accounts', label: 'User Management', icon: UserCog,

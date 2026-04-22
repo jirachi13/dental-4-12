@@ -5,6 +5,7 @@ import { AlertCircle, TrendingUp, CheckCircle, Filter, Eye, Brain, Activity, Sch
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { GradePill } from './GradePill';
+import { ListSearchInput } from './ListSearchInput';
 
 const SCHOOLS = [
   'Bagong Tanyag Integrated School',
@@ -35,6 +36,8 @@ export const AIAnalytics = () => {
   const [riskFilter, setRiskFilter] = useState('all');
   const [validationFilter, setValidationFilter] = useState('all');
   const [analyticsSubTab, setAnalyticsSubTab] = useState<'risk' | 'pending'>('risk');
+  const [listMode, setListMode] = useState<'risk' | 'full'>('risk');
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Helper functions
   const calculateAge = (birthdate: string) => {
@@ -170,10 +173,20 @@ export const AIAnalytics = () => {
     ? students.filter(s => s.school === selectedSchool)
     : students;
 
-  const filteredStudents = contextStudents
+  const studentsWithRisk = contextStudents.map(s => {
+    const { riskLevel, predictedIssue, recommendedAction, factors, score } = computeRiskScore(s);
+    return { ...s, riskLevel, predictedIssue, recommendedAction, riskFactors: factors, riskScore: score };
+  });
+
+  const scopedStudents = listMode === 'risk'
+    ? studentsWithRisk.filter(student => student.riskLevel !== 'Low')
+    : studentsWithRisk;
+
+  const filteredStudents = scopedStudents
     .filter(student => {
       const age = calculateAge(student.birthdate);
       const ageGroup = getAgeGroup(age);
+      const query = searchTerm.trim().toLowerCase();
 
       const matchesGrade = gradeFilter === 'all' || student.grade === gradeFilter;
       const matchesSection = sectionFilter === 'all' || student.section === sectionFilter;
@@ -183,20 +196,17 @@ export const AIAnalytics = () => {
       const matchesValidation = validationFilter === 'all' ||
         (validationFilter === 'validated' && student.validated) ||
         (validationFilter === 'pending' && !student.validated);
+      const matchesSearch = query === '' ||
+        student.name.toLowerCase().includes(query) ||
+        student.grade.toLowerCase().includes(query) ||
+        student.section.toLowerCase().includes(query);
 
-      return matchesGrade && matchesSection && matchesAgeGroup && matchesGender && matchesRisk && matchesValidation;
+      return matchesGrade && matchesSection && matchesAgeGroup && matchesGender && matchesRisk && matchesValidation && matchesSearch;
     })
     .sort((a, b) => {
-      // Sort by risk level: High first, then Medium, then Low
       const riskOrder = { 'High': 0, 'Medium': 1, 'Low': 2 };
       return riskOrder[a.riskLevel as keyof typeof riskOrder] - riskOrder[b.riskLevel as keyof typeof riskOrder];
     });
-
-  const highRiskCount = students.filter(s => s.riskLevel === 'High').length;
-  const mediumRiskCount = students.filter(s => s.riskLevel === 'Medium').length;
-  const lowRiskCount = students.filter(s => s.riskLevel === 'Low').length;
-  const pendingValidation = students.filter(s => !s.validated).length;
-  const avgConfidence = Math.round(students.reduce((sum, s) => sum + s.confidenceScore, 0) / students.length);
 
   const getRiskBadgeColor = (risk: string) => {
     switch (risk) {
@@ -231,12 +241,6 @@ export const AIAnalytics = () => {
     { name: 'Pending', value: students.filter(s => !s.validated).length, color: '#E31E24', id: 'pending' },
   ];
 
-  // Apply computed risk to each student
-  const studentsWithRisk = contextStudents.map(s => {
-    const { riskLevel, predictedIssue, recommendedAction, factors, score } = computeRiskScore(s);
-    return { ...s, riskLevel, predictedIssue, recommendedAction, riskFactors: factors, riskScore: score };
-  });
-
   // School view data
   const schoolRiskSummary = (selectedSchool ? [selectedSchool] : SCHOOLS).map(school => {
     const schoolStudents = contextStudents.filter(s => s.school === school);
@@ -250,114 +254,27 @@ export const AIAnalytics = () => {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Risk Classification</h1>
-        <p className="text-sm text-gray-500 mt-0.5">ML-based oral health risk assessment</p>
-      </div>
-
-      {false && (
-        <div className="space-y-4">
-          <p className="text-sm text-gray-500">Select a school to view detailed risk analytics, or switch to List View to see all students.</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {schoolRiskSummary.map(s => {
-              const sc = getSchoolColor(s.name);
-              return (
-                <div key={s.name} style={{ borderColor: sc.border }} className="bg-white rounded-xl border-2 p-5 hover:shadow-md transition-all cursor-pointer"
-                  onClick={() => { }}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div style={{ backgroundColor: sc.light }} className="w-10 h-10 rounded-lg flex items-center justify-center">
-                      <Brain style={{ color: sc.solid }} className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div style={{ color: sc.text }} className="font-bold text-sm">{getSchoolShortName(s.name)}</div>
-                      <div className="text-xs text-gray-500">{s.total} students assessed</div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-center mb-3">
-                    <div className="bg-red-50 rounded-lg p-2">
-                      <div className="text-lg font-bold text-red-600">{s.high}</div>
-                      <div className="text-xs text-gray-500">High</div>
-                    </div>
-                    <div className="bg-yellow-50 rounded-lg p-2">
-                      <div className="text-lg font-bold text-yellow-600">{s.medium}</div>
-                      <div className="text-xs text-gray-500">Medium</div>
-                    </div>
-                    <div className="bg-green-50 rounded-lg p-2">
-                      <div className="text-lg font-bold text-green-600">{s.low}</div>
-                      <div className="text-xs text-gray-500">Low</div>
-                    </div>
-                  </div>
-                  {s.pending > 0 && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-yellow-700">
-                      ⚠ {s.pending} predictions pending validation
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Risk Classification</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Risk-based student classification list</p>
         </div>
-      )}
-
-      {true && <div className="space-y-4">
-
-      {/* AI Model Info Banner */}
-      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <Brain className="w-5 h-5 text-purple-600 mt-0.5" />
-          <div className="flex-1">
-            <h3 className="font-semibold text-purple-900 mb-1">AI Model: Floral Oral Health Classifier v2.3.1</h3>
-            <p className="text-sm text-purple-800">
-              Deep learning model trained on 50,000+ dental images with 94% accuracy. Confidence threshold: 75%. 
-              All AI predictions require dentist validation for clinical decision-making.
-            </p>
-          </div>
+        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setListMode('risk')}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${listMode === 'risk' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Risk List
+          </button>
+          <button
+            onClick={() => setListMode('full')}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${listMode === 'full' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Full List
+          </button>
         </div>
       </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-2 text-red-600 mb-2">
-            <AlertCircle className="w-5 h-5" />
-            <span className="text-sm font-medium">High Risk</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900">{highRiskCount}</p>
-          <p className="text-xs text-gray-500 mt-1">Immediate attention needed</p>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-2 text-yellow-600 mb-2">
-            <TrendingUp className="w-5 h-5" />
-            <span className="text-sm font-medium">Medium Risk</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900">{mediumRiskCount}</p>
-          <p className="text-xs text-gray-500 mt-1">Requires monitoring</p>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-2 text-green-600 mb-2">
-            <CheckCircle className="w-5 h-5" />
-            <span className="text-sm font-medium">Low Risk</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900">{lowRiskCount}</p>
-          <p className="text-xs text-gray-500 mt-1">Healthy oral status</p>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-2 text-blue-600 mb-2">
-            <Activity className="w-5 h-5" />
-            <span className="text-sm font-medium">Avg Confidence</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900">{avgConfidence}%</p>
-          <p className="text-xs text-gray-500 mt-1">Model certainty</p>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-2 text-orange-600 mb-2">
-            <Eye className="w-5 h-5" />
-            <span className="text-sm font-medium">Pending Review</span>
-          </div>
-          <p className="text-3xl font-bold text-gray-900">{pendingValidation}</p>
-          <p className="text-xs text-gray-500 mt-1">Awaiting validation</p>
-        </div>
-      </div>
+      <div className="space-y-4">
 
       {/* Filters */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
@@ -376,6 +293,9 @@ export const AIAnalytics = () => {
             className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-xs font-medium">
             <Brain className="w-3.5 h-3.5" /> Update Risk Scores
           </button>
+        </div>
+        <div className="mb-3">
+          <ListSearchInput value={searchTerm} onChange={setSearchTerm} />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
           <div>
@@ -467,7 +387,7 @@ export const AIAnalytics = () => {
       {/* Student List with AI Predictions */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-200">
-          <h2 className="text-sm font-bold text-gray-900">AI Risk Predictions <span className="font-normal text-gray-400">({filteredStudents.length} students)</span></h2>
+          <h2 className="text-sm font-bold text-gray-900">Risk Classification List <span className="font-normal text-gray-400">({filteredStudents.length} students)</span></h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -482,7 +402,7 @@ export const AIAnalytics = () => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredStudents.map((student) => (
-                <tr key={student.id} onClick={() => navigate(`/dental-chart/${student.id}?tab=ai`)}
+                <tr key={student.id} onClick={() => navigate(`/dental-chart/${student.id}?tab=ai&mode=risk`)}
                   className="hover:bg-gray-50 cursor-pointer transition-colors">
                   <td className="px-4 py-3">
                     <div className="font-medium text-gray-900">{student.name}</div>
@@ -525,44 +445,7 @@ export const AIAnalytics = () => {
         </div>
       </div>
 
-      {/* Model Performance + Validation Stats — technical detail, placed last */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div key="chart-container-1" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Model Performance Metrics</h2>
-          <ResponsiveContainer width="100%" height={250} key="bar-chart-container">
-            <BarChart data={modelPerformanceData} id="model-performance-chart">
-              <CartesianGrid strokeDasharray="3 3" key="bar-grid" />
-              <XAxis dataKey="metric" key="bar-xaxis" />
-              <YAxis domain={[0, 100]} key="bar-yaxis" />
-              <Tooltip key="bar-tooltip" />
-              <Bar dataKey="value" fill="#1E40AF" key="bar-element" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div key="chart-container-2" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Validation Status Distribution</h2>
-          <ResponsiveContainer width="100%" height={250} key="pie-chart-container">
-            <PieChart id="validation-stats-chart">
-              <Pie data={validationStatsData} cx="50%" cy="50%" outerRadius={80} dataKey="value" nameKey="name" label key="pie-element">
-                {validationStatsData.map((entry) => (
-                  <Cell key={entry.id} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip key="pie-tooltip" />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="flex justify-center gap-4 mt-4">
-            {validationStatsData.map((item) => (
-              <div key={item.id} className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-sm text-gray-600">{item.name}: {item.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-    </div>}
+    </div>
 
       {/* ── TREATMENT PENDING VIEW ── */}
       {analyticsSubTab === 'pending' && (
