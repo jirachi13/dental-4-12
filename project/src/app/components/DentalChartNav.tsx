@@ -245,6 +245,7 @@ const getAgeGroup = (age: number) => {
 
 export const DentalChartNav = () => {
   const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState<'queued' | 'full'>('queued');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
@@ -256,7 +257,13 @@ export const DentalChartNav = () => {
     return [...new Set(base.map(p => p.section))].sort();
   }, [gradeFilter]);
 
-  const filtered = useMemo(() => mockPatients.filter(p => {
+  const queueIds = useMemo(() => new Set(['1', '3', '8', '11', '15', '24', '41', '58', '76']), []);
+  const sourcePatients = useMemo(
+    () => (viewMode === 'queued' ? mockPatients.filter((p) => queueIds.has(p.id)) : mockPatients),
+    [viewMode, queueIds],
+  );
+
+  const filtered = useMemo(() => sourcePatients.filter(p => {
     const age = calculateAge(p.birthdate);
     const ag = getAgeGroup(age);
     if (gradeFilter !== 'all' && p.grade !== gradeFilter) return false;
@@ -269,7 +276,7 @@ export const DentalChartNav = () => {
       if (!formattedName.includes(query) && !p.grade.toLowerCase().includes(query) && !p.section.toLowerCase().includes(query)) return false;
     }
     return true;
-  }), [gradeFilter, sectionFilter, genderFilter, ageGroupFilter, searchTerm]);
+  }), [sourcePatients, gradeFilter, sectionFilter, genderFilter, ageGroupFilter, searchTerm]);
 
   const hasActiveFilters = gradeFilter !== 'all' || sectionFilter !== 'all' || genderFilter !== 'all' || ageGroupFilter !== 'all' || searchTerm !== '';
   const clearFilters = () => { setGradeFilter('all'); setSectionFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); setSearchTerm(''); };
@@ -286,7 +293,23 @@ export const DentalChartNav = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dental Charts</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{filtered.length} chart{filtered.length !== 1 ? 's' : ''} found</p>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {viewMode === 'queued' ? `${filtered.length} queued student${filtered.length !== 1 ? 's' : ''}` : `${filtered.length} chart${filtered.length !== 1 ? 's' : ''} found`}
+          </p>
+        </div>
+        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('queued')}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium ${viewMode === 'queued' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-600 hover:text-gray-800'}`}
+          >
+            Queued
+          </button>
+          <button
+            onClick={() => setViewMode('full')}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium ${viewMode === 'full' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-600 hover:text-gray-800'}`}
+          >
+            Full List
+          </button>
         </div>
       </div>
       <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
@@ -322,7 +345,7 @@ export const DentalChartNav = () => {
               ) : filtered.map(p => {
                 const age = calculateAge(p.birthdate);
                 return (
-                  <tr key={p.id} onClick={() => navigate(`/dental-chart/${p.id}`)} className={studentListTableStyles.row}>
+                  <tr key={p.id} onClick={() => navigate(`/dental-chart/${p.id}?tab=history&context=dental-queue`)} className={studentListTableStyles.row}>
                     <td className={studentListTableStyles.primaryCell}>{formatStudentName(p.name)}</td>
                     <GradeTableCell grade={p.grade} />
                     <td className={studentListTableStyles.secondaryCell}>{p.section}</td>
@@ -334,7 +357,7 @@ export const DentalChartNav = () => {
             </tbody>
           </table>
         </div>
-        {filtered.length > 0 && <div className={studentListTableStyles.footer}>Showing {filtered.length} of {mockPatients.length} charts</div>}
+        {filtered.length > 0 && <div className={studentListTableStyles.footer}>Showing {filtered.length} of {sourcePatients.length} {viewMode === 'queued' ? 'queued students' : 'charts'}</div>}
       </div>
     </div>
   );
