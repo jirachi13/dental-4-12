@@ -5,6 +5,7 @@ import { formatStudentName } from '../utils/formatStudentName';
 import { GradeTableCell } from './GradeTableCell';
 import { ListSearchInput } from './ListSearchInput';
 import { studentListTableStyles } from './StudentListTableStyles';
+import { getQueuedStudentIds } from '../utils/queueStorage';
 
 const GRADES = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'];
 
@@ -251,17 +252,17 @@ export const DentalChartNav = () => {
   const [genderFilter, setGenderFilter] = useState('all');
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const queuedStudentIds = useMemo(() => getQueuedStudentIds(), []);
+
+  const sourcePatients = useMemo(
+    () => (viewMode === 'queued' ? mockPatients.filter((p) => queuedStudentIds.includes(p.id)) : mockPatients),
+    [viewMode, queuedStudentIds],
+  );
 
   const allSections = useMemo(() => {
-    let base = gradeFilter !== 'all' ? mockPatients.filter(p => p.grade === gradeFilter) : mockPatients;
+    const base = gradeFilter !== 'all' ? sourcePatients.filter((p) => p.grade === gradeFilter) : sourcePatients;
     return [...new Set(base.map(p => p.section))].sort();
-  }, [gradeFilter]);
-
-  const queueIds = useMemo(() => new Set(['1', '3', '8', '11', '15', '24', '41', '58', '76']), []);
-  const sourcePatients = useMemo(
-    () => (viewMode === 'queued' ? mockPatients.filter((p) => queueIds.has(p.id)) : mockPatients),
-    [viewMode, queueIds],
-  );
+  }, [gradeFilter, sourcePatients]);
 
   const filtered = useMemo(() => sourcePatients.filter(p => {
     const age = calculateAge(p.birthdate);

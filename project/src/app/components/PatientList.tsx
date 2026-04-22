@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
-import { Plus, Eye, FileText, X, School as SchoolIcon, List, ChevronRight, Users, Upload, CheckCircle, AlertCircle, ClipboardPlus } from 'lucide-react';
+import { Plus, Eye, FileText, X, School as SchoolIcon, List, ChevronRight, Users, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 import { formatStudentName } from '../utils/formatStudentName';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
@@ -9,6 +9,7 @@ import { GradePill } from './GradePill';
 import { GradeTableCell } from './GradeTableCell';
 import { ListSearchInput } from './ListSearchInput';
 import { studentListTableStyles } from './StudentListTableStyles';
+import { addQueuedStudentId, getQueuedStudentIds } from '../utils/queueStorage';
 
 const SCHOOLS = [
   'Bagong Tanyag Integrated School',
@@ -45,12 +46,12 @@ export const PatientList = () => {
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [queuedStudents, setQueuedStudents] = useState<Set<string>>(new Set());
   const [newPatient, setNewPatient] = useState({ firstName:'', lastName:'', middleName:'', birthdate:'', gender:'', grade:'', section:'', school:'', guardianName:'', guardianContact:'', address:'', philhealthNumber:'', philhealthStatus:'None', is4Ps:false, fourPsId:'', consentStatus:'pending' });
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [bulkFile, setBulkFile] = useState<File | null>(null);
   const [bulkPreview, setBulkPreview] = useState<any[]>([]);
   const [bulkStep, setBulkStep] = useState<'upload'|'preview'|'done'>('upload');
+  const [queuedStudentIds, setQueuedStudentIds] = useState<string[]>(() => getQueuedStudentIds());
 
   const calculateAge = (birthdate: string) => {
     const today = new Date(); const birth = new Date(birthdate);
@@ -542,7 +543,7 @@ export const PatientList = () => {
                     <th className={studentListTableStyles.headerCell}>Section</th>
                     <th className={studentListTableStyles.headerCell}>Gender</th>
                     <th className={studentListTableStyles.headerCell}>Age</th>
-                    <th className={studentListTableStyles.headerCell}>Action</th>
+                    <th className={studentListTableStyles.headerCell}>Actions</th>
                   </tr>
                 </thead>
                 <tbody className={studentListTableStyles.body}>
@@ -550,7 +551,7 @@ export const PatientList = () => {
                     <tr><td colSpan={6} className={studentListTableStyles.emptyCell}>No students match the selected filters.</td></tr>
                   ) : filtered.map(student => {
                     const age = calculateAge(student.birthdate);
-                    const isQueued = queuedStudents.has(student.id);
+                    const isQueued = queuedStudentIds.includes(student.id);
                     return (
                       <tr key={student.id} onClick={() => navigate(`/dental-chart/${student.id}?tab=history`)} className={studentListTableStyles.row}>
                         <td className={studentListTableStyles.primaryCell}>{formatStudentName(student.name)}</td>
@@ -562,16 +563,17 @@ export const PatientList = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setQueuedStudents((prev) => {
-                                const next = new Set(prev);
-                                next.add(student.id);
-                                return next;
-                              });
+                              if (isQueued) return;
+                              setQueuedStudentIds(addQueuedStudentId(student.id));
                             }}
-                            className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium ${isQueued ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}
+                            disabled={isQueued}
+                            className={`px-2.5 py-1 rounded text-xs font-semibold border transition-colors ${
+                              isQueued
+                                ? 'bg-green-100 text-green-700 border-green-200 cursor-default'
+                                : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                            }`}
                           >
-                            <ClipboardPlus className="h-3.5 w-3.5" />
-                            {isQueued ? 'Queued' : 'Queue'}
+                            {isQueued ? 'Queued' : 'Queue for Charting'}
                           </button>
                         </td>
                       </tr>
@@ -618,7 +620,6 @@ export const PatientList = () => {
               <div><label className="block text-sm font-medium text-gray-700 mb-1">PhilHealth Status</label><select value={newPatient.philhealthStatus} onChange={e => setNewPatient({...newPatient, philhealthStatus: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="None">None</option><option value="Principal">Principal</option><option value="Dependent">Dependent</option></select></div>
               <div className="flex items-center gap-3 pt-2"><input type="checkbox" id="is4ps" checked={newPatient.is4Ps} onChange={e => setNewPatient({...newPatient, is4Ps: e.target.checked})} className="w-4 h-4 rounded accent-blue-600" /><label htmlFor="is4ps" className="text-sm font-medium text-gray-700">4Ps / NHTS Member</label></div>
               {newPatient.is4Ps && <div><label className="block text-sm font-medium text-gray-700 mb-1">4Ps ID</label><input type="text" value={newPatient.fourPsId} onChange={e => setNewPatient({...newPatient, fourPsId: e.target.value})} placeholder="4PS-XXXXXXXX" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>}
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Consent Status</label><select value={newPatient.consentStatus} onChange={e => setNewPatient({...newPatient, consentStatus: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="pending">Pending</option><option value="complete">Complete</option><option value="missing">Missing</option></select></div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Address</label><input type="text" value={newPatient.address} onChange={e => setNewPatient({...newPatient, address: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             </div>
             <div className="flex gap-3 p-6 border-t">
