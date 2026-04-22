@@ -211,8 +211,28 @@ export const DentalChart = () => {
   };
 
   type TabKey = 'history' | 'chart' | 'appointments' | 'records' | 'treatments' | 'referrals' | 'ai';
+  type IptrContext = 'default' | 'dental-queue' | 'risk' | 'treatment';
+  const iptrContext = (searchParams.get('context') as IptrContext) || 'default';
   const initialTab = (searchParams.get('tab') as TabKey) || 'history';
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
+  const allTabs: { key: TabKey; label: string }[] = [
+    { key: 'history', label: 'History & Oral' },
+    { key: 'chart', label: 'Dental Chart' },
+    { key: 'appointments', label: 'Consent' },
+    { key: 'treatments', label: 'Treatment History' },
+    { key: 'records', label: 'DMFT History' },
+    { key: 'referrals', label: 'Referrals' },
+    { key: 'ai', label: 'Risk Classification' },
+  ];
+  const visibleTabs = (
+    iptrContext === 'dental-queue'
+      ? allTabs.filter((tab) => tab.key === 'history' || tab.key === 'chart')
+      : iptrContext === 'risk'
+      ? allTabs.filter((tab) => tab.key === 'ai')
+      : iptrContext === 'treatment'
+      ? allTabs.filter((tab) => tab.key === 'chart' || tab.key === 'treatments')
+      : allTabs
+  );
 
   // ── Dental Records (DMFT by year) ────────────────────────────────────────
   const dmftByYear = [
@@ -223,6 +243,7 @@ export const DentalChart = () => {
 
   // ── Treatment History ────────────────────────────────────────────────────
   const [showAddTreatment, setShowAddTreatment] = useState(false);
+  const [showRiskModificationForm, setShowRiskModificationForm] = useState(false);
   const [showAddReferral, setShowAddReferral] = useState(false);
   const [referralForm, setReferralForm] = useState({ date: '', facility: '', reason: '', followUpDate: '' });
   type Referral = { date: string; facility: string; reason: string; followUpDate: string; status: 'pending' | 'completed' | 'no-show' };
@@ -400,7 +421,16 @@ export const DentalChart = () => {
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+    if (iptrContext === 'dental-queue') {
+      setTimeout(() => navigate('/ai-analytics'), 450);
+    }
   };
+
+  useEffect(() => {
+    if (!visibleTabs.some((tab) => tab.key === activeTab)) {
+      setActiveTab(visibleTabs[0]?.key ?? 'history');
+    }
+  }, [activeTab, visibleTabs]);
 
   const ToothButton = ({ num }: { num: number }) => {
     const data = currentChart[num];
@@ -449,18 +479,26 @@ export const DentalChart = () => {
 
   // Base44-exact treatment codes
   const treatmentCodes = [
+    { code: 'OEX', label: 'Oral Exam / Checkup'      },
     { code: 'FV',  label: 'Fluoride Varnish'        },
     { code: 'PFS', label: 'Pit and Fissure Sealant'  },
+    { code: 'OP',  label: 'Oral Prophylaxis'         },
     { code: 'PF',  label: 'Permanent Filling'        },
     { code: 'TF',  label: 'Temporary Filling'        },
+    { code: 'TR',  label: 'Tooth Restoration (Pasta)' },
     { code: 'X',   label: 'Extraction'               },
     { code: 'SDF', label: 'Silver Diamine Fluoride'  },
   ];
+  const treatmentCodeCounts = treatmentCodes.reduce<Record<string, number>>((acc, code) => {
+    acc[code.code] = Object.values(currentChart).filter((entry) => entry.treatment === code.code).length;
+    return acc;
+  }, {});
 
   const med = medHistory[selectedYear] || {};
   const diet = dietHistory[selectedYear] || {};
   const oral = oralCondition[selectedYear] || {};
   const showStickyYearBar = activeTab === 'history' || activeTab === 'chart';
+  const backPath = iptrContext === 'risk' ? '/ai-analytics' : iptrContext === 'treatment' ? '/treatment-records' : '/dental-charts';
 
   return (
     <div className="space-y-4 max-w-5xl mx-auto">
@@ -469,7 +507,7 @@ export const DentalChart = () => {
       {/* Header */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-3 min-w-0">
-          <Link to="/dental-charts" className="p-2 hover:bg-gray-100 rounded-lg shrink-0">
+          <Link to={backPath} className="p-2 hover:bg-gray-100 rounded-lg shrink-0">
             <ArrowLeft className="w-4 h-4 text-gray-600" />
           </Link>
           <div className="min-w-0">
@@ -654,15 +692,7 @@ export const DentalChart = () => {
           >
             <div className="overflow-x-auto">
             <div className="flex min-w-max">
-            {[
-              { key: 'history',      label: 'History & Oral'    },
-              { key: 'chart',        label: 'Dental Chart'     },
-              { key: 'appointments', label: 'Consent'          },
-              { key: 'treatments',   label: 'Treatment History' },
-              { key: 'records',      label: 'DMFT History'     },
-              { key: 'referrals',    label: 'Referrals'        },
-              { key: 'ai',           label: 'AI Risk'          },
-            ].map(tab => (
+            {visibleTabs.map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key as TabKey)}
                 className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors ${activeTab === tab.key ? 'border-b-2 border-blue-700 text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
                 {tab.key === 'referrals' && referrals.length > 0 ? (
@@ -865,7 +895,8 @@ export const DentalChart = () => {
             {/* Code selector — edit only */}
             <div className={`bg-blue-50 rounded-xl p-4 ${!canEdit ? 'opacity-50 pointer-events-none select-none' : ''}`}>
               {!canEdit && <p className="text-xs text-gray-500 mb-2 italic">View only — editing restricted to Dentist / Dental Aide</p>}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className={`grid grid-cols-1 ${iptrContext === 'default' ? 'lg:grid-cols-2' : ''} gap-4`}>
+                {iptrContext !== 'treatment' && (
                 <div>
                   <div className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Condition Codes</div>
                   <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
@@ -878,6 +909,8 @@ export const DentalChart = () => {
                     ))}
                   </div>
                 </div>
+                )}
+                {iptrContext !== 'dental-queue' && (
                 <div>
                   <div className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Treatment Codes</div>
                   <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
@@ -890,6 +923,7 @@ export const DentalChart = () => {
                     ))}
                   </div>
                 </div>
+                )}
               </div>
               {(selectedCondition || selectedTreatment) && (
                 <div className="mt-3 flex items-center gap-2">
@@ -967,6 +1001,18 @@ export const DentalChart = () => {
                     ))}
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
+              <div className="text-xs font-semibold text-gray-600 mb-3 uppercase tracking-wide">Treatment Code Counter (Auto-computed)</div>
+              <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2">
+                {treatmentCodes.map((code) => (
+                  <div key={code.code} className="rounded border border-gray-300 bg-white p-2 text-center">
+                    <div className="text-[10px] text-gray-500">{code.code}</div>
+                    <div className="text-sm font-bold text-gray-900">{treatmentCodeCounts[code.code]}</div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -1440,15 +1486,12 @@ export const DentalChart = () => {
               </div>
               <div className="space-y-2 text-xs">
                 {[
-                  { priority: 'Urgent',      color: 'red',    tx: 'Priority scheduling — refer to City Health Office for comprehensive treatment' },
-                  { priority: 'Immediate',   color: 'orange', tx: 'Extraction or restoration of severely decayed teeth (#36, #46)' },
-                  { priority: 'Short-term',  color: 'yellow', tx: 'Oral prophylaxis and scaling for generalized gingivitis' },
-                  { priority: 'Preventive',  color: 'blue',   tx: 'Fluoride varnish application + pit and fissure sealant on sound molars' },
-                  { priority: 'Education',   color: 'green',  tx: 'Oral hygiene instruction; dietary counseling to reduce sugar intake' },
-                ].map(r => (
-                  <div key={r.priority} className="flex items-start gap-2">
-                    <span className={`flex-shrink-0 px-2 py-0.5 rounded text-xs font-semibold bg-${r.color}-100 text-${r.color}-700`}>{r.priority}</span>
-                    <span className="text-gray-700">{r.tx}</span>
+                  { tx: 'Oral exam and full dental check-up with dentist validation.', color: 'bg-blue-50 border-blue-200 text-blue-800' },
+                  { tx: 'Tooth restoration or extraction for severe caries on molars.', color: 'bg-red-50 border-red-200 text-red-800' },
+                  { tx: 'Fluoride varnish, pit and fissure sealant, and oral prophylaxis as preventive care.', color: 'bg-green-50 border-green-200 text-green-800' },
+                ].map((r, index) => (
+                  <div key={index} className={`rounded-lg border px-3 py-2 ${r.color}`}>
+                    {r.tx}
                   </div>
                 ))}
               </div>
@@ -1459,16 +1502,54 @@ export const DentalChart = () => {
               <h3 className="text-sm font-bold text-gray-900">Dentist Validation</h3>
               <p className="text-xs text-gray-500">Review the AI prediction and treatment recommendation above, then record your clinical decision.</p>
               {canEdit ? (
-                <div className="flex flex-wrap gap-2">
-                  <button className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => navigate('/treatment-records')}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+                  >
                     ✓ Approve Prediction
                   </button>
-                  <button className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+                  <button
+                    onClick={() => setShowRiskModificationForm((v) => !v)}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                  >
                     ✎ Approve with Modifications
                   </button>
                   <button className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">
                     ✕ Reject Prediction
                   </button>
+                </div>
+                {showRiskModificationForm && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                    <h4 className="text-xs font-semibold text-blue-900">Treatment Modification Entry</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Treatment Code</label>
+                        <select className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                          <option>OEX - Oral Exam / Dental Check-up</option>
+                          <option>FV - Topical Fluoride Varnish Application</option>
+                          <option>PFS - Pit and Fissure Sealant</option>
+                          <option>OP - Oral Prophylaxis</option>
+                          <option>TR - Tooth Restoration (Pasta)</option>
+                          <option>X - Tooth Extraction</option>
+                        </select>
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
+                        <textarea rows={2} className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => navigate('/treatment-records')} className="px-4 py-1.5 text-sm bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700">Save Modification</button>
+                      <button onClick={() => setShowRiskModificationForm(false)} className="px-4 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
+                    </div>
+                  </div>
+                )}
                 </div>
               ) : (
                 <p className="text-xs text-gray-400 italic">Only the assigned dentist can validate AI predictions.</p>

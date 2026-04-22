@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
-import { Plus, Eye, FileText, X, School as SchoolIcon, List, ChevronRight, Users, Upload, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, Eye, FileText, X, School as SchoolIcon, List, ChevronRight, Users, Upload, CheckCircle, AlertCircle, ClipboardPlus } from 'lucide-react';
 import { getGradeColor } from '../utils/gradeColors';
 import { formatStudentName } from '../utils/formatStudentName';
 import { getSchoolColor, getSchoolShortName } from '../utils/schoolColors';
@@ -45,6 +45,7 @@ export const PatientList = () => {
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [queuedStudents, setQueuedStudents] = useState<Set<string>>(new Set());
   const [newPatient, setNewPatient] = useState({ firstName:'', lastName:'', middleName:'', birthdate:'', gender:'', grade:'', section:'', school:'', guardianName:'', guardianContact:'', address:'', philhealthNumber:'', philhealthStatus:'None', is4Ps:false, fourPsId:'', consentStatus:'pending' });
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [bulkFile, setBulkFile] = useState<File | null>(null);
@@ -541,13 +542,15 @@ export const PatientList = () => {
                     <th className={studentListTableStyles.headerCell}>Section</th>
                     <th className={studentListTableStyles.headerCell}>Gender</th>
                     <th className={studentListTableStyles.headerCell}>Age</th>
+                    <th className={studentListTableStyles.headerCell}>Action</th>
                   </tr>
                 </thead>
                 <tbody className={studentListTableStyles.body}>
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={5} className={studentListTableStyles.emptyCell}>No students match the selected filters.</td></tr>
+                    <tr><td colSpan={6} className={studentListTableStyles.emptyCell}>No students match the selected filters.</td></tr>
                   ) : filtered.map(student => {
                     const age = calculateAge(student.birthdate);
+                    const isQueued = queuedStudents.has(student.id);
                     return (
                       <tr key={student.id} onClick={() => navigate(`/dental-chart/${student.id}?tab=history`)} className={studentListTableStyles.row}>
                         <td className={studentListTableStyles.primaryCell}>{formatStudentName(student.name)}</td>
@@ -555,6 +558,22 @@ export const PatientList = () => {
                         <td className={studentListTableStyles.secondaryCell}>{student.section}</td>
                         <td className={studentListTableStyles.secondaryCell}>{student.gender}</td>
                         <td className={studentListTableStyles.secondaryCell}>{age}</td>
+                        <td className={studentListTableStyles.secondaryCell}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setQueuedStudents((prev) => {
+                                const next = new Set(prev);
+                                next.add(student.id);
+                                return next;
+                              });
+                            }}
+                            className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium ${isQueued ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}
+                          >
+                            <ClipboardPlus className="h-3.5 w-3.5" />
+                            {isQueued ? 'Queued' : 'Queue'}
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}

@@ -245,13 +245,20 @@ const getAgeGroup = (age: number) => {
 
 export const TreatmentRecords = () => {
   const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState<'treatment' | 'full'>('treatment');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filtered = useMemo(() => mockPatients.filter(t => {
+  const treatmentIds = useMemo(() => new Set(['2', '5', '7', '11', '13', '17', '22', '35', '48']), []);
+  const sourcePatients = useMemo(
+    () => (viewMode === 'treatment' ? mockPatients.filter((p) => treatmentIds.has(p.id)) : mockPatients),
+    [viewMode, treatmentIds],
+  );
+
+  const filtered = useMemo(() => sourcePatients.filter(t => {
     const age = calculateAge(t.birthdate);
     if (gradeFilter !== 'all' && t.grade !== gradeFilter) return false;
     if (sectionFilter !== 'all' && t.section !== sectionFilter) return false;
@@ -263,7 +270,7 @@ export const TreatmentRecords = () => {
       if (!formattedName.includes(query) && !t.grade.toLowerCase().includes(query) && !t.section.toLowerCase().includes(query)) return false;
     }
     return true;
-  }), [gradeFilter, sectionFilter, genderFilter, ageGroupFilter, searchTerm]);
+  }), [sourcePatients, gradeFilter, sectionFilter, genderFilter, ageGroupFilter, searchTerm]);
 
   const hasActiveFilters = [gradeFilter, sectionFilter, genderFilter, ageGroupFilter].some(f => f !== 'all') || searchTerm !== '';
   const clearFilters = () => { setGradeFilter('all'); setSectionFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); setSearchTerm(''); };
@@ -279,8 +286,12 @@ export const TreatmentRecords = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Treatment Records</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Treatment</h1>
           <p className="text-sm text-gray-500 mt-0.5">{filtered.length} record{filtered.length !== 1 ? 's' : ''} found</p>
+        </div>
+        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <button onClick={() => setViewMode('treatment')} className={`px-3 py-1.5 rounded-md text-sm font-medium ${viewMode === 'treatment' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-600 hover:text-gray-800'}`}>Treatment List</button>
+          <button onClick={() => setViewMode('full')} className={`px-3 py-1.5 rounded-md text-sm font-medium ${viewMode === 'full' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-600 hover:text-gray-800'}`}>Full List</button>
         </div>
       </div>
       <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
@@ -316,7 +327,7 @@ export const TreatmentRecords = () => {
               ) : filtered.map(t => {
                 const age = calculateAge(t.birthdate);
                 return (
-                  <tr key={t.id} onClick={() => navigate(`/dental-chart/${t.id}?tab=treatments`)} className={studentListTableStyles.row}>
+                  <tr key={t.id} onClick={() => navigate(`/dental-chart/${t.id}?tab=chart&context=treatment`)} className={studentListTableStyles.row}>
                     <td className={studentListTableStyles.primaryCell}>{formatStudentName(t.name)}</td>
                     <GradeTableCell grade={t.grade} />
                     <td className={studentListTableStyles.secondaryCell}>{t.section}</td>
@@ -328,7 +339,7 @@ export const TreatmentRecords = () => {
             </tbody>
           </table>
         </div>
-        {filtered.length > 0 && <div className={studentListTableStyles.footer}>Showing {filtered.length} of {mockPatients.length} records</div>}
+        {filtered.length > 0 && <div className={studentListTableStyles.footer}>Showing {filtered.length} of {sourcePatients.length} records</div>}
       </div>
     </div>
   );
