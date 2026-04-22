@@ -9,6 +9,7 @@ import { GradePill } from './GradePill';
 import { GradeTableCell } from './GradeTableCell';
 import { ListSearchInput } from './ListSearchInput';
 import { studentListTableStyles } from './StudentListTableStyles';
+import { addQueuedStudentId, getQueuedStudentIds } from '../utils/queueStorage';
 
 const SCHOOLS = [
   'Bagong Tanyag Integrated School',
@@ -50,6 +51,7 @@ export const PatientList = () => {
   const [bulkFile, setBulkFile] = useState<File | null>(null);
   const [bulkPreview, setBulkPreview] = useState<any[]>([]);
   const [bulkStep, setBulkStep] = useState<'upload'|'preview'|'done'>('upload');
+  const [queuedStudentIds, setQueuedStudentIds] = useState<string[]>(() => getQueuedStudentIds());
 
   const calculateAge = (birthdate: string) => {
     const today = new Date(); const birth = new Date(birthdate);
@@ -541,13 +543,15 @@ export const PatientList = () => {
                     <th className={studentListTableStyles.headerCell}>Section</th>
                     <th className={studentListTableStyles.headerCell}>Gender</th>
                     <th className={studentListTableStyles.headerCell}>Age</th>
+                    <th className={studentListTableStyles.headerCell}>Actions</th>
                   </tr>
                 </thead>
                 <tbody className={studentListTableStyles.body}>
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={5} className={studentListTableStyles.emptyCell}>No students match the selected filters.</td></tr>
+                    <tr><td colSpan={6} className={studentListTableStyles.emptyCell}>No students match the selected filters.</td></tr>
                   ) : filtered.map(student => {
                     const age = calculateAge(student.birthdate);
+                    const isQueued = queuedStudentIds.includes(student.id);
                     return (
                       <tr key={student.id} onClick={() => navigate(`/dental-chart/${student.id}?tab=history`)} className={studentListTableStyles.row}>
                         <td className={studentListTableStyles.primaryCell}>{formatStudentName(student.name)}</td>
@@ -555,6 +559,23 @@ export const PatientList = () => {
                         <td className={studentListTableStyles.secondaryCell}>{student.section}</td>
                         <td className={studentListTableStyles.secondaryCell}>{student.gender}</td>
                         <td className={studentListTableStyles.secondaryCell}>{age}</td>
+                        <td className={studentListTableStyles.secondaryCell}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (isQueued) return;
+                              setQueuedStudentIds(addQueuedStudentId(student.id));
+                            }}
+                            disabled={isQueued}
+                            className={`px-2.5 py-1 rounded text-xs font-semibold border transition-colors ${
+                              isQueued
+                                ? 'bg-green-100 text-green-700 border-green-200 cursor-default'
+                                : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                            }`}
+                          >
+                            {isQueued ? 'Queued' : 'Queue for Charting'}
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}

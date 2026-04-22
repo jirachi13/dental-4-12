@@ -211,8 +211,33 @@ export const DentalChart = () => {
   };
 
   type TabKey = 'history' | 'chart' | 'records' | 'treatments' | 'ai';
-  const initialTab = (searchParams.get('tab') as TabKey) || 'history';
-  const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
+  type EntryMode = 'full' | 'charting' | 'risk';
+  const modeParam = searchParams.get('mode');
+  const entryMode: EntryMode = modeParam === 'charting' || modeParam === 'risk' ? modeParam : 'full';
+  const visibleTabs: { key: TabKey; label: string }[] =
+    entryMode === 'risk'
+      ? [{ key: 'ai', label: 'Risk Classification' }]
+      : entryMode === 'charting'
+        ? [
+            { key: 'history', label: 'History & Oral' },
+            { key: 'chart', label: 'Dental Chart' },
+          ]
+        : [
+            { key: 'history', label: 'History & Oral' },
+            { key: 'chart', label: 'Dental Chart' },
+            { key: 'treatments', label: 'Treatment History' },
+            { key: 'records', label: 'DMFT History' },
+            { key: 'ai', label: 'Risk Classification' },
+          ];
+  const requestedTab = searchParams.get('tab') as TabKey | null;
+  const resolvedInitialTab = (requestedTab && visibleTabs.some(tab => tab.key === requestedTab))
+    ? requestedTab
+    : visibleTabs[0].key;
+  const riskClassificationPath = '/ai-analytics';
+  // Small delay to keep the "Saved!" confirmation visible before redirecting out of charting mode.
+  const SAVE_REDIRECT_DELAY_MS = 300;
+  const [activeTab, setActiveTab] = useState<TabKey>(resolvedInitialTab);
+  const backHref = entryMode === 'risk' ? riskClassificationPath : '/dental-charts';
 
   // ── Dental Records (DMFT by year) ────────────────────────────────────────
   const dmftByYear = [
@@ -238,6 +263,9 @@ export const DentalChart = () => {
   const [selectedTreatment, setSelectedTreatment] = useState<string | null>(null);
   const [consentGiven, setConsentGiven] = useState(resolvedPatient.consentStatus === 'complete');
   const [saved, setSaved] = useState(false);
+  const [showModifyValidation, setShowModifyValidation] = useState(false);
+  const [modificationNote, setModificationNote] = useState('');
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [patientInfo, setPatientInfo] = useState({ ...resolvedPatient });
   const [draftInfo, setDraftInfo] = useState({ ...resolvedPatient });
   const [editingInfo, setEditingInfo] = useState(false);
@@ -390,9 +418,24 @@ export const DentalChart = () => {
     }
   }, [canEdit]);
 
+  useEffect(() => {
+    setActiveTab(resolvedInitialTab);
+  }, [resolvedInitialTab, id]);
+
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+    if (entryMode === 'charting') {
+      setTimeout(() => navigate(riskClassificationPath), SAVE_REDIRECT_DELAY_MS);
+    }
+  };
+
+  const buildChartPath = (patientId: string, tab: TabKey = activeTab) => {
+    const params = new URLSearchParams({ tab });
+    if (entryMode !== 'full') {
+      params.set('mode', entryMode);
+    }
+    return `/dental-chart/${patientId}?${params.toString()}`;
   };
 
   const ToothButton = ({ num }: { num: number }) => {
@@ -462,7 +505,7 @@ export const DentalChart = () => {
       {/* Header */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-3 min-w-0">
-          <Link to="/dental-charts" className="p-2 hover:bg-gray-100 rounded-lg shrink-0">
+          <Link to={backHref} className="p-2 hover:bg-gray-100 rounded-lg shrink-0">
             <ArrowLeft className="w-4 h-4 text-gray-600" />
           </Link>
           <div className="min-w-0">
@@ -470,43 +513,49 @@ export const DentalChart = () => {
             <p className="text-xs text-gray-500">{patientInfo.lastName}, {patientInfo.firstName} · {patientInfo.grade} {patientInfo.section} · {patientInfo.sex} · {computeAge(patientInfo.birthday)} yrs</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Patient navigation */}
-          <div className="hidden sm:flex items-center gap-1 border border-gray-200 rounded-lg overflow-hidden">
-            <button
-              onClick={() => prevPatient && navigate(`/dental-chart/${prevPatient.id}`)}
-              disabled={!prevPatient}
-              title={prevPatient ? `← ${prevPatient.name}` : undefined}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default border-r border-gray-200"
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Patient navigation */}
+            {entryMode !== 'risk' && (
+            <div className="hidden sm:flex items-center gap-1 border border-gray-200 rounded-lg overflow-hidden">
+              <button
+                onClick={() => prevPatient && navigate(buildChartPath(prevPatient.id, activeTab))}
+                disabled={!prevPatient}
+                title={prevPatient ? `← ${prevPatient.name}` : undefined}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default border-r border-gray-200"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               {prevPatient ? <span className="max-w-[80px] truncate">{prevPatient.name.split(' ')[0]}</span> : 'First'}
             </button>
-            <span className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-500">
-              <Users className="w-3 h-3" />
-              {navIndex >= 0 ? `${navIndex + 1}/${patientNavList.length}` : '—'}
-            </span>
-            <button
-              onClick={() => nextPatient && navigate(`/dental-chart/${nextPatient.id}`)}
-              disabled={!nextPatient}
-              title={nextPatient ? `${nextPatient.name} →` : undefined}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default border-l border-gray-200"
+              <span className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-500">
+                <Users className="w-3 h-3" />
+                {navIndex >= 0 ? `${navIndex + 1}/${patientNavList.length}` : '—'}
+              </span>
+              <button
+                onClick={() => nextPatient && navigate(buildChartPath(nextPatient.id, activeTab))}
+                disabled={!nextPatient}
+                title={nextPatient ? `${nextPatient.name} →` : undefined}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default border-l border-gray-200"
             >
               {nextPatient ? <span className="max-w-[80px] truncate">{nextPatient.name.split(' ')[0]}</span> : 'Last'}
-              <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            )}
+            {/* Year navigation */}
+            {entryMode !== 'risk' && (
+            <>
+            <button onClick={() => setSelectedYear(Math.max(0, selectedYear - 1))} disabled={selectedYear === 0} className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30">
+              <ChevronLeft className="w-4 h-4" />
             </button>
-          </div>
-          {/* Year navigation */}
-          <button onClick={() => setSelectedYear(Math.max(0, selectedYear - 1))} disabled={selectedYear === 0} className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
           <span className="text-sm font-medium px-3 py-1.5 bg-blue-50 text-blue-800 rounded-lg">{activeYears[selectedYear]}</span>
-          <button onClick={() => setSelectedYear(Math.min(activeYears.length - 1, selectedYear + 1))} disabled={selectedYear === activeYears.length - 1} className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30">
-            <ChevronRight className="w-4 h-4" />
-          </button>
-          {canEdit && (
-            <button onClick={handleSave} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${saved ? 'bg-green-600 text-white' : 'bg-blue-700 text-white hover:bg-blue-700'}`}>
-              <Save className="w-4 h-4" />
+            <button onClick={() => setSelectedYear(Math.min(activeYears.length - 1, selectedYear + 1))} disabled={selectedYear === activeYears.length - 1} className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            </>
+            )}
+            {canEdit && entryMode !== 'risk' && (
+              <button onClick={handleSave} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${saved ? 'bg-green-600 text-white' : 'bg-blue-700 text-white hover:bg-blue-700'}`}>
+                <Save className="w-4 h-4" />
               {saved ? 'Saved!' : 'Save'}
             </button>
           )}
@@ -651,13 +700,7 @@ export const DentalChart = () => {
           >
             <div className="overflow-x-auto">
             <div className="flex min-w-max">
-            {[
-              { key: 'history',      label: 'History & Oral'    },
-              { key: 'chart',        label: 'Dental Chart'     },
-              { key: 'treatments',   label: 'Treatment History' },
-              { key: 'records',      label: 'DMFT History'     },
-              { key: 'ai',           label: 'AI Risk'          },
-            ].map(tab => (
+            {visibleTabs.map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key as TabKey)}
                 className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors ${activeTab === tab.key ? 'border-b-2 border-blue-700 text-blue-700 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
                 {tab.label}
@@ -853,7 +896,7 @@ export const DentalChart = () => {
             {/* Code selector — edit only */}
             <div className={`bg-blue-50 rounded-xl p-4 ${!canEdit ? 'opacity-50 pointer-events-none select-none' : ''}`}>
               {!canEdit && <p className="text-xs text-gray-500 mb-2 italic">View only — editing restricted to Dentist / Dental Aide</p>}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className={`grid grid-cols-1 ${entryMode === 'charting' ? '' : 'lg:grid-cols-2'} gap-4`}>
                 <div>
                   <div className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Condition Codes</div>
                   <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
@@ -866,6 +909,7 @@ export const DentalChart = () => {
                     ))}
                   </div>
                 </div>
+                {entryMode !== 'charting' && (
                 <div>
                   <div className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Treatment Codes</div>
                   <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
@@ -878,6 +922,7 @@ export const DentalChart = () => {
                     ))}
                   </div>
                 </div>
+                )}
               </div>
               {(selectedCondition || selectedTreatment) && (
                 <div className="mt-3 flex items-center gap-2">
@@ -1025,7 +1070,7 @@ export const DentalChart = () => {
                   ))}
                 </div>
               </div>
-              <div className="bg-gray-50 rounded-xl p-3">
+              {entryMode !== 'charting' && <div className="bg-gray-50 rounded-xl p-3">
                 <div className="font-semibold text-gray-600 mb-2 uppercase tracking-wide text-[10px]">Treatment Codes</div>
                 <div className="space-y-1">
                   {[
@@ -1039,7 +1084,7 @@ export const DentalChart = () => {
                     <div key={code} className="flex gap-2"><span className="font-mono font-bold text-blue-700 w-10">{code}</span><span className="text-gray-500">{label}</span></div>
                   ))}
                 </div>
-              </div>
+              </div>}
             </div>
             </div>
           </div>
@@ -1210,7 +1255,7 @@ export const DentalChart = () => {
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-purple-600" />
-                <h3 className="text-sm font-bold text-gray-900">Oral Health Risk Prediction</h3>
+                <h3 className="text-sm font-bold text-gray-900">Risk Classification</h3>
                 <span className="ml-auto text-xs text-gray-400">Model v2.3.1 · Confidence: 94%</span>
               </div>
               <div className="flex items-center gap-3">
@@ -1248,15 +1293,14 @@ export const DentalChart = () => {
               </div>
               <div className="space-y-2 text-xs">
                 {[
-                  { priority: 'Urgent',      color: 'red',    tx: 'Priority scheduling — refer to City Health Office for comprehensive treatment' },
-                  { priority: 'Immediate',   color: 'orange', tx: 'Extraction or restoration of severely decayed teeth (#36, #46)' },
-                  { priority: 'Short-term',  color: 'yellow', tx: 'Oral prophylaxis and scaling for generalized gingivitis' },
-                  { priority: 'Preventive',  color: 'blue',   tx: 'Fluoride varnish application + pit and fissure sealant on sound molars' },
-                  { priority: 'Education',   color: 'green',  tx: 'Oral hygiene instruction; dietary counseling to reduce sugar intake' },
+                  { color: 'bg-red-50 border-red-200 text-red-700', tx: 'Priority scheduling — refer to City Health Office for comprehensive treatment' },
+                  { color: 'bg-orange-50 border-orange-200 text-orange-700', tx: 'Extraction or restoration of severely decayed teeth (#36, #46)' },
+                  { color: 'bg-yellow-50 border-yellow-200 text-yellow-700', tx: 'Oral prophylaxis and scaling for generalized gingivitis' },
+                  { color: 'bg-blue-50 border-blue-200 text-blue-700', tx: 'Fluoride varnish application + pit and fissure sealant on sound molars' },
+                  { color: 'bg-green-50 border-green-200 text-green-700', tx: 'Oral hygiene instruction; dietary counseling to reduce sugar intake' },
                 ].map(r => (
-                  <div key={r.priority} className="flex items-start gap-2">
-                    <span className={`flex-shrink-0 px-2 py-0.5 rounded text-xs font-semibold bg-${r.color}-100 text-${r.color}-700`}>{r.priority}</span>
-                    <span className="text-gray-700">{r.tx}</span>
+                  <div key={r.tx} className={`rounded-lg border px-3 py-2 ${r.color}`}>
+                    <span>{r.tx}</span>
                   </div>
                 ))}
               </div>
@@ -1267,16 +1311,59 @@ export const DentalChart = () => {
               <h3 className="text-sm font-bold text-gray-900">Dentist Validation</h3>
               <p className="text-xs text-gray-500">Review the AI prediction and treatment recommendation above, then record your clinical decision.</p>
               {canEdit ? (
-                <div className="flex flex-wrap gap-2">
-                  <button className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => { setValidationMessage('Risk classification approved.'); setShowModifyValidation(false); }}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+                  >
                     ✓ Approve Prediction
                   </button>
-                  <button className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+                  <button
+                    onClick={() => { setValidationMessage(null); setShowModifyValidation(true); }}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                  >
                     ✎ Approve with Modifications
                   </button>
-                  <button className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">
+                  <button
+                    onClick={() => { setValidationMessage('Risk classification rejected and marked for reassessment.'); setShowModifyValidation(false); }}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
+                  >
                     ✕ Reject Prediction
                   </button>
+                  </div>
+                  {showModifyValidation && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                      <label className="block text-xs font-medium text-gray-700">Modification Notes</label>
+                      <textarea
+                        rows={3}
+                        value={modificationNote}
+                        onChange={(e) => setModificationNote(e.target.value)}
+                        placeholder="Enter updates to risk classification and treatment recommendation..."
+                        className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setValidationMessage('Risk classification approved with modifications.');
+                            setShowModifyValidation(false);
+                          }}
+                          className="px-4 py-1.5 text-sm bg-[#1E40AF] text-white rounded-lg hover:bg-blue-700"
+                        >
+                          Save Modifications
+                        </button>
+                        <button
+                          onClick={() => setShowModifyValidation(false)}
+                          className="px-4 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {validationMessage && (
+                    <p className="text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">{validationMessage}</p>
+                  )}
                 </div>
               ) : (
                 <p className="text-xs text-gray-400 italic">Only the assigned dentist can validate AI predictions.</p>

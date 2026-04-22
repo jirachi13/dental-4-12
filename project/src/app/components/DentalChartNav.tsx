@@ -5,6 +5,7 @@ import { formatStudentName } from '../utils/formatStudentName';
 import { GradeTableCell } from './GradeTableCell';
 import { ListSearchInput } from './ListSearchInput';
 import { studentListTableStyles } from './StudentListTableStyles';
+import { getQueuedStudentIds } from '../utils/queueStorage';
 
 const GRADES = ['Kinder','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'];
 
@@ -245,18 +246,24 @@ const getAgeGroup = (age: number) => {
 
 export const DentalChartNav = () => {
   const navigate = useNavigate();
+  const [listMode, setListMode] = useState<'queued' | 'full'>('queued');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [sectionFilter, setSectionFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
   const [ageGroupFilter, setAgeGroupFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const queuedStudentIds = useMemo(() => getQueuedStudentIds(), []);
+  const sourcePatients = useMemo(
+    () => (listMode === 'queued' ? mockPatients.filter(p => queuedStudentIds.includes(p.id)) : mockPatients),
+    [listMode, queuedStudentIds]
+  );
 
   const allSections = useMemo(() => {
-    let base = gradeFilter !== 'all' ? mockPatients.filter(p => p.grade === gradeFilter) : mockPatients;
+    let base = gradeFilter !== 'all' ? sourcePatients.filter(p => p.grade === gradeFilter) : sourcePatients;
     return [...new Set(base.map(p => p.section))].sort();
-  }, [gradeFilter]);
+  }, [gradeFilter, sourcePatients]);
 
-  const filtered = useMemo(() => mockPatients.filter(p => {
+  const filtered = useMemo(() => sourcePatients.filter(p => {
     const age = calculateAge(p.birthdate);
     const ag = getAgeGroup(age);
     if (gradeFilter !== 'all' && p.grade !== gradeFilter) return false;
@@ -269,7 +276,7 @@ export const DentalChartNav = () => {
       if (!formattedName.includes(query) && !p.grade.toLowerCase().includes(query) && !p.section.toLowerCase().includes(query)) return false;
     }
     return true;
-  }), [gradeFilter, sectionFilter, genderFilter, ageGroupFilter, searchTerm]);
+  }), [gradeFilter, sectionFilter, genderFilter, ageGroupFilter, searchTerm, sourcePatients]);
 
   const hasActiveFilters = gradeFilter !== 'all' || sectionFilter !== 'all' || genderFilter !== 'all' || ageGroupFilter !== 'all' || searchTerm !== '';
   const clearFilters = () => { setGradeFilter('all'); setSectionFilter('all'); setGenderFilter('all'); setAgeGroupFilter('all'); setSearchTerm(''); };
@@ -286,7 +293,23 @@ export const DentalChartNav = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dental Charts</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{filtered.length} chart{filtered.length !== 1 ? 's' : ''} found</p>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {listMode === 'queued' ? 'Queued students for charting' : 'All students'} · {filtered.length} chart{filtered.length !== 1 ? 's' : ''} found
+          </p>
+        </div>
+        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setListMode('queued')}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${listMode === 'queued' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Queued
+          </button>
+          <button
+            onClick={() => setListMode('full')}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${listMode === 'full' ? 'bg-white text-[#1E40AF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Full List
+          </button>
         </div>
       </div>
       <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
@@ -318,11 +341,12 @@ export const DentalChartNav = () => {
             </thead>
             <tbody className={studentListTableStyles.body}>
               {filtered.length === 0 ? (
-                <tr><td colSpan={5} className={studentListTableStyles.emptyCell}>No dental charts match the selected filters.</td></tr>
+                <tr><td colSpan={5} className={studentListTableStyles.emptyCell}>No students match the selected filters in this view.</td></tr>
               ) : filtered.map(p => {
                 const age = calculateAge(p.birthdate);
+                const rowParams = new URLSearchParams({ tab: 'history', mode: 'charting' });
                 return (
-                  <tr key={p.id} onClick={() => navigate(`/dental-chart/${p.id}`)} className={studentListTableStyles.row}>
+                  <tr key={p.id} onClick={() => navigate(`/dental-chart/${p.id}?${rowParams.toString()}`)} className={studentListTableStyles.row}>
                     <td className={studentListTableStyles.primaryCell}>{formatStudentName(p.name)}</td>
                     <GradeTableCell grade={p.grade} />
                     <td className={studentListTableStyles.secondaryCell}>{p.section}</td>
@@ -334,7 +358,7 @@ export const DentalChartNav = () => {
             </tbody>
           </table>
         </div>
-        {filtered.length > 0 && <div className={studentListTableStyles.footer}>Showing {filtered.length} of {mockPatients.length} charts</div>}
+        {filtered.length > 0 && <div className={studentListTableStyles.footer}>Showing {filtered.length} of {sourcePatients.length} charts</div>}
       </div>
     </div>
   );
