@@ -344,8 +344,9 @@ export const DentalChartNav = () => {
                 <tr><td colSpan={5} className={studentListTableStyles.emptyCell}>No students match the selected filters in this view.</td></tr>
               ) : filtered.map(p => {
                 const age = calculateAge(p.birthdate);
+                const rowParams = new URLSearchParams({ tab: 'history', mode: 'charting' });
                 return (
-                  <tr key={p.id} onClick={() => navigate(`/dental-chart/${p.id}?tab=history&mode=charting`)} className={studentListTableStyles.row}>
+                  <tr key={p.id} onClick={() => navigate(`/dental-chart/${p.id}?${rowParams.toString()}`)} className={studentListTableStyles.row}>
                     <td className={studentListTableStyles.primaryCell}>{formatStudentName(p.name)}</td>
                     <GradeTableCell grade={p.grade} />
                     <td className={studentListTableStyles.secondaryCell}>{p.section}</td>

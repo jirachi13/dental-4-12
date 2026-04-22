@@ -1,4 +1,5 @@
 const QUEUED_STUDENT_IDS_KEY = 'queued-student-ids';
+// Default queue seed for first load/demo so Dental Charts starts in a non-empty queued view.
 const DEFAULT_QUEUED_IDS = ['1', '3', '11', '13', '38'];
 
 const normalizeIds = (ids: string[]) => [...new Set(ids.map(String))];

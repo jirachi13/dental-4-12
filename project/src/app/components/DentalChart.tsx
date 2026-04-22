@@ -233,8 +233,11 @@ export const DentalChart = () => {
   const resolvedInitialTab = (requestedTab && visibleTabs.some(tab => tab.key === requestedTab))
     ? requestedTab
     : visibleTabs[0].key;
+  const riskClassificationPath = '/ai-analytics';
+  // Small delay to keep the "Saved!" confirmation visible before redirecting out of charting mode.
+  const SAVE_REDIRECT_DELAY_MS = 300;
   const [activeTab, setActiveTab] = useState<TabKey>(resolvedInitialTab);
-  const backHref = entryMode === 'risk' ? '/ai-analytics' : '/dental-charts';
+  const backHref = entryMode === 'risk' ? riskClassificationPath : '/dental-charts';
 
   // ── Dental Records (DMFT by year) ────────────────────────────────────────
   const dmftByYear = [
@@ -423,13 +426,16 @@ export const DentalChart = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
     if (entryMode === 'charting') {
-      setTimeout(() => navigate('/ai-analytics'), 300);
+      setTimeout(() => navigate(riskClassificationPath), SAVE_REDIRECT_DELAY_MS);
     }
   };
 
   const buildChartPath = (patientId: string, tab: TabKey = activeTab) => {
-    const modeQuery = entryMode === 'full' ? '' : `&mode=${entryMode}`;
-    return `/dental-chart/${patientId}?tab=${tab}${modeQuery}`;
+    const params = new URLSearchParams({ tab });
+    if (entryMode !== 'full') {
+      params.set('mode', entryMode);
+    }
+    return `/dental-chart/${patientId}?${params.toString()}`;
   };
 
   const ToothButton = ({ num }: { num: number }) => {
@@ -1249,7 +1255,7 @@ export const DentalChart = () => {
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-purple-600" />
-                <h3 className="text-sm font-bold text-gray-900">Risk Classification Summary</h3>
+                <h3 className="text-sm font-bold text-gray-900">Risk Classification</h3>
                 <span className="ml-auto text-xs text-gray-400">Model v2.3.1 · Confidence: 94%</span>
               </div>
               <div className="flex items-center gap-3">

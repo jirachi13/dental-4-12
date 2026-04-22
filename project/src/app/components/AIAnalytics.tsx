@@ -257,7 +257,7 @@ export const AIAnalytics = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Risk Classification</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Risk-based student classification list</p>
+          <p className="text-sm text-gray-500 mt-0.5">Student risk classification overview</p>
         </div>
         <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
           <button
