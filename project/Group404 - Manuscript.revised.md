@@ -1,1 +1,0 @@
-(Full copy from project/Group404 - Manuscript.md will be placed here along with revisions as specified)
